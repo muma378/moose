@@ -180,14 +180,26 @@ class OptionBaseType(object):
 	def get_value(self):
 		raise NotImplementedError
 
-class OptionString(OptionBaseType):
+
+class OptionUnicode(OptionBaseType):
 	"""
-	Type for string or option not specified.
+	Type for unicode or option not specified. (decoded in __update_codec)
 	"""
-	opt_code = (None, 'string', 'String')
+	opt_code = (None, 'unicode', 'Unicode')
 
 	def get_value(self):
 		return self.value
+
+
+class OptionString(OptionBaseType):
+	"""
+	Type for string.
+	"""
+	opt_code = ('string', 'String')
+
+	def get_value(self):
+		return str(self.value)
+
 
 class OptionSequence(OptionBaseType):
 	opt_code = ('list', 'sequence', 'List', 'Sequence')
@@ -225,6 +237,7 @@ class OptionRange(OptionBaseType):
 
 class OptionParser(object):
 	option_types = (
+		OptionUnicode,
 		OptionString,
 		OptionSequence,
 		OptionInteger,
