@@ -5,9 +5,6 @@ from os.path import abspath, dirname, join, normcase, sep
 from moose.core.exceptions import SuspiciousFileOperation
 from moose.utils.encoding import force_text
 
-# For backwards-compatibility in Django 2.0
-abspathu = abspath
-
 
 def upath(path):
     """Always return a unicode path (did something for Python 2)."""
