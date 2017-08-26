@@ -178,7 +178,8 @@ class TemplateCommand(BaseCommand):
                         content = template_file.read()
                     # TODO: use Jinja2 instead of implementing template engine self
                     # template = Engine().from_string(content)
-                    # content = template.render(context)
+                    # content = template.render(context
+                    content = content.format(**context)
                     with io.open(new_path, 'w', encoding='utf-8') as new_file:
                         new_file.write(content)
                 else:
