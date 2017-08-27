@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Moose settings for {{ project_name }} project.
 
@@ -27,19 +28,8 @@ PROJECT_ROOT = os.getcwd()
 def norm_porject_path(*args):
     return normpath(join(PROJECT_ROOT, *args))
 
-DATA_DIR = norm_porject_path('..', 'data')
-CONF_DIR = norm_porject_path('..', 'conf')
-LOGS_DIR = norm_porject_path('..', 'logs')
-APPS_DIR = norm_porject_path('apps')
-
 
 template_app = norm_porject_path('core', 'app_template.py')
-
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
-
-if not os.path.exists(LOGS_DIR):
-    os.makedirs(LOGS_DIR)
 
 
 # config settings
@@ -56,6 +46,10 @@ CONNECTION_SETTINGS = {
     "interval": 300,
     "retry": 3
 }
+
+INSTALLED_APPS = [
+    'cityscape.apps.CityscapeConfig',
+]
 
 # azure settings
 AZURE_SETTINGS = {
@@ -106,13 +100,13 @@ WEB_SETTINGS = {
     "password": "2017_data@Tech",
 }
 
-BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
-COOKIE_PATH = os.path.join(TOOLS_DIR, 'cookie')
-
-DECRYPT_SETTINGS = {
-    "key_path": os.path.join(TOOLS_DIR, 'key'),
-    "timeout": 60,
-}
+# BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
+# COOKIE_PATH = os.path.join(TOOLS_DIR, 'cookie')
+#
+# DECRYPT_SETTINGS = {
+#     "key_path": os.path.join(TOOLS_DIR, 'key'),
+#     "timeout": 60,
+# }
 
 DOWNLOAD_SETTINGS = {
     "queue_buffer": 2500,
@@ -122,7 +116,7 @@ DOWNLOAD_SETTINGS = {
 
 # tools are assumed to be put at the dir named tools
 TOOLS_SETTINGS = {
-    
+
 }
 
 # email settings
@@ -139,10 +133,10 @@ NOTIFY_MAIL_SETTINGS = {
     "content": "Task {title} you started before is finised now."
 }
 
-# logs settings
-LOGGING_CONF_FILE = norm_porject_path('conf', 'logging.conf')
-logging.config.fileConfig(LOGGING_CONF_FILE)
-logger = logging.getLogger('root')
+# # logs settings
+# LOGGING_CONF_FILE = norm_porject_path('conf', 'logging.conf')
+# logging.config.fileConfig(LOGGING_CONF_FILE)
+# logger = logging.getLogger('root')
 
 # others
 EDITOR = "vim"
@@ -159,4 +153,3 @@ RESERVED_FILES = [
     CONF_TEMPLATE_NAME,
     CONF_IN_USING_NAME,
     ]
-

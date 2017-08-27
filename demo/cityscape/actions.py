@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
 from moose import actions
 
-# Create your views here.
+class Upload(actions.AbstractAction):
+    def run(self, **kwargs):
+        return "upload"
+
+
+class Export(actions.AbstractAction):
+    def run(self, **kwargs):
+        return "export"
