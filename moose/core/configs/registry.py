@@ -2,7 +2,6 @@ import os
 import pickle
 
 from moose.core.exceptions import ImproperlyConfigured
-from moose.apps import AppConfig
 from moose.conf import settings
 
 from .config import ConfigLoader
@@ -13,15 +12,17 @@ class ConfigsRegistry(object):
 	"""
 	configs_of_app = {}
 
-	def __init__(self, app_config):
-		assert(isinstance(app_config, AppConfig))
+	def __init__(self, app_config, all_configs=None):
 		self.app_config = app_config
 
 		# Mapping of config names to ConfigLoader instances for the app_config
-		self._configs = {}
+		if all_configs:
+			self._configs = all_configs
+		else:
+			self._configs = {}
 
-		# Called after initializing self.app_config and self._configs
-		self.synchronize()
+			# Called after initializing self.app_config and self._configs
+			self.synchronize()
 
 	# Updates self._configs for the case that configs created, modified or deleted
 	def synchronize(self):
@@ -35,7 +36,7 @@ class ConfigsRegistry(object):
 		# updates the modified and appended
 		for config_name in config_files:
 			config_file = os.path.join(conf_dirname, config_name)
-			self._configs[config_name], is_changed = ConfigLoader.create(config_file, self)
+			self._configs[config_name], is_changed = ConfigLoader.create(config_file, self._configs)
 			# Ture if any changed
 			anyone_changed = anyone_changed or is_changed
 
@@ -65,8 +66,8 @@ class ConfigsRegistry(object):
 	@classmethod
 	def get_or_create(cls, installed_app):
 		# finds the AppConfig according to the app_label
-		if not isinstance(installed_app, AppConfig):
-			raise ImproperlyConfigured("'%s' isn't instance of AppConfig." % installed_app)
+		# if not isinstance(installed_app, AppConfig):
+		# 	raise ImproperlyConfigured("'%s' isn't instance of AppConfig." % installed_app)
 
 		# Step 1. checks if it was loaded in the memory recently
 		# TODO: synchronize here or not?
@@ -83,7 +84,8 @@ class ConfigsRegistry(object):
 		if os.path.exists(conf_cache_file):
 			with open(conf_cache_file, 'r') as f:
 				try:
-					configs = pickle.load(f)
+					all_configs = pickle.load(f)
+					configs = cls(installed_app, all_configs)
 				except EOFError as e:
 					configs = cls(installed_app)
 					tuned = True
@@ -100,7 +102,7 @@ class ConfigsRegistry(object):
 		# Content was changed since the last dumping
 		if tuned:
 			with open(conf_cache_file, 'w') as f:
-				pickle.dump(configs, f)
+				pickle.dump(configs._configs, f)
 
 		# Saves it to the memory
 		cls.configs_of_app[installed_app.label] = configs
@@ -126,8 +128,6 @@ class ConfigsRegistry(object):
 		raise NotImplementedError
 
 
-configs = ConfigsRegistry
-
 # TODO: moves to AppConfig for an attribute
 def get_conf_dirname(app_config):
 	return os.path.join(app_config.path, settings.CONFIGS_DIRNAME)
@@ -148,7 +148,7 @@ def find_nearest_conf(app_config):
 # attribute: `-c a:attr=val`
 def find_matched_conf(app_config, conf_desc):
 	# instantiates a ConfigsRegistry with a given app_config
-	configs = configs.get_or_create(app_config)
+	configs = ConfigsRegistry.get_or_create(app_config)
 
 	if conf_desc.find(settings.CONFIG_DESC_SEP) == 1:
 		# separated by colon, consists of a letter and an expression

@@ -6,7 +6,7 @@ import ConfigParser
 import chardet
 
 from moose.utils._os import npath
-from moose.utils.datatools import stripl
+from moose.utils.datautils import stripl
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
 from moose.conf import settings
 
@@ -50,16 +50,17 @@ class ConfigLoader(object):
 	def create(cls, conf_path, configs):
 		# Checks if it was loaded from the cache
 		argv_config = configs.get(conf_path)
+		is_newly_created = True
 
 		if argv_config:
 			# get the posix stat for the config file
 			config_stat = os.stat(conf_path)
 			# checks if the content was changed since last parsing
 			if argv_config.mtime == config_stat.st_mtime:
-				return argv_config
+				return argv_config, not is_newly_created
 
 		# create a new ArgvConfig instance
-		return cls(conf_path)
+		return cls(conf_path), is_newly_created
 
 	def __update_codec(self):
 		# character encoding detect

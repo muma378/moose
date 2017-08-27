@@ -5,8 +5,11 @@ from moose.core.exceptions import ImproperlyConfigured
 from moose.utils._os import upath
 from moose.utils import six
 from moose.utils.module_loading import module_has_submodule
+from moose.core.configs.registry import find_matched_conf
 
 ACTIONS_MODULE_NAME = 'actions'
+CONFIGS_DIRNAME = 'configs'
+CONFIGS_CACHE_NAME = '.config'
 
 class AppConfig(object):
 	"""
@@ -45,6 +48,14 @@ class AppConfig(object):
 
 		# table to store the map between alias and actions
 		self.alias_action_table = {}
+
+		# Filesystem path to the config directory of the application.
+		if not hasattr(self, 'configs_dirname'):
+			self.configs_dirname = os.path.join(self.path, CONFIGS_DIRNAME)
+
+		# Filesystem path to the config cache file.
+		if not hasattr(self, 'configs_cache_path'):
+			self.configs_cache_path = os.path.join(self.configs_dirname, CONFIGS_CACHE_NAME)
 
 
 	def __repr__(self):
@@ -202,7 +213,9 @@ class AppConfig(object):
 		else:
 			raise ImproperlyConfigured("Unknown action alias '%s'." % action_alias)
 		response = []
+
 		for config in configs:
+			config = find_matched_conf(self, config)
 			response.append(action.run(config=config))
 		return response
 

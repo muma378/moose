@@ -115,17 +115,9 @@ class Settings(BaseSettings):
                 setattr(self, setting, setting_value)
                 self._explicit_settings.add(setting)
 
-        if not self.SECRET_KEY:
-            raise ImproperlyConfigured("The SECRET_KEY setting must not be empty.")
+        # if not self.SECRET_KEY:
+        #     raise ImproperlyConfigured("The SECRET_KEY setting must not be empty.")
 
-        if ('django.contrib.auth.middleware.AuthenticationMiddleware' in self.MIDDLEWARE_CLASSES and
-                'django.contrib.auth.middleware.SessionAuthenticationMiddleware' not in self.MIDDLEWARE_CLASSES):
-            warnings.warn(
-                "Session verification will become mandatory in Django 1.10. "
-                "Please add 'django.contrib.auth.middleware.SessionAuthenticationMiddleware' "
-                "to your MIDDLEWARE_CLASSES setting when you are ready to opt-in after "
-                "reading the upgrade considerations in the 1.8 release notes.",
-            )
 
         if hasattr(time, 'tzset') and self.TIME_ZONE:
             # When we can, attempt to validate the timezone. If we can't find
