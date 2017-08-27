@@ -15,7 +15,7 @@ from moose.conf import global_settings
 from moose.core.exceptions import ImproperlyConfigured
 from moose.utils.functional import LazyObject, empty
 
-ENVIRONMENT_VARIABLE = "DJANGO_SETTINGS_MODULE"
+ENVIRONMENT_VARIABLE = "MOOSE_SETTINGS_MODULE"
 
 
 class LazySettings(LazyObject):
