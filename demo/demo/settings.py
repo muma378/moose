@@ -32,11 +32,21 @@ def norm_porject_path(*args):
 template_app = norm_porject_path('core', 'app_template.py')
 
 
+CONFIGS_DIRNAME = 'configs'
+CONFIG_CACHE_NAME = '.config'
+CONFIG_EXTENSION = '.cfg'
+
 # config settings
 COMMON_CONF_FILE = norm_porject_path('conf', 'common.cfg')
 CONF_GEN_SCRIPT_NAME = 'gen_template.py'
 CONF_TEMPLATE_NAME = 'template.cfg'
 CONF_IN_USING_NAME = 'config.cfg'
+CONFIG_META_KEYWORD = 'meta'
+CONFIG_KEYS_KEYWORD = 'keys'
+CONFIG_LIST_SEP = ','
+CONFIG_META_SECTION_CONCATE = '_'
+CONFIG_FILE_CODEC = 'UTF-8'
+CONFIG_DESC_SEP = '-'
 
 DEFAULT_TIMEOUT = 60
 

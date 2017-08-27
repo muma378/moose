@@ -2,7 +2,6 @@
 # common.connection.azure -
 import os
 import sys
-import Queue
 
 from azure.storage.blob import BlockBlobService, PublicAccess
 from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError
