@@ -43,6 +43,9 @@ class AppConfig(object):
 		if not hasattr(self, 'path'):
 			self.path = self._path_from_module(app_module)
 
+		# table to store the map between alias and actions
+		self.alias_action_table = {}
+
 
 	def __repr__(self):
 		return '<%s: %s>' % (self.__class__.__name__, self.label)
@@ -73,6 +76,7 @@ class AppConfig(object):
 				"you must configure this app with an AppConfig subclass "
 				"with a 'path' class attribute." % (module,))
 		return upath(paths[0])
+
 
 	@classmethod
 	def create(cls, entry):
@@ -164,7 +168,6 @@ class AppConfig(object):
 		# Dictionary of actions for this app, primarily maintained in the
 		# 'all_actions' attribute of the Apps this AppConfig is attached to.
 		# self.actions = self.apps.all_actions[self.label]
-		import pdb; pdb.set_trace()
 		if module_has_submodule(self.module, ACTIONS_MODULE_NAME):
 			actions_module_name = '%s.%s' % (self.name, ACTIONS_MODULE_NAME)
 			self.actions_module = import_module(actions_module_name)
@@ -176,17 +179,31 @@ class AppConfig(object):
 		"""
 		pass
 
-	def run(self, action, configs, daemon):
+	def register(self, action_klass, alias, default=False, entry=None):
+		"""
+		To store the map between actions and names, which would be called by
+		the sub-command 'run' and option '-a'
+		"""
+		if self.alias_action_table.get(alias):
+			raise ImproperlyConfigured("Action alias '%s' was registered." % alias)
+
+		# TODO: take into account argument default and entry
+		self.alias_action_table[alias] = getattr(self.actions_module, action_klass)
+
+
+	def run(self, action_alias, configs, daemon=False):
 		"""
 		Runs the action with configs listed one by one, catches errors occured
 		and reports after all done.
 		"""
-		act = self.actions.get(action)
-
+		action_klass = self.alias_action_table.get(action_alias)
+		if action_klass:
+			action = action_klass(self)
+		else:
+			raise ImproperlyConfigured("Unknown action alias '%s'." % action_alias)
 		response = []
 		for config in configs:
-			response.append(act(config))
-
+			response.append(action.run(config=config))
 		return response
 
 
