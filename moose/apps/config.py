@@ -5,7 +5,6 @@ from moose.core.exceptions import ImproperlyConfigured
 from moose.utils._os import upath
 from moose.utils import six
 from moose.utils.module_loading import module_has_submodule
-from moose.core.configs.registry import find_matched_conf
 
 ACTIONS_MODULE_NAME = 'actions'
 CONFIGS_DIRNAME = 'configs'
@@ -201,23 +200,8 @@ class AppConfig(object):
 		# TODO: take into account argument default and entry
 		self.alias_action_table[alias] = getattr(self.actions_module, action_klass)
 
-
-	def run(self, action_alias, configs, daemon=False):
-		"""
-		Runs the action with configs listed one by one, catches errors occured
-		and reports after all done.
-		"""
-		action_klass = self.alias_action_table.get(action_alias)
-		if action_klass:
-			action = action_klass(self)
-		else:
-			raise ImproperlyConfigured("Unknown action alias '%s'." % action_alias)
-		response = []
-
-		for config in configs:
-			config = find_matched_conf(self, config)
-			response.append(action.run(config=config))
-		return response
+	def get_action_klass(self, action_alias):
+		return self.alias_action_table.get(action_alias)
 
 
 	# TODO: returns a list containing all actions allowed

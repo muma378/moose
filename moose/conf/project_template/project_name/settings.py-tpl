@@ -131,7 +131,7 @@ MAIL_SETTINGS = {
 }
 
 NOTIFY_MAIL_SETTINGS = {
-    "subject": "[automate] {title}",
+    "subject": "[mooose] {title}",
     "content": "Task {title} you started before is finised now."
 }
 
@@ -148,6 +148,8 @@ DATALINK_TEMPLATE = 'http://bz.datatang.com/datalink?data={data_guid}&taskId={ta
 AZURE_FILELINK = 'http://crowdfile.blob.core.chinacloudapi.cn/{task_id}/{file_path}'
 
 PREFERRED_PROJECT_NAME = u"%d第%d期图片标注任务"
+
+TIME_ZONE = 'Asia/Shanghai'
 
 RESERVED_FILES = [
     '.gitignore',

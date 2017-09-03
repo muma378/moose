@@ -235,6 +235,10 @@ class BaseCommand(object):
         ``Exception`` is not ``CommandError``, raise it.
         """
         self._called_from_command_line = True
+        self.raw_command_line = ' '.join(argv)
+        self.prog = argv[0]
+        self.name = argv[1]
+
         parser = self.create_parser(argv[0], argv[1])
 
         options = parser.parse_args(argv[2:])
@@ -317,7 +321,7 @@ class BaseCommand(object):
         The default comment on running the command.
 
         """
-        return ''
+        return self.raw_command_line
 
 
 class AppCommand(BaseCommand):

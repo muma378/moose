@@ -1,8 +1,10 @@
 import os
 import pickle
 
+from moose.apps import AppConfig
 from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
+
 
 from .config import ConfigLoader
 
@@ -66,8 +68,8 @@ class ConfigsRegistry(object):
 	@classmethod
 	def get_or_create(cls, installed_app):
 		# finds the AppConfig according to the app_label
-		# if not isinstance(installed_app, AppConfig):
-		# 	raise ImproperlyConfigured("'%s' isn't instance of AppConfig." % installed_app)
+		if not isinstance(installed_app, AppConfig):
+			raise ImproperlyConfigured("'%s' isn't instance of AppConfig." % installed_app)
 
 		# Step 1. checks if it was loaded in the memory recently
 		# TODO: synchronize here or not?
