@@ -42,7 +42,11 @@ CONFIG_KEYS_KEYWORD = 'keys'
 CONFIG_LIST_SEP = ','
 CONFIG_META_SECTION_CONCATE = '_'
 CONFIG_FILE_CODEC = 'UTF-8'
-CONFIG_DESC_SEP = '-'
+CONFIG_DESC_EXPR_SEP = ':'
+CONFIG_DISCOVER_BY_TAG = 't'
+CONFIG_DISCOVER_BY_ATTR = 'a'
+CONFIG_DESC_ATTR_VAL_SEP = '='
+
 
 DEFAULT_TIMEOUT = 60
 
@@ -141,7 +145,7 @@ logging.config.fileConfig(LOGGING_CONF_FILE)
 logger = logging.getLogger('root')
 
 # others
-EDITOR = "vim"
+EDITOR = "vim" if NOT_POSIX else "notepad"
 OFFLINE = None
 
 DATALINK_TEMPLATE = 'http://bz.datatang.com/datalink?data={data_guid}&taskId={task_id}'

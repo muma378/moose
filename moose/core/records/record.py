@@ -19,7 +19,7 @@ class CommandRecord(object):
 	# datetime_format = "%d/%m/%y, %H:%M:%S"
 	display_format = (
 		"[{r.app_label} - {r.command_name}] ({r.launch_time} ~ {r.running_time})"
-		" {r.message} "
+		" \"{r.message}\""
 		)
 
 	def __init__(self, app_config, command, message):

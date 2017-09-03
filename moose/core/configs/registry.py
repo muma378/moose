@@ -123,7 +123,7 @@ class ConfigsRegistry(object):
 			config = config_loader.parse()
 			if getattr(config, section):
 				if getattr(config, section).get(option) == val:
-					return config
+					return config_loader
 		return None
 
 	def find(self, conf_desc):
@@ -152,17 +152,17 @@ def find_matched_conf(app_config, conf_desc):
 	# instantiates a ConfigsRegistry with a given app_config
 	configs = ConfigsRegistry.get_or_create(app_config)
 
-	if conf_desc.find(settings.CONFIG_DESC_SEP) == 1:
+	if conf_desc.find(settings.CONFIG_DESC_EXPR_SEP) == 1:
 		# separated by colon, consists of a letter and an expression
 		style, _, expr = conf_desc.partition(settings.CONFIG_DESC_EXPR_SEP)
 		if style == settings.CONFIG_DISCOVER_BY_TAG:
 			# t:tag-name
-			config_loader = configs.find_by_tag(app_config, expr)
+			config_loader = configs.find_by_tag(expr)
 		elif style == settings.CONFIG_DISCOVER_BY_ATTR:
 			# a:attr=val
 			attr, _, val = expr.partition(settings.CONFIG_DESC_ATTR_VAL_SEP)
 			section, _, option = attr.partition(settings.CONFIG_DESC_SECT_OPT_SEP)
-			config_loader = configs.find_by_attr(app_config, section, option, val)
+			config_loader = configs.find_by_attr(section, option, val)
 		else:
 			return None
 	else:
@@ -173,4 +173,4 @@ def find_matched_conf(app_config, conf_desc):
 			# is it a name?
 			config_loader = configs.find_by_name(conf_desc)
 
-	return config_loader.parse()
+	return config_loader

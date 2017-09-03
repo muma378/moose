@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from moose.apps import apps
 from moose.core.management.base import AppCommand, CommandError
 from moose.core.configs.registry import find_matched_conf
@@ -8,11 +7,17 @@ from moose.core.mail import NotifyMailSender
 
 
 class CommandRunNotifier(NotifyMailSender):
+	"""
+	An email sender inherited from `NotifyMailSender`, by overriding
+	`subject_template` and `content_template` to define the title and
+	content in the email to send.
+	"""
+
 	subject_template = "[moose] {r.app_label} - {c.action_alias}"
 	content_template = (
 		"Task '{r.id}' you started is finised, here is the information:\n"
 		"\t\"{r}\"\n\n"
-		"Output of the action is:\n"
+		"And the output of the action is:\n"
 		"\t\"{output}\""
 		)
 
@@ -22,7 +27,7 @@ class CommandRunNotifier(NotifyMailSender):
 			'c': command,
 			'output': output,
 		}
-		
+
 
 class Command(AppCommand):
 	help = (
@@ -59,27 +64,33 @@ class Command(AppCommand):
 
 		keep_quite	= options['quite']
 		recipients	= options['recipients']
-		message		= options['message']
-		if not message:
-			message = self.comment()
+		message		= options.get('message', self.comment())
 
+		# start to time
 		record = CommandRecord(app_config, self, message)
 
+		# get user-defined class for the action
 		action_klass = app_config.get_action_klass(self.action_alias)
 		if action_klass:
 			actor = action_klass(app_config)
 		else:
-			raise ImproperlyConfigured("Unknown action alias '%s'." % action_alias)
+			raise CommandError("Unknown action alias '%s'." % action_alias)
 
 		# run with configs and get the output
 		output = []
 		for conf_desc in self.configs:
-			config = find_matched_conf(app_config, conf_desc)
-			output.append(actor.run(config=config))
+			config_loader = find_matched_conf(app_config, conf_desc)
+			if not config_loader:
+				# Instead of raising an exception, makes a report after all done
+				err_msg = "No matched config found for description '%s', aborted." % conf_desc
+				output.append(err_msg)
+				continue
+			else:
+				config = config_loader._parse()
+				output.append(actor.run(config=config))
 
 		# to close the timer
 		record.done()
-		# print record
 
 		if not keep_quite:
 			records.add(record)

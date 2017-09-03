@@ -11,8 +11,8 @@ from argparse import ArgumentParser
 import moose
 from moose.core.exceptions import ImproperlyConfigured
 from moose.core.management.color import color_style, no_style
+from moose.core.configs.registry import find_matched_conf
 from moose.utils.encoding import force_str, force_text
-
 
 
 class checks(object):
@@ -358,6 +358,82 @@ class AppCommand(BaseCommand):
         raise NotImplementedError(
             "Subclasses of AppCommand must provide"
             "a handle_app_config() method.")
+
+
+class ConfigsCommand(BaseCommand):
+    """
+    A management command which takes one application label and one or more
+    config description as arguments. The config will be handled by the
+    application in sequence.
+
+    Rather than implementing ``handle()``, subclasses must implement
+    ``handle_config()``, which will be called once for each config.
+    """
+    multiple_configs_allowed = True
+    use_conf_desc_allowed = True
+    config_desc_usage = (
+        "`conf_desc` is a literal representation on a config file, "
+        "4 ways are provided to find a config file for the application:\n"
+        "1. full path to the config file;\n"
+        "2. basename of the config file;\n"
+        "3. by tag with the letter 't', eg. `-c t:tag_name`\n"
+        "4. by attribute and value with letter 'a', eg. `-c a:section.option=val`"
+        )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            'args', metavar='app_label', nargs=1,
+            help='Specify an application label.'
+            )
+
+        if self.use_conf_desc_allowed:
+            help_text = self.config_desc_usage
+        else:
+            help_text = "Full path to or the basename of the config file."
+
+        if self.multiple_configs_allowed:
+            parser.add_argument(
+                '-c', '--config', metavar='config_descs', action='append',
+                help=help_text,
+                )
+        else:
+            parser.add_argument(
+                '-c', '--config', metavar='config_desc', action='store',
+                help=help_text,
+            )
+
+
+    def handle(self, app_label, **options):
+        from moose.apps import apps
+        try:
+            app_config = apps.get_app_config(app_label)
+        except (LookupError, ImportError) as e:
+            raise CommandError("%s. Are you sure your INSTALLED_APPS setting is correct?" % e)
+
+        if self.multiple_configs_allowed:
+            configs = options['config']
+        else:
+            configs = [options['config'], ]
+
+        output = []
+        for conf_desc in configs:
+            config_loader = find_matched_conf(app_config, conf_desc)
+            if not config_loader:
+                raise CommandError("No matched config found for the description '%s', aborted." % conf_desc)
+            app_output = self.handle_config_loader(app_config, config_loader, **options)
+            if app_output:
+                output.append(app_output)
+        return '\n'.join(output)
+
+
+    def handle_config_loader(self, app_config, config_loader, **options):
+        """
+        Perform the command's actions for app_config with a config_loader,
+        an AppConfig instance corresponding to an application label given on the command line.
+        """
+        raise NotImplementedError(
+            "Subclasses of AppCommand must provide"
+            "a handle_config_loader() method.")
 
 
 class LabelCommand(BaseCommand):

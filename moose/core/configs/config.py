@@ -30,7 +30,7 @@ class ConfigLoader(object):
 		if not os.path.exists(conf_path):
 			raise DoesNotExist("Config path does not exist: %s" % npath(conf_path))
 
-		self.config_path = conf_path
+		self.path = conf_path
 		# checks and updates the codecs of config file if necessary
 		# which must be done before setting attribute mtime.
 		self.__update_codec()
@@ -64,13 +64,13 @@ class ConfigLoader(object):
 
 	def __update_codec(self):
 		# character encoding detect
-		with open(self.config_path, 'r+') as f:
+		with open(self.path, 'r+') as f:
 			overwrite = False
 			content = f.read()
 			result = chardet.detect(content)
 			if not result:
 				raise ImproperlyConfigured(
-					"Unknown encoding for '%s'." % self.config_path)
+					"Unknown encoding for '%s'." % self.path)
 
 			# coding with utf-N-BOM, removes the BOM signs '\xff\xfe' or '\xfe\xff'
 			if content.startswith(codecs.BOM_LE) or content.startswith(codecs.BOM_BE):
@@ -85,10 +85,10 @@ class ConfigLoader(object):
 					overwrite = True
 				except UnicodeDecodeError as e:
 					raise ImproperlyConfigured(
-						"Unknown encoding for '%s'." % self.config_path)
+						"Unknown encoding for '%s'." % self.path)
 				except UnicodeEncodeError as e:
 					raise ImproperlyConfigured(
-						"Unrecognized symbols in '%s'." % self.config_path)
+						"Unrecognized symbols in '%s'." % self.path)
 
 			# erases the content and rewrites with 'utf-8' encoding
 			if overwrite:
@@ -100,7 +100,7 @@ class ConfigLoader(object):
 	def _parse(self):
 		# A wrapper to parse config files
 		config_parser = ConfigParser.ConfigParser()
-		config_parser.read(self.config_path)
+		config_parser.read(self.path)
 
 		# Config always starts with a [meta] section, which lists the following
 		# sections to use in the option `keys`
@@ -108,7 +108,7 @@ class ConfigLoader(object):
 			settings.CONFIG_KEYS_KEYWORD)
 		sections = stripl(sections_str.split(settings.CONFIG_LIST_SEP))
 
-		# init a config instance
+		# init a config instance, it contains the fields in file only
 		config = Config()
 		section_parser = SectionParser(config_parser)
 		for section in sections:
