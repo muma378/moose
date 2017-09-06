@@ -1,5 +1,5 @@
-{unicode_literals}from moose.apps import AppConfig
+${unicode_literals}from moose.apps import AppConfig
 
 
-class {camel_case_app_name}Config(AppConfig):
-    name = '{app_name}'
+class ${camel_case_app_name}Config(AppConfig):
+    name = '${app_name}'

@@ -5,8 +5,8 @@ from moose.apps import AppConfig
 from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
 
-
 from .config import ConfigLoader
+
 
 class ConfigsRegistry(object):
 	"""
@@ -25,6 +25,13 @@ class ConfigsRegistry(object):
 
 			# Called after initializing self.app_config and self._configs
 			self.synchronize()
+
+		self.template_conf = self.get_default_template()
+
+	def get_default_template(self):
+		config_template_path = self.app_config.get_config_template()
+		if not os.path.exists(config_template_path):
+			return None
 
 	# Updates self._configs for the case that configs created, modified or deleted
 	def synchronize(self):

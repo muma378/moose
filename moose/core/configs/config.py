@@ -19,6 +19,34 @@ class Config(object):
 	"""
 	pass
 
+
+class ConfigWriter(object):
+	def __init__(self, template_path):
+		if os.path.exists(conf_path):
+			raise ImproperlyConfigured("Config path '%s' does exist." % npath(conf_path))
+
+		self.template_path = template_path
+		self._config = self.__load_template()
+
+	def __load_template(self):
+		if not os.path.exists(self.template_path):
+			raise ImproperlyConfigured("Template path '%s' does not exist." % npath(conf_path))
+
+		config = ConfigParser.RawConfigParser()
+		config.read(self.template_path)
+		return config
+
+	def add_section(self, section_name):
+		self._config.add_section(section_name)
+
+	def set(self, section_name, option_name, value):
+		self._config.set(section_name, option_name, value)
+
+	def write(self, conf_path):
+		with open(conf_path, 'wb') as configfile:
+			self._config.write(configfile)
+
+
 class ConfigLoader(object):
 	"""
 	Class to parse a config file, it loads extra info for the config file each
@@ -28,7 +56,7 @@ class ConfigLoader(object):
 	"""
 	def __init__(self, conf_path):
 		if not os.path.exists(conf_path):
-			raise DoesNotExist("Config path does not exist: %s" % npath(conf_path))
+			raise DoesNotExist("Config path does not exist: '%s'." % npath(conf_path))
 
 		self.path = conf_path
 		# checks and updates the codecs of config file if necessary
@@ -102,6 +130,7 @@ class ConfigLoader(object):
 		config_parser = ConfigParser.ConfigParser()
 		config_parser.read(self.path)
 
+		# TODO: a more clear format of config
 		# Config always starts with a [meta] section, which lists the following
 		# sections to use in the option `keys`
 		sections_str = config_parser.get(settings.CONFIG_META_KEYWORD,
@@ -115,6 +144,7 @@ class ConfigLoader(object):
 			setattr(config, section, section_parser.parse(section))
 
 		return config
+
 
 	def parse(self):
 		return self._config

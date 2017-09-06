@@ -432,8 +432,8 @@ class ConfigsCommand(BaseCommand):
         an AppConfig instance corresponding to an application label given on the command line.
         """
         raise NotImplementedError(
-            "Subclasses of AppCommand must provide"
-            "a handle_config_loader() method.")
+            "Subclasses of AppCommand must provide a "
+            "handle_config_loader() method.")
 
 
 class LabelCommand(BaseCommand):

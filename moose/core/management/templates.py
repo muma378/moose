@@ -8,6 +8,7 @@ import re
 import shutil
 import stat
 import sys
+import string
 import tempfile
 from os import path
 
@@ -48,7 +49,7 @@ class TemplateCommand(BaseCommand):
     rewrite_template_suffixes = (
         # Allow shipping invalid .py files without byte-compilation.
         ('.py-tpl', '.py'),
-        ('.conf-tpl', '.conf'),
+        ('.cfg-tpl', '.cfg'),
     )
 
     def add_arguments(self, parser):
@@ -121,6 +122,7 @@ class TemplateCommand(BaseCommand):
         #                                            'from __future__ import unicode_literals\n\n',
         # }), autoescape=False)
 
+
         context = dict(options, **{
             base_name: name,
             base_directory: top_dir,
@@ -141,7 +143,6 @@ class TemplateCommand(BaseCommand):
         prefix_length = len(template_dir) + 1
 
         for root, dirs, files in os.walk(template_dir):
-
             path_rest = root[prefix_length:]
             relative_dir = path_rest.replace(base_name, name)
             if relative_dir:
@@ -171,6 +172,7 @@ class TemplateCommand(BaseCommand):
                                        "directory won't replace conflicting "
                                        "files" % new_path)
 
+
                 # Only render the Python files, as we don't want to
                 # accidentally render Moose templates files
                 if new_path.endswith(extensions) or filename in extra_files:
@@ -178,8 +180,8 @@ class TemplateCommand(BaseCommand):
                         content = template_file.read()
                     # TODO: use Jinja2 instead of implementing template engine self
                     # template = Engine().from_string(content)
-                    # content = template.render(context
-                    content = content.format(**context)
+                    # content = template.render(context)
+                    content = string.Template(content).substitute(**context)
                     with io.open(new_path, 'w', encoding='utf-8') as new_file:
                         new_file.write(content)
                 else:
