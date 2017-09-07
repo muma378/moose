@@ -6,8 +6,9 @@ import fnmatch
 def ivisit(src, dst=None, pattern=None, ignorecase=True):
     """
     A iterator to find all files in path `src` and match the Unix shell-like
-    `pattern` if provided. The value of `pattern` could be a string or a tuple, and would
-    perform a case-sensitive comparision if `ignorecase` was set to False.
+    `pattern` if provided. The value of `pattern` could be a string or a tuple,
+    and would perform a case-sensitive comparision if `ignorecase` was set
+    to False.
 
     Details for unix shell-like wildcards can be seen from:
         https://docs.python.org/2/library/fnmatch.html#module-fnmatch
@@ -20,7 +21,6 @@ def ivisit(src, dst=None, pattern=None, ignorecase=True):
     # syntax sugar, converts string to a tuple with one element
     if isinstance(pattern, str):
         pattern = (pattern, )
-
     # defines the function anymatch
     if pattern:
         if ignorecase:
