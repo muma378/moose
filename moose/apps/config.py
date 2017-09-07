@@ -5,6 +5,7 @@ from moose.core.exceptions import ImproperlyConfigured
 from moose.utils._os import upath
 from moose.utils import six
 from moose.utils.module_loading import module_has_submodule
+from moose.conf import settings
 
 ACTIONS_MODULE_NAME = 'actions'
 CONFIGS_DIRNAME = 'configs'
@@ -55,6 +56,10 @@ class AppConfig(object):
 		# Filesystem path to the config cache file.
 		if not hasattr(self, 'configs_cache_path'):
 			self.configs_cache_path = os.path.join(self.configs_dirname, CONFIGS_CACHE_NAME)
+
+		# Filesystem path to the template of the config file.
+		if not hasattr(self, 'config_template'):
+			self.config_template = os.path.join(self.path, settings.CONF_TEMPLATE_NAME)
 
 
 	def __repr__(self):

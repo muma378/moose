@@ -5,7 +5,8 @@ from moose.apps import AppConfig
 from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
 
-from .config import ConfigLoader
+from .loader import ConfigLoader
+from .writer import ConfigWriter
 
 
 class ConfigsRegistry(object):
@@ -29,9 +30,21 @@ class ConfigsRegistry(object):
 		self.template_conf = self.get_default_template()
 
 	def get_default_template(self):
-		config_template_path = self.app_config.get_config_template()
+		config_template_path = self.app_config.config_template
 		if not os.path.exists(config_template_path):
-			return None
+			raise ImproperlyConfigured("Config template path '%s' does not exist." % config_template_path)
+
+		return ConfigWriter(config_template_path)
+
+	def append(self, config_name):
+		if not isinstance(self.template_conf, ConfigWriter):
+			raise ImproperlyConfigured(
+				"Member of the class 'template_conf' must "
+				"be an instance of 'ConfigWriter'")
+
+		config_path = os.path.join(self.app_config.configs_dirname, config_name)
+		self.template_conf.write(config_path)
+
 
 	# Updates self._configs for the case that configs created, modified or deleted
 	def synchronize(self):

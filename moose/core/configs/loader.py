@@ -20,33 +20,6 @@ class Config(object):
 	pass
 
 
-class ConfigWriter(object):
-	def __init__(self, template_path):
-		if os.path.exists(conf_path):
-			raise ImproperlyConfigured("Config path '%s' does exist." % npath(conf_path))
-
-		self.template_path = template_path
-		self._config = self.__load_template()
-
-	def __load_template(self):
-		if not os.path.exists(self.template_path):
-			raise ImproperlyConfigured("Template path '%s' does not exist." % npath(conf_path))
-
-		config = ConfigParser.RawConfigParser()
-		config.read(self.template_path)
-		return config
-
-	def add_section(self, section_name):
-		self._config.add_section(section_name)
-
-	def set(self, section_name, option_name, value):
-		self._config.set(section_name, option_name, value)
-
-	def write(self, conf_path):
-		with open(conf_path, 'wb') as configfile:
-			self._config.write(configfile)
-
-
 class ConfigLoader(object):
 	"""
 	Class to parse a config file, it loads extra info for the config file each
