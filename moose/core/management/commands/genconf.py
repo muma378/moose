@@ -22,7 +22,7 @@ class Command(AppCommand):
 
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
-
+        # TODO: add argument -a to customise the config to generate
         parser.add_argument(
             '-c', '--config', metavar='config_name', action='append',
             help='Specify a config name for the newly created.',

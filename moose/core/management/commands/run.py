@@ -74,7 +74,7 @@ class Command(AppCommand):
 		if action_klass:
 			actor = action_klass(app_config)
 		else:
-			raise CommandError("Unknown action alias '%s'." % action_alias)
+			raise CommandError("Unknown action alias '%s'." % self.action_alias)
 
 		# run with configs and get the output
 		output = []

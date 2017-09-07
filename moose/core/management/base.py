@@ -293,7 +293,9 @@ class BaseCommand(object):
                 #         output,
                 #         self.style.SQL_KEYWORD(connection.ops.end_transaction_sql()),
                 #     )
-                self.stdout.write(output)
+
+                style_output = self.style.SUCCESS(output)
+                self.stdout.write(style_output)
         finally:
             pass
 
@@ -370,7 +372,7 @@ class ConfigsCommand(BaseCommand):
     ``handle_config()``, which will be called once for each config.
     """
     multiple_configs_allowed = True
-    use_conf_desc_allowed = True
+    # use_conf_desc_allowed = True
     config_desc_usage = (
         "`conf_desc` is a literal representation on a config file, "
         "4 ways are provided to find a config file for the application:\n"
@@ -386,10 +388,10 @@ class ConfigsCommand(BaseCommand):
             help='Specify an application label.'
             )
 
-        if self.use_conf_desc_allowed:
-            help_text = self.config_desc_usage
-        else:
-            help_text = "Full path to or the basename of the config file."
+        # if self.use_conf_desc_allowed:
+        #     help_text = self.config_desc_usage
+        # else:
+        #     help_text = "Full path to or the basename of the config file."
 
         if self.multiple_configs_allowed:
             parser.add_argument(
@@ -397,6 +399,7 @@ class ConfigsCommand(BaseCommand):
                 help=help_text,
                 )
         else:
+            # only one config description was allowed to specified
             parser.add_argument(
                 '-c', '--config', metavar='config_desc', action='store',
                 help=help_text,
