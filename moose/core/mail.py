@@ -11,15 +11,16 @@ from moose.conf import settings
 
 class BaseMailSender(object):
 	"""sends mails with text only"""
-	def __init__(self, smtphost=None, smtpport=None, smtpuser=None, smtppass=None):
+	def __init__(self, host=None, port=None, user=None, password=None):
 		super(BaseMailSender, self).__init__()
-		self.smtphost = smtphost
-		self.smtpport = smtpport
-		self.smtpuser = smtpuser
-		self.smtppass = smtppass
+		self.host = host if host else settings.EMAIL_HOST
+		self.port = port if port else settings.EMAIL_PORT
+		self.user = user if user else settings.EMAIL_HOST_USER
+		self.password = password else settings.EMAIL_HOST_PASSWORD
 
-		self.smtp = smtplib.SMTP(self.smtphost, self.smtpport)
-		# logger.info("connected to smtp server {0}".format(self.smtphost))
+		# initialize the connection to smtp server
+		self.smtp = smtplib.SMTP(self.host, self.port)
+		# logger.info("connected to smtp server {0}".format(self.host))
 
 	def __del__(self):
 		self.smtp.quit()
@@ -33,22 +34,23 @@ class BaseMailSender(object):
 		self.smtp.sendmail(from_addr, to_addrs, msg.as_string())
 
 
-class NotifyMailSender(BaseMailSender):
-	"""notifies users if tasks was done"""
+class BaseTemplateMail(BaseMailSender):
+	"""
+	Sends mails to recipients with rendering templates declared in the
+	derived classes. Except for templates for subject and content, derived
+	classes must also provide a dict `context` contains variables in templates.
+	"""
 	subject_template = None
 	content_template = None
 
 	def __init__(self, recipients):
-		host = settings.MAIL_SETTINGS['smtp_server']
-		port = settings.MAIL_SETTINGS['smtp_port']
-		sender = settings.MAIL_SETTINGS['sender']
-		super(NotifyMailSender, self).__init__(smtphost=host, smtpport=port)
+		super(BaseTemplateMail, self).__init__()
 		self.recipients = ', '.join(recipients)
-		self.sender = sender
+		self.sender = settings.DEFAULT_FROM_EMAIL
 
-	def notify(self, context):
-		self.send(
+	def send(self, context):
+		super(BaseTemplateMail, self).send(
 			self.sender, self.recipients,
 			self.subject_template.format(**context),
 			self.content_template.format(**context),
-		)
+			)

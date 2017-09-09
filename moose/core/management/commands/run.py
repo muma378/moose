@@ -3,10 +3,10 @@ from moose.apps import apps
 from moose.core.management.base import AppCommand, CommandError
 from moose.core.configs.registry import find_matched_conf
 from moose.core.records import CommandRecord, records
-from moose.core.mail import NotifyMailSender
+from moose.core.mail import BaseTemplateMail
 
 
-class CommandRunNotifier(NotifyMailSender):
+class CommandRunNotifier(BaseTemplateMail):
 	"""
 	An email sender inherited from `NotifyMailSender`, by overriding
 	`subject_template` and `content_template` to define the title and
@@ -99,7 +99,7 @@ class Command(AppCommand):
 		if recipients:
 			mail_sender = CommandRunNotifier(recipients)
 			context = mail_sender.get_context(record, self, output_str)
-			mail_sender.notify(context)
+			mail_sender.send(context)
 
 		return output_str
 
