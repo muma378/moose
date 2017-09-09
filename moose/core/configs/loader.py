@@ -80,9 +80,9 @@ class ConfigLoader(object):
 
 			file_encoding = result['encoding']
 			# coding with other codecs except for ascii or utf-8
-			if file_encoding!='ascii' and file_encoding!=settings.CONFIG_FILE_CODEC:
+			if file_encoding!='ascii' and file_encoding!=settings.FILE_CHARSET:
 				try:
-					content = content.decode(file_encoding).encode(settings.CONFIG_FILE_CODEC)
+					content = content.decode(file_encoding).encode(settings.FILE_CHARSET)
 					overwrite = True
 				except UnicodeDecodeError as e:
 					raise ImproperlyConfigured(
