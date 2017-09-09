@@ -6,168 +6,225 @@ import sys
 from azure.storage.blob import BlockBlobService, PublicAccess
 from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError
 
-from moose.utils._os import npath
-from moose.shortcuts import ivisit
-from moose.conf.settings import logger
-from moose.conf.settings import AZURE_SETTINGS as az, CONNECTION_SETTINGS as cs
+from moose.utils._os import npath, ppath, safe_join
+from moose.conf import settings
+from moose.core.exceptions import ImproperlyConfigured
+# from moose.conf.settings import logger
+# from moose.conf.settings import AZURE_SETTINGS as az, CONNECTION_SETTINGS as cs
 # from service.progressbar import ProgressBar
 # from service.progressbar import widgets
 
 
-class AzureBlob(object):
-	"""Connection to azure blob service."""
-	def __init__(self, account=az["account"], key=az["key"], endpoint_suffix=az['endpoint_suffix'],
-			timeout=cs['timeout'], workers=az['workers'], chunks=az['chunks']):
-		self.account = account
-		self.key = key
-		self.endpoint_suffix = endpoint_suffix
-		self.timeout = timeout
-		self.host = account + '.blob.' + endpoint_suffix
-		self.workers = workers
-		self.chunks = chunks
-		logger.info("initialize azure blob service with account {0} and endpoint_suffix {1}".format(
-			self.account, self.endpoint_suffix))
-		# diffs from database, it sends a request when required
+class AzureBlobService(object):
+	"""
+	Application interface to access <Azure Blob Storage Service>. A wrapper of
+	the module 'BlockBlobService' from azure SDK for python.
+	"""
+	def __init__(self, settings_dict, stdout, stderr):
+		# Set stdout and stderr to colorize the output
+		self.stdout = stdout
+		self.stderr = stderr
+
+		# Set settings for azure connections
+		self.settings_dict = settings_dict
+
+		self.account = settings_dict['ACCOUNT']
+		self.host = settings_dict['ACCOUNT']+'.blob.'+settings_dict['ENDPOINT']
+
 		self.block_blob_service = BlockBlobService(
-			account_name=self.account, account_key=self.key, endpoint_suffix=self.endpoint_suffix)
+			account_name=settings_dict['ACCOUNT'],
+			account_key=settings_dict['KEY'],
+			endpoint_suffix=settings_dict['ENDPOINT'])
 
-	def create_container(self, container_name, public=False):
-		logger.info("creating a container {0} on {1}".format(container_name, self.host))
+	def create_container(self, container_name, set_public=False):
+		"""
+		Create a azure blob container.
+		"""
+		self.stdout.INFO("Creating the container [%s] on '%s'" % (container_name, self.host))
 
-		if public:
+		if set_public:
 			public_access = PublicAccess.Container
-			logger.info("setting container {0} public".format(container_name))
+			self.stdout.INFO("Sets the container [%s] to public access." % container_name)
 		else:
 			public_access = None
 
 		try:
-			result = self.block_blob_service.create_container(container_name,
-				fail_on_exist=True, timeout=self.timeout , public_access=public_access)
+			result = self.block_blob_service.create_container(
+				container_name, fail_on_exist=True,
+				timeout=self.settings_dict['TIMEOUT'],
+				public_access=public_access)
 		except AzureConflictHttpError as e:
-			logger.error("the specified container {0} already exists".format(container_name))
+			self.stdout.ERROR("The specified container [%s] does exist" % container_name)
 			result = False
 
-		if result:
-			logger.info("succeed")
-		else:
-			logger.error("failed to create the container {0} on {1}".format(container_name, self.host))
 		return result
 
+	def list_containers(self, prefix=None):
+		self.stdout.INFO("Request to list containers on %s" % self.host)
+		# An iterator to list all containers on blob
+		icontainers = self.block_blob_service.list_containers(
+			prefix=prefix, timeout=self.settings_dict['TIMEOUT'])
 
-	def list_containers(self, prefix=None, suffix=''):
-		container_names = []
-		logger.info("request to list containers on {0}".format(self.host))
-		results = self.block_blob_service.list_containers(prefix=prefix, timeout=self.timeout)
-		for container_name in results:
-			if container_name.endswith(suffix):
-				container_names.append(container_name)
+		# Converts an iterator to list
+		container_names = [container for container in icontainers]
 
-		logger.info("{0} containers found on {1}".format(len(container_names), self.host))
+		self.stdout.INFO(
+			"%d containers found on %s." % (len(container_names), self.host)
+			)
 		return container_names
 
 
-	def list_blobs(self, container_name, prefix=None, suffix=''):
+	def list_blobs(self, container_name, prefix=None, suffix=None):
+		"""
+		Lists all blobs on the container, note that the blob_names returned
+		are posix-style path, no matter what names were when create.
+		"""
 		blob_names = []
-		logger.info("request to list blobs in container {0}@{1}".format(container_name, self.host))
+		self.stdout.INFO("Request to list blobs in container [%s]" % container_name)
 
 		try:
-			results = self.block_blob_service.list_blobs(container_name, prefix=prefix, timeout=self.timeout)
+			# An iterator to
+			iblobs = self.block_blob_service.list_blobs(
+				container_name, prefix=prefix, timeout=self.timeout)
+
+			if suffix:
+				blob_names = [blob for blob in iblobs if blob.endswith(suffix)]
+			else:
+				blob_names = [blob for blob in iblobs]
+
 		except AzureMissingResourceHttpError as e:
-			logger.error("the specified container {0} does not exist".format(container_name))
-			results = []
+			self.stdout.ERROR(
+				"The specified container [%s] does not exist." % container_name
+				)
 
-		for blob in results:
-			if blob.name.endswith(suffix):
-				blob_names.append(blob.name)
-
-		logger.info("{0} blobs found in {1}".format(len(blob_names), self.host))
+		self.stdout.INFO(
+			"%s blobs found on [%s]." % (len(blob_names), container_name)
+			)
 		return blob_names
 
 
-	def upload(self, container_name, root_path, suffix='', prefix=''):
-		self.create_container(container_name)
-
-		logger.info("begin to upload {0} to container - {1} hosted in {2}: ".format(
-			root_path, container_name, self.host))
-
-		for filepath, blob_name in ivisit(root_path, '', pattern=suffix):
-			if prefix and not os.path.basename(blob_name).startswith(prefix):
-				continue
-			blob_name = os.path.normcase(blob_name)
-			self.create_blob_from_path(container_name, blob_name, filepath)
-
-
 	def create_blob_from_path(self, container_name, blob_name, filepath):
-		logger.info("{0} => {1}@{2}".format(npath(filepath), npath(blob_name), container_name))
-		sys.stdout.write("uploading {0} ... ".format(npath(blob_name)))
-		sys.stdout.flush()
+		"""
+		Uploads a file to the container.
 
-		def progress_callback(current, total):
-			if total > self.block_blob_service.MAX_SINGLE_PUT_SIZE \
-				and current%(self.chunk*self.block_blob_service.MAX_BLOCK_SIZE)  == 0:
-				print("{0:.1f} of {1:.2f} MB ({2:.1%}) uploaded".format(current/1048576.0, total/1048576.0, 1.0*current/total))
+		Returns an instance of `Blob` with properties and metadata.
+		"""
+		if not os.path.exists(filepath):
+			self.stdout.ERROR("'%s' does not exist." % filepath)
+			return None
 
-		self.block_blob_service.create_blob_from_path(container_name,
-			blob_name, filepath, progress_callback=progress_callback)
-		print("done")
+		blob = self.block_blob_service.create_blob_from_path(
+			container_name, blob_name, filepath)
+		return blob
 
 
-	def download(self, container_name, root_path, suffix='', prefix=None):
-		blob_list = self.list_blobs(container_name, suffix=suffix, prefix=prefix)
+	def upload(self, container_name, blob_pairs):
+		"""
+		Uploads files to the container on Azure. Note that 'blob_name' uploaded
+		will be converted to posix-style names, which means sep for path is
+		'/'.
 
-		for blob_name in blob_list:
-			filepath = os.path.join(root_path, os.path.normpath(blob_name))
-			if os.path.exists(filepath):
-				logger.info("{0}@{1} existed already, skipped".format(blob_name, container_name))
-			else:
-				self.get_blob_to_path(container_name, blob_name, filepath)
+		`blob_pairs`
+			A tuple consists of 2 elements, blob_name and its filepath on local
+			filesystem.
+		"""
+		if not self.block_blob_service.exists(container_name):
+			self.create_container(container_name, set_public=True)
+
+		blobs = []
+		blobs_in_container = self.list_blobs(container_name)
+		# TODO: show progress bar when uploading files
+		for blob_name, filepath in blob_pairs:
+			posix_blob_name = ppath(blob_name)
+			if posix_blob_name not in blobs_in_container:
+				blob = self.create_blob_from_path(
+					container_name, posix_blob_name, filepath)
+				if blob:
+					blobs.append(blob)
+
+		self.stdout.INFO("Uploads %d files to [%s]." % (len(blobs), container_name))
+		return blobs
+
 
 	def get_blob_to_path(self, container_name, blob_name, filepath):
-		logger.info("{0}@{1} => {2}".format(blob_name, container_name, filepath))
-		sys.stdout.write("downloading {0} ... ".format(blob_name))
-		sys.stdout.flush()
-		# blob = self.block_blob_service.get_blob_properties(container_name, blob_name)
-		# _widgets = [blob_name+': ', widgets.Percentage(), ' ', widgets.Bar(marker='='),
-#              ' ', widgets.ETA(), ' ', widgets.FileTransferSpeed()]
-		# pbar = ProgressBar(widgets=_widgets, maxval=blob.properties.content_length).start()
+		"""
+		Gets a blob from the container. The filepath would be returned if gotten
+		successfully.
+		"""
+		dirpath = os.path.dirname(filepath)
+		if not os.path.exists(dirpath):
+			os.makedirs(dirpath)
+
+		blob = self.block_blob_service.get_blob_to_path(
+			container_name, blob_name, filepath)
+		return blob
 
 
-		def progress_callback(current, total):
-			if total > self.block_blob_service.MAX_SINGLE_GET_SIZE \
-				and current%(self.chunk*self.block_blob_service.MAX_CHUNK_GET_SIZE):
-				print("{0:.1f} of {1:.2f} MB ({2:.1%}) downloaded".format(current/1048576.0, total/1048576.0, 1.0*current/total))
-			# pbar.update(current)
+	def download(self, container_name, dest, blob_names=None):
+		"""
+		Get blobs from the container to the `dest` directory.
+		"""
+		blobs = []
 
-		if not os.path.exists(os.path.dirname(filepath)):
-			os.makedirs(os.path.dirname(filepath))
+		if not self.block_blob_service.exists(container_name):
+			self.stdout.ERROR("Container [%s] does not exist" % container_name)
+		# Get the list of blobs and then do comparision would be much more efficient
+		blobs_in_container = self.list_blobs(container_name)
 
-		self.block_blob_service.get_blob_to_path(
-			container_name, blob_name, filepath, progress_callback=progress_callback)
-		# pbar.finish()
-		print("done")
+		# Get all blobs if blob_names was not specified
+		if not blob_names:
+			blob_names = blobs_in_container
+
+		for blob_name in blob_names:
+			if ppath(blob_name) in blobs_in_container:
+				dest_filepath = safe_join(dest, blob_name)
+				# TODO: not sure posix-style path works for files on container
+				# are windows-style
+				blob = self.get_blob_to_path(container_name, ppath(blob_name), dest_filepath)
+				blobs.append(blob)
+
+		return blobs
 
 
-	def set_container_acl(self, container_name, public=True):
-		if public:
-			logger.info("setting full public read access for container {0} and its blob data".format(container_name))
+	def get_blob_to_text(self, container_name, blob_name):
+		pass
+
+
+	def get_blobs(self, container_name, blob_names=None):
+		pass
+
+
+	def set_container_acl(self, container_name, set_public=True):
+		if set_public:
+			self.stdout.INFO("Set public read access to container [%s]." % container_name)
 			public_access = PublicAccess.Container
 		else:
-			logger.info("setting public read access for blobs in container {0} ".format(container_name))
+			self.stdout.INFO("Set public read access to blobs on [%s]." % container_name)
 			public_access = PublicAccess.Blob
 
 		self.block_blob_service.set_container_acl(container_name, public_access=public_access)
 
 
-	def delete_blob(self, container_name, blob_names):
-		failed = []
+	def delete_blobs(self, container_name, blob_names):
+		blobs = []
 		for blob_name in blob_names:
 			try:
-				self.block_blob_service.delete_blob(container_name, blob_name)
-				logger.info("deleted blob data {0} from container {1}".format(blob_name, container_name))
+				blob = self.block_blob_service.delete_blob(container_name, blob_name)
+				self.stdout.INFO(
+					"Delete the blob %s from container [%s]" % (blob_name, container_name))
+				blobs.append(blob)
 			except AzureMissingResourceHttpError as e:
-				failed.append(blob_name)
-				logger.warning("the sepcified blob {0}@{1} does not exist".format(blob_name, container_name))
-		return failed
+				self.stdout.WARNING(
+					"The sepcified blob %s on [%s] does not exist" % (blob_name, container_name))
 
-	def move(self, src_container, dst_conta):
+		return blobs
+
+
+	def copy_blobs(self, container_name, blob_names, copy_source):
 		pass
+
+	def copy(self, src_container, dst_container):
+		pass
+
+
+azure = AzureBlobService(settings.AZURE, )

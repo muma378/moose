@@ -1,21 +1,35 @@
+from __future__ import unicode_literals
+
 import os
+import sys
 import tempfile
-from os.path import abspath, dirname, join, normcase, sep
+from os.path import abspath, dirname, isabs, join, normcase, normpath, sep
+
+import six
 
 from moose.core.exceptions import SuspiciousFileOperation
 from moose.utils.encoding import force_text
 
+if six.PY2:
+    fs_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
+
 
 def upath(path):
-    """Always return a unicode path (did something for Python 2)."""
+    """
+    Always return a unicode path.
+    """
+    if six.PY2 and not isinstance(path, six.text_type):
+        return path.decode(fs_encoding)
     return path
 
 
 def npath(path):
     """
     Always return a native path, that is unicode on Python 3 and bytestring on
-    Python 2. Noop for Python 3.
+    Python 2.
     """
+    if six.PY2 and not isinstance(path, bytes):
+        return path.encode(fs_encoding)
     return path
 
 
@@ -63,3 +77,49 @@ def symlinks_supported():
         except (OSError, NotImplementedError):
             supported = False
         return supported
+
+
+WIN_PATH_SEP = '\\'
+POSIX_PATH_SEP = '/'
+
+def ppath(path):
+    """
+    Return a posix-style path, whose separator of path is '/'.
+    """
+    return path.replace(WIN_PATH_SEP, POSIX_PATH_SEP)
+
+
+def wpath(path):
+    """
+    Return a windows-style path, whose separator of path is '\\'.
+    """
+    return path.replace(POSIX_PATH_SEP, WIN_PATH_SEP)
+
+
+def posixpath(path):
+    """
+    Return a posix-style path, whose separator of path is '/'.
+    """
+    return path.replace(WIN_PATH_SEP, POSIX_PATH_SEP)
+
+
+def normpath(path):
+    """
+    Converts path to the local filesystem case.
+    """
+    return os.path.normpath(path)
+
+
+def makedirs(dirpath):
+    """
+    Creates the directory as dirpath indicates. Do not raise an
+    exception if the dirpath was existed already.
+    """
+    if not os.path.exists(dirpath):
+    	os.makedirs(dirpath)
+
+def makeparents(filepath):
+    """
+    Creates directoriea for a filepath.
+    """
+    makedirs(os.path.dirname(filepath))
