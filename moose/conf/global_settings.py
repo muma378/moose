@@ -24,20 +24,12 @@ USE_ETAGS = False
 # In the format [('Full Name', 'email@example.com'), ('Full Name', 'anotheremail@example.com')]
 ADMINS = []
 
-# List of IP addresses, as strings, that:
-#   * See debug comments, when DEBUG is true
-#   * Receive x-headers
-INTERNAL_IPS = []
-
-# Hosts/domain names that are valid for this site.
-# "*" matches anything, ".example.com" matches example.com and all subdomains
-ALLOWED_HOSTS = []
 
 # Local time zone for this installation. All choices can be found here:
 # https://en.wikipedia.org/wiki/List_of_tz_zones_by_name (although not all
 # systems may support all possibilities). When USE_TZ is True, this is
 # interpreted as the default user time zone.
-TIME_ZONE = 'America/Chicago'
+TIME_ZONE = 'Asiz/Shanghai'
 
 # If you set this to True, Django will use timezone-aware datetimes.
 USE_TZ = False
@@ -46,114 +38,6 @@ USE_TZ = False
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-# Languages we provide translations for, out of the box.
-LANGUAGES = [
-    ('af', gettext_noop('Afrikaans')),
-    ('ar', gettext_noop('Arabic')),
-    ('ast', gettext_noop('Asturian')),
-    ('az', gettext_noop('Azerbaijani')),
-    ('bg', gettext_noop('Bulgarian')),
-    ('be', gettext_noop('Belarusian')),
-    ('bn', gettext_noop('Bengali')),
-    ('br', gettext_noop('Breton')),
-    ('bs', gettext_noop('Bosnian')),
-    ('ca', gettext_noop('Catalan')),
-    ('cs', gettext_noop('Czech')),
-    ('cy', gettext_noop('Welsh')),
-    ('da', gettext_noop('Danish')),
-    ('de', gettext_noop('German')),
-    ('el', gettext_noop('Greek')),
-    ('en', gettext_noop('English')),
-    ('en-au', gettext_noop('Australian English')),
-    ('en-gb', gettext_noop('British English')),
-    ('eo', gettext_noop('Esperanto')),
-    ('es', gettext_noop('Spanish')),
-    ('es-ar', gettext_noop('Argentinian Spanish')),
-    ('es-co', gettext_noop('Colombian Spanish')),
-    ('es-mx', gettext_noop('Mexican Spanish')),
-    ('es-ni', gettext_noop('Nicaraguan Spanish')),
-    ('es-ve', gettext_noop('Venezuelan Spanish')),
-    ('et', gettext_noop('Estonian')),
-    ('eu', gettext_noop('Basque')),
-    ('fa', gettext_noop('Persian')),
-    ('fi', gettext_noop('Finnish')),
-    ('fr', gettext_noop('French')),
-    ('fy', gettext_noop('Frisian')),
-    ('ga', gettext_noop('Irish')),
-    ('gd', gettext_noop('Scottish Gaelic')),
-    ('gl', gettext_noop('Galician')),
-    ('he', gettext_noop('Hebrew')),
-    ('hi', gettext_noop('Hindi')),
-    ('hr', gettext_noop('Croatian')),
-    ('hu', gettext_noop('Hungarian')),
-    ('ia', gettext_noop('Interlingua')),
-    ('id', gettext_noop('Indonesian')),
-    ('io', gettext_noop('Ido')),
-    ('is', gettext_noop('Icelandic')),
-    ('it', gettext_noop('Italian')),
-    ('ja', gettext_noop('Japanese')),
-    ('ka', gettext_noop('Georgian')),
-    ('kk', gettext_noop('Kazakh')),
-    ('km', gettext_noop('Khmer')),
-    ('kn', gettext_noop('Kannada')),
-    ('ko', gettext_noop('Korean')),
-    ('lb', gettext_noop('Luxembourgish')),
-    ('lt', gettext_noop('Lithuanian')),
-    ('lv', gettext_noop('Latvian')),
-    ('mk', gettext_noop('Macedonian')),
-    ('ml', gettext_noop('Malayalam')),
-    ('mn', gettext_noop('Mongolian')),
-    ('mr', gettext_noop('Marathi')),
-    ('my', gettext_noop('Burmese')),
-    ('nb', gettext_noop('Norwegian Bokmal')),
-    ('ne', gettext_noop('Nepali')),
-    ('nl', gettext_noop('Dutch')),
-    ('nn', gettext_noop('Norwegian Nynorsk')),
-    ('os', gettext_noop('Ossetic')),
-    ('pa', gettext_noop('Punjabi')),
-    ('pl', gettext_noop('Polish')),
-    ('pt', gettext_noop('Portuguese')),
-    ('pt-br', gettext_noop('Brazilian Portuguese')),
-    ('ro', gettext_noop('Romanian')),
-    ('ru', gettext_noop('Russian')),
-    ('sk', gettext_noop('Slovak')),
-    ('sl', gettext_noop('Slovenian')),
-    ('sq', gettext_noop('Albanian')),
-    ('sr', gettext_noop('Serbian')),
-    ('sr-latn', gettext_noop('Serbian Latin')),
-    ('sv', gettext_noop('Swedish')),
-    ('sw', gettext_noop('Swahili')),
-    ('ta', gettext_noop('Tamil')),
-    ('te', gettext_noop('Telugu')),
-    ('th', gettext_noop('Thai')),
-    ('tr', gettext_noop('Turkish')),
-    ('tt', gettext_noop('Tatar')),
-    ('udm', gettext_noop('Udmurt')),
-    ('uk', gettext_noop('Ukrainian')),
-    ('ur', gettext_noop('Urdu')),
-    ('vi', gettext_noop('Vietnamese')),
-    ('zh-hans', gettext_noop('Simplified Chinese')),
-    ('zh-hant', gettext_noop('Traditional Chinese')),
-]
-
-# Languages using BiDi (right-to-left) layout
-LANGUAGES_BIDI = ["he", "ar", "fa", "ur"]
-
-# If you set this to False, Django will make some optimizations so as not
-# to load the internationalization machinery.
-USE_I18N = True
-LOCALE_PATHS = []
-
-# Settings for language cookie
-LANGUAGE_COOKIE_NAME = 'django_language'
-LANGUAGE_COOKIE_AGE = None
-LANGUAGE_COOKIE_DOMAIN = None
-LANGUAGE_COOKIE_PATH = '/'
-
-
-# If you set this to True, Django will format dates, numbers and calendars
-# according to user current locale.
-USE_L10N = False
 
 # Not-necessarily-technical managers of the site. They get broken link
 # notifications and other various emails.
@@ -308,29 +192,6 @@ FILE_UPLOAD_HANDLERS = [
     'django.core.files.uploadhandler.TemporaryFileUploadHandler',
 ]
 
-# Maximum size, in bytes, of a request before it will be streamed to the
-# file system instead of into memory.
-FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # i.e. 2.5 MB
-
-# Directory in which upload streamed files will be temporarily saved. A value of
-# `None` will make Django use the operating system's default temporary directory
-# (i.e. "/tmp" on *nix systems).
-FILE_UPLOAD_TEMP_DIR = None
-
-# The numeric mode to set newly-uploaded files to. The value should be a mode
-# you'd pass directly to os.chmod; see http://docs.python.org/lib/os-file-dir.html.
-FILE_UPLOAD_PERMISSIONS = None
-
-# The numeric mode to assign to newly-created directories, when uploading files.
-# The value should be a mode as you'd pass to os.chmod;
-# see http://docs.python.org/lib/os-file-dir.html.
-FILE_UPLOAD_DIRECTORY_PERMISSIONS = None
-
-# Python module path where user will place custom format definition.
-# The directory where this setting is pointing should contain subdirectories
-# named as the locales, containing a formats.py file
-# (i.e. "myproject.locale" for myproject/locale/en/formats.py etc. use)
-FORMAT_MODULE_PATH = None
 
 # Default formatting for date objects. See all available format strings here:
 # http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
@@ -426,12 +287,6 @@ THOUSAND_SEPARATOR = ','
 DEFAULT_TABLESPACE = ''
 DEFAULT_INDEX_TABLESPACE = ''
 
-# Default X-Frame-Options header value
-X_FRAME_OPTIONS = 'SAMEORIGIN'
-
-USE_X_FORWARDED_HOST = False
-USE_X_FORWARDED_PORT = False
-
 # The Python dotted path to the WSGI application that Django's internal server
 # (runserver) will use. If `None`, the return value of
 # 'django.core.wsgi.get_wsgi_application' is used, thus preserving the same
@@ -456,8 +311,7 @@ SECURE_PROXY_SSL_HEADER = None
 # this middleware classes will be applied in the order given, and in the
 # response phase the middleware will be applied in reverse order.
 MIDDLEWARE_CLASSES = [
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+
 ]
 
 ############
@@ -504,39 +358,6 @@ CACHE_MIDDLEWARE_KEY_PREFIX = ''
 CACHE_MIDDLEWARE_SECONDS = 600
 CACHE_MIDDLEWARE_ALIAS = 'default'
 
-##################
-# AUTHENTICATION #
-##################
-
-AUTH_USER_MODEL = 'auth.User'
-
-AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
-
-LOGIN_URL = '/accounts/login/'
-
-LOGOUT_URL = '/accounts/logout/'
-
-LOGIN_REDIRECT_URL = '/accounts/profile/'
-
-# The number of days a password reset link is valid for
-PASSWORD_RESET_TIMEOUT_DAYS = 3
-
-# the first hasher in this list is the preferred algorithm.  any
-# password using different algorithms will be converted automatically
-# upon login
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.BCryptPasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-    'django.contrib.auth.hashers.UnsaltedSHA1PasswordHasher',
-    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
-]
-
-AUTH_PASSWORD_VALIDATORS = []
 
 ###########
 # SIGNING #
@@ -544,23 +365,6 @@ AUTH_PASSWORD_VALIDATORS = []
 
 SIGNING_BACKEND = 'django.core.signing.TimestampSigner'
 
-########
-# CSRF #
-########
-
-# Dotted path to callable to be used as view when a request is
-# rejected by the CSRF middleware.
-CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
-
-# Settings for CSRF cookie.
-CSRF_COOKIE_NAME = 'csrftoken'
-CSRF_COOKIE_AGE = 60 * 60 * 24 * 7 * 52
-CSRF_COOKIE_DOMAIN = None
-CSRF_COOKIE_PATH = '/'
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False
-CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
-CSRF_TRUSTED_ORIGINS = []
 
 ############
 # MESSAGES #
@@ -596,56 +400,3 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # Apps that don't need to be serialized at test database creation time
 # (only apps with migrations are to start with)
 TEST_NON_SERIALIZED_APPS = []
-
-############
-# FIXTURES #
-############
-
-# The list of directories to search for fixtures
-FIXTURE_DIRS = []
-
-###############
-# STATICFILES #
-###############
-
-# A list of locations of additional static files
-STATICFILES_DIRS = []
-
-# The default file storage backend used during the build process
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-
-# List of finder classes that know how to find static files in
-# various locations.
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
-]
-
-##############
-# MIGRATIONS #
-##############
-
-# Migration module overrides for apps, by app label.
-MIGRATION_MODULES = {}
-
-#################
-# SYSTEM CHECKS #
-#################
-
-# List of all issues generated by system checks that should be silenced. Light
-# issues like warnings, infos or debugs will not generate a message. Silencing
-# serious issues like errors and criticals does not result in hiding the
-# message, but Django will not stop you from e.g. running server.
-SILENCED_SYSTEM_CHECKS = []
-
-#######################
-# SECURITY MIDDLEWARE #
-#######################
-SECURE_BROWSER_XSS_FILTER = False
-SECURE_CONTENT_TYPE_NOSNIFF = False
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_SECONDS = 0
-SECURE_REDIRECT_EXEMPT = []
-SECURE_SSL_HOST = None
-SECURE_SSL_REDIRECT = False
