@@ -73,13 +73,14 @@ AZURE = {
   "TIMEOUT": 300,
 }
 
+
 DATABASES = {
     'sqlserver': {
         'HOST': 'crowdser.chinacloudapp.cn',
         'PORT': '9280',
         'USER': 'sa',
         'PASSWORD': '2015_zaixianSimple',
-        'NAME': 'CrowdDB',
+        'DATABASE': 'CrowdDB',
         'CHARSET': 'UTF-8',
     },
     'mongo': {
@@ -87,8 +88,24 @@ DATABASES = {
         'PORT': '38011',
         'USER': 'crowd_read',
         'PASSWORD': 'crowdread',
-    }
+    },
+    'mysql': {
+        'HOST': '139.217.7.145',
+        'PORT': 3306,
+        'USER': 'root',
+        'PASSWORD': 'C19c3Y^3QjvW',
+        'DATABASE': 'CrowdDB',
+        'CHARSET': 'utf8',
+    },
+    'mongo-indie': {
+        'HOST': '139.217.7.145',
+        'PORT': '27011',
+        'USER': 'crowdadmin',
+        'PASSWORD': '2015_zaixianSimple',
+        'DATABASE': 'CrowdData',
+    },
 }
+
 
 
 SMB_SETTINGS = {
