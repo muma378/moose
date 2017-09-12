@@ -18,4 +18,8 @@ def setup(set_prefix=True):
     from moose.apps import apps
     from moose.conf import settings
 
+    from moose.utils.log import configure_logging
+
+    configure_logging(settings.LOGGING_CONFIG, settings.LOGGING)
+
     # apps.populate(settings.INSTALLED_APPS)

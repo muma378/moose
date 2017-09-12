@@ -14,7 +14,7 @@ if six.PY3:
     from urllib.parse import unquote_to_bytes
 
 
-class DjangoUnicodeDecodeError(UnicodeDecodeError):
+class MooseUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self, obj, *args):
         self.obj = obj
         UnicodeDecodeError.__init__(self, *args)
@@ -85,7 +85,7 @@ def force_text(s, encoding='utf-8', strings_only=False, errors='strict'):
             s = s.decode(encoding, errors)
     except UnicodeDecodeError as e:
         if not isinstance(s, Exception):
-            raise DjangoUnicodeDecodeError(s, *e.args)
+            raise MooseUnicodeDecodeError(s, *e.args)
         else:
             # If we get to here, the caller has passed in an Exception
             # subclass populated with non-ASCII bytestring data without a

@@ -78,6 +78,7 @@ PALETTES = {
         'SUCCESS': {},
         'WARNING': {},
         'NOTICE': {},
+
         'SQL_FIELD': {},
         'SQL_COLTYPE': {},
         'SQL_KEYWORD': {},
@@ -97,6 +98,7 @@ PALETTES = {
         'SUCCESS': {'fg': 'green', 'opts': ('bold',)},
         'WARNING': {'fg': 'yellow', 'opts': ('bold',)},
         'NOTICE': {'fg': 'red'},
+
         'SQL_FIELD': {'fg': 'green', 'opts': ('bold',)},
         'SQL_COLTYPE': {'fg': 'green'},
         'SQL_KEYWORD': {'fg': 'yellow'},
@@ -116,6 +118,7 @@ PALETTES = {
         'SUCCESS': {'fg': 'green', 'opts': ('bold',)},
         'WARNING': {'fg': 'yellow', 'opts': ('bold',)},
         'NOTICE': {'fg': 'red'},
+
         'SQL_FIELD': {'fg': 'green', 'opts': ('bold',)},
         'SQL_COLTYPE': {'fg': 'green'},
         'SQL_KEYWORD': {'fg': 'blue'},
@@ -135,7 +138,7 @@ DEFAULT_PALETTE = DARK_PALETTE
 
 
 def parse_color_setting(config_string):
-    """Parse a DJANGO_COLORS environment variable to produce the system palette
+    """Parse a MOOSE_COLORS environment variable to produce the system palette
 
     The general form of a palette definition is:
 

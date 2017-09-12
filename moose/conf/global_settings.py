@@ -85,6 +85,9 @@ EMAIL_TIMEOUT = None
 # List of strings representing installed apps.
 INSTALLED_APPS = []
 
+# List of strings representing apps to output to logs.
+LOGGING_APPS = []
+
 # List of locations of the template source files, in search order.
 TEMPLATE_DIRS = []
 
@@ -400,3 +403,8 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # Apps that don't need to be serialized at test database creation time
 # (only apps with migrations are to start with)
 TEST_NON_SERIALIZED_APPS = []
+
+
+###########
+# LOGGING #
+###########
