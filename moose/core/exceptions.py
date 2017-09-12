@@ -1,20 +1,15 @@
 # -*- coding: utf-8 -*-
-class BaseException(Exception):
-	def __init__(self, msg):
-		super(BaseException, self).__init__()
-		self.msg = msg
 
+class ConnectionTimeout(Exception):
+    """Time out for a connections"""
+    pass
 
-class ArgumentsError(BaseException):
-	def __init__(self, msg='invalid arguments passed in'):
-		super(ArgumentsError, self).__init__(msg)
-
-class ConnTimeoutError(BaseException):
-	def __init__(self, msg='connection timeout'):
-		super(ConnTimeoutError, self).__init__(msg)
+class DatabaseError(Exception):
+    """"""
+    pass
 
 class ImproperlyConfigured(Exception):
-    """moose is somehow improperly configured"""
+    """Moose is somehow improperly configured"""
     pass
 
 class AppRegistryNotReady(Exception):
@@ -22,11 +17,12 @@ class AppRegistryNotReady(Exception):
     pass
 
 class DoesNotExist(Exception):
-	"""File specified does not exist"""
-	pass
+    """File specified does not exist"""
+    pass
 
 class SuspiciousOperation(Exception):
     """The user did something suspicious"""
+    pass
 
 class SuspiciousFileOperation(SuspiciousOperation):
     """A Suspicious filesystem operation was attempted"""

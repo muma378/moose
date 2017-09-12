@@ -40,7 +40,7 @@ DEFAULT_LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'moose.console'
@@ -58,8 +58,8 @@ DEFAULT_LOGGING = {
     },
     'loggers': {
         'moose': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
         },
         'moose.server': {
             'handlers': ['moose.server'],

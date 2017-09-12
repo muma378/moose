@@ -23,18 +23,18 @@ class AzureBlobService(object):
 
 		self.account = settings_dict['ACCOUNT']
 		self.host = settings_dict['ACCOUNT']+'.blob.'+settings_dict['ENDPOINT']
-		logger.debug("Establishing connection to %s." % self.host)
+		logger.debug("Connectings to '%s'..." % self.host)
 		self.block_blob_service = BlockBlobService(
 			account_name=settings_dict['ACCOUNT'],
 			account_key=settings_dict['KEY'],
 			endpoint_suffix=settings_dict['ENDPOINT'])
-		logger.debug("Connection to %s established." % self.host)
+		logger.debug("Connection established.")
 
 	def create_container(self, container_name, set_public=False):
 		"""
 		Create a azure blob container.
 		"""
-		logger.debug("Creating container [%s] on '%s'" % (container_name, self.host))
+		logger.debug("Creating container [%s] on '%s'." % (container_name, self.host))
 
 		if set_public:
 			public_access = PublicAccess.Container
@@ -48,7 +48,7 @@ class AzureBlobService(object):
 				timeout=self.settings_dict['TIMEOUT'],
 				public_access=public_access)
 		except AzureConflictHttpError as e:
-			logger.error("The specified container [%s] already exist." % container_name)
+			logger.error("The specified container [%s] already exists." % container_name)
 			result = False
 
 		logger.info("Container created: %s." % container_name)
@@ -64,7 +64,7 @@ class AzureBlobService(object):
 		container_names = [container for container in icontainers]
 
 		logger.info(
-			"%d containers found on %s." % (len(container_names), self.host)
+			"%d containers found on '%s'." % (len(container_names), self.host)
 			)
 		return container_names
 
@@ -105,7 +105,7 @@ class AzureBlobService(object):
 		Returns an instance of `Blob` with properties and metadata.
 		"""
 		if not os.path.exists(filepath):
-			logger.error("'%s' does not exist." % filepath)
+			logger.error("File doesn't exist: %s." % filepath)
 			return None
 
 		blob = self.block_blob_service.create_blob_from_path(
@@ -124,7 +124,9 @@ class AzureBlobService(object):
 			filesystem.
 		"""
 		if not self.block_blob_service.exists(container_name):
-			logger.debug("Container [%s] which upload to does not exist." % container_name)
+			logger.info(
+				"Container [%s] which upload to doesn't exist, "
+				"creating now." % container_name)
 			self.create_container(container_name, set_public=True)
 
 		blobs = []
