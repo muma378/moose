@@ -16,7 +16,7 @@ class BaseMailSender(object):
 		self.host = host if host else settings.EMAIL_HOST
 		self.port = port if port else settings.EMAIL_PORT
 		self.user = user if user else settings.EMAIL_HOST_USER
-		self.password = password else settings.EMAIL_HOST_PASSWORD
+		self.password = password if password else settings.EMAIL_HOST_PASSWORD
 
 		# initialize the connection to smtp server
 		self.smtp = smtplib.SMTP(self.host, self.port)
