@@ -11,15 +11,16 @@ from os.path import join, normpath
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 import platform
 IS_WINDOWS = True if platform.system()=="Windows" else False
 IS_POSIX = not IS_WINDOWS
 
 
-DEBUG = True
+INSTALLED_APPS = []
 
-# List of strings representing apps to output to logs.
+# List of strings representing apps to output logs to self-defined files.
 LOGGING_APPS = []
 
 
@@ -57,15 +58,7 @@ CONNECTION_SETTINGS = {
 # CONNECTIONS #
 ###############
 
-# azure settings
-AZURE_SETTINGS = {
-    "account": "crowdfile",
-    "key": "LPKAQIkvntlpsZm+EBTB2JfjILpObuRfYzwhmBk31/ILoafSLzwkJaBQDhwcW4rpXks7UGi3+e2+1eCHHCn+SQ==",
-    "endpoint_suffix": "core.chinacloudapi.cn",
-    "workers": 4,
-    "chunks": 8,
-}
-
+# Configs for Azure Blob Service
 AZURE = {
   'ACCOUNT': 'crowdfile',
   'KEY': 'LPKAQIkvntlpsZm+EBTB2JfjILpObuRfYzwhmBk31/ILoafSLzwkJaBQDhwcW4rpXks7UGi3+e2+1eCHHCn+SQ==',
@@ -73,6 +66,7 @@ AZURE = {
   "TIMEOUT": 300,
 }
 
+DATABASE_NAME = '[10.0.0.201].CrowdDB.dbo'
 
 DATABASES = {
     'sqlserver': {
@@ -82,6 +76,13 @@ DATABASES = {
         'PASSWORD': '2015_zaixianSimple',
         'DATABASE': 'CrowdDB',
         'CHARSET': 'UTF-8',
+        'TABLE_ALIAS': {
+            'table_result': '[10.0.0.201].CrowdDB.dbo.DataResult',
+            'table_source': '[10.0.0.201].CrowdDB.dbo.DataSource',
+            'table_person': '[10.0.0.201].CrowdDB.dbo.Person',
+            'table_project': '[10.0.0.201].CrowdDB.dbo.Project',
+            'table_person_in_project': '[10.0.0.201].CrowdDB.dbo.PersonInProject',
+        },
     },
     'mongo': {
         'HOST': 'crowdser.chinacloudapp.cn',
@@ -91,11 +92,18 @@ DATABASES = {
     },
     'mysql': {
         'HOST': '139.217.7.145',
-        'PORT': 3306,
+        'PORT': '3306',
         'USER': 'root',
         'PASSWORD': 'C19c3Y^3QjvW',
         'DATABASE': 'CrowdDB',
         'CHARSET': 'utf8',
+        'TABLE_ALIAS': {
+            'table_result': 'dataresult',
+            'table_source': 'datasource',
+            'table_person': 'person',
+            'table_project': 'task',
+            'table_person_in_project': 'person_in_task',
+        },
     },
     'mongo-indie': {
         'HOST': '139.217.7.145',
@@ -106,24 +114,17 @@ DATABASES = {
     },
 }
 
-
-
-SMB_SETTINGS = {
-    "host": "10.10.8.123",
-    "port": 139, # 139 if using NetBIOS over tcp/ip, 445 if direct hosting over tcp/ip
-    "username": "administrator",
-    "password": "Shujutang18FF",
-    "domain": "",   # workgroup, it is safe to leave it empty
-    "client_name": "DATATANG",  # an arbitary ASCII string
-    "server_name": "WIN-DJM4V2HB0T5",
+# Config for Server Message Block protocol
+SMB = {
+    'HOST': '10.10.8.123',
+    'PORT': 139, # 139 if using NetBIOS over tcp/ip, 445 if direct hosting over tcp/ip
+    'USERNAME': 'USERNAME',
+    'PASSWORD': '********',
+    'DOMAIN': 'DATATANG',   # workgroup, it is safe to leave it empty
+    'CLIENT_NAME': 'DATATANG',  # an arbitary ASCII string
+    'SERVER_NAME': 'TEST-5-11',
     # NTLMv1 or NTLMv2 authentication will be used, guess to be True for WIN7, Vista
-    "use_ntlm_v2": True,
-
-    "reconnect_times": 3,
-    "connect_timeout": 60,
-    "echo_timeout": 30,
-    "retrive_timeout": 120,
-    "reconnect_interval": 300,
+    'NTLMv2': True,
 }
 
 WEB_SETTINGS = {
@@ -153,8 +154,7 @@ DEFAULT_FROM_EMAIL = 'tech@datatang.com'
 EMAIL_SUBJECT_PREFIX = '[Moose] '
 
 # others
-EDITOR = "vim" if IS_POSIX else "notepad"
-OFFLINE = None
+EDITOR = "vim" if NOT_POSIX else "notepad"
 
 DATALINK_TEMPLATE = 'http://bz.datatang.com/datalink?data={data_guid}&taskId={task_id}'
 AZURE_FILELINK = 'http://crowdfile.blob.core.chinacloudapi.cn/{task_id}/{file_path}'
