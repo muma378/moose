@@ -39,8 +39,8 @@ class SMBConnProxyTestCase(unittest.TestCase):
         self.assertNotEqual(self.smb_proxy.smb_conn.echo('hello1'), 'hello', 'connected failed')
         self.smb_proxy.smb_conn.close()
 
-    with self.assertRaises(NotConnectedError):
-        self.assertEqual(self.smb_proxy.smb_conn.echo('hello'), 'hello', 'connected failed')
+        with self.assertRaises(NotConnectedError):
+            self.assertEqual(self.smb_proxy.smb_conn.echo('hello'), 'hello', 'connected failed')
 
         self.smb_proxy.connect()
         self.assertEqual(self.smb_proxy.smb_conn.echo('hello'), 'hello', 'connected failed')
