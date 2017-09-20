@@ -8,5 +8,5 @@ class CityscapeConfig(AppConfig):
     verbose_name = u"街景道路标注"
 
     def ready(self):
-        self.register('Upload', 'upload', default=True)
+        self.register('StandardUpload', 'upload', default=True)
         self.register('Export', 'export')

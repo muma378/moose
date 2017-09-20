@@ -154,9 +154,10 @@ DEFAULT_FROM_EMAIL = 'tech@datatang.com'
 EMAIL_SUBJECT_PREFIX = '[Moose] '
 
 # others
-EDITOR = "vim" if NOT_POSIX else "notepad"
+EDITOR = "vim" if IS_POSIX else "notepad"
 
 DATALINK_TEMPLATE = 'http://bz.datatang.com/datalink?data={data_guid}&taskId={task_id}'
+
 AZURE_FILELINK = 'http://crowdfile.blob.core.chinacloudapi.cn/{task_id}/{file_path}'
 
 PREFERRED_PROJECT_NAME = u"%d第%d期图片标注任务"

@@ -22,3 +22,6 @@ class Export(actions.AbstractAction):
     def run(self, **kwargs):
         sqlserver = MySQLHandler(DATABASES['mysql'])
         return "export"
+
+class StandardUpload(actions.upload.BaseUpload):
+    pass

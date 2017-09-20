@@ -64,3 +64,4 @@ target/
 # Porject relative
 .DS_store
 *.bak
+demo/cityscape/data
