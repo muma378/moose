@@ -80,7 +80,7 @@ class AzureBlobService(object):
         try:
             # An iterator to
             iblobs = self.block_blob_service.list_blobs(
-                container_name, prefix=prefix, timeout=self.timeout)
+                container_name, prefix=prefix, timeout=self.settings_dict['TIMEOUT'])
 
             if suffix:
                 blob_names = [blob for blob in iblobs if blob.endswith(suffix)]

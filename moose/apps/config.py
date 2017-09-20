@@ -10,6 +10,7 @@ from moose.conf import settings
 ACTIONS_MODULE_NAME = 'actions'
 CONFIGS_DIRNAME = 'configs'
 CONFIGS_CACHE_NAME = '.config'
+DATA_DIRNAME = 'data'
 
 class AppConfig(object):
 	"""
@@ -61,6 +62,8 @@ class AppConfig(object):
 		if not hasattr(self, 'config_template'):
 			self.config_template = os.path.join(self.path, settings.CONF_TEMPLATE_NAME)
 
+		if not hasattr(self, 'data_dirname'):
+			self.data_dirname = os.path.join(self.path, DATA_DIRNAME)
 
 	def __repr__(self):
 		return '<%s: %s>' % (self.__class__.__name__, self.label)

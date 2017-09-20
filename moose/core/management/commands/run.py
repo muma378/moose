@@ -87,7 +87,7 @@ class Command(AppCommand):
 				continue
 			else:
 				config = config_loader._parse()
-				output.append(actor.run(config=config))
+				output.append(actor.run(config=config, app=app_config))
 
 		# to close the timer
 		record.done()
