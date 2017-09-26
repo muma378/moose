@@ -19,7 +19,7 @@ def ivisit(src, dst=None, pattern=None, ignorecase=True):
     yield a tuple ('/a/c/d.txt', '/b/c/d.txt')
     """
     # syntax sugar, converts string to a tuple with one element
-    if isinstance(pattern, str):
+    if isinstance(pattern, str) or isinstance(pattern, unicode):
         pattern = (pattern, )
     # defines the function anymatch
     if pattern:
