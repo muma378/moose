@@ -136,7 +136,8 @@ class TemplateCommand(BaseCommand):
         # Setup a stub settings environment for template rendering
         if not settings.configured:
             settings.configure()
-            moose.setup()
+            if app_or_project == 'app':
+                moose.setup()
 
         template_dir = self.handle_template(options['template'],
                                             base_subdir)

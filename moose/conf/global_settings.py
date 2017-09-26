@@ -4,13 +4,13 @@
 # This is defined here as a do-nothing function because we can't import
 # django.utils.translation -- that module depends on the settings.
 gettext_noop = lambda s: s
-
 ####################
 # CORE             #
 ####################
 
 DEBUG = False
 TEMPLATE_DEBUG = False
+
 
 # Whether the framework should propagate raw exceptions rather than catching
 # them. This is useful under some testing situations and should never be used
@@ -124,7 +124,7 @@ DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
 # Subject-line prefix for email messages send with django.core.mail.mail_admins
 # or ...mail_managers.  Make sure to include the trailing space.
-EMAIL_SUBJECT_PREFIX = '[Django] '
+EMAIL_SUBJECT_PREFIX = '[Moose] '
 
 # Whether to append trailing slashes to URLs.
 APPEND_SLASH = True
