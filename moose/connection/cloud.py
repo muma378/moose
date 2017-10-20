@@ -83,9 +83,9 @@ class AzureBlobService(object):
                 container_name, prefix=prefix, timeout=self.settings_dict['TIMEOUT'])
 
             if suffix:
-                blob_names = [blob for blob in iblobs if blob.endswith(suffix)]
+                blob_names = [blob.name for blob in iblobs if blob.name.endswith(suffix)]
             else:
-                blob_names = [blob for blob in iblobs]
+                blob_names = [blob.name for blob in iblobs]
 
         except AzureMissingResourceHttpError as e:
             logger.error(
@@ -107,7 +107,7 @@ class AzureBlobService(object):
         if not os.path.exists(filepath):
             logger.error("File doesn't exist: %s." % filepath)
             return None
-
+        print blob_name
         blob = self.block_blob_service.create_blob_from_path(
             container_name, blob_name, filepath)
         return blob
@@ -135,10 +135,9 @@ class AzureBlobService(object):
         for blob_name, filepath in blob_pairs:
             posix_blob_name = ppath(blob_name)
             if posix_blob_name not in blobs_in_container:
-                blob = self.create_blob_from_path(
+                self.create_blob_from_path(
                     container_name, posix_blob_name, filepath)
-                if blob:
-                    blobs.append(blob)
+                blobs.append(posix_blob_name)
 
         logger.info("Uploaded %d files to [%s]." % (len(blobs), container_name))
         return blobs

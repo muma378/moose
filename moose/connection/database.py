@@ -8,6 +8,7 @@ import time
 import random
 import logging
 
+from pymongo import MongoClient, errors
 from moose.core.exceptions import ConnectionTimeout, ImproperlyConfigured
 
 logger = logging.getLogger(__name__)
@@ -193,8 +194,6 @@ class MongoDBHandler(object):
         self.close()
 
     def __connect(self):
-        from pymongo import MongoClient, errors
-
         mongo_url = self.__get_mongo_url(self.settings_dict)
         logger.debug("Connectting to '%s'..." % self.displayed_mongo_url)
         client = MongoClient(mongo_url)
