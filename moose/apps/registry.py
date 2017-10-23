@@ -103,7 +103,10 @@ class Apps(object):
 
 			# Phase 2: import models modules.
 			for app_config in self.app_configs.values():
-				app_config.import_actions()
+				try:
+					app_config.import_actions()
+				except ImportError as e:
+					raise ImproperlyConfigured(e.message)
 
 			# self.actions_ready = True
 
