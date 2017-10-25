@@ -15,6 +15,7 @@ class BaseModel(object):
     an unified interface, the diversity of implementation can be ignored.
     """
     output_suffix = '.json'
+    effective_values = ('1', 1)
 
     def __init__(self, annotation):
         self.annotation = annotation
@@ -63,9 +64,9 @@ class BaseModel(object):
     # return true if the value was '1'
     def is_effective(self):
         if self.result.get("effective"):
-            return self.result['effective'] == '1'
+            return self.result['effective'] in self.effective_values
         elif self.result.get("Effective"):
-            return self.result['Effective'] == '1'
+            return self.result['Effective'] in self.effective_values
         else:
             raise NotImplementedError("Unknown property to get the validity.")
 

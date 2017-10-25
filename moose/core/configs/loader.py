@@ -90,7 +90,6 @@ class ConfigLoader(object):
 				except UnicodeEncodeError as e:
 					raise ImproperlyConfigured(
 						"Unrecognized symbols in '%s'." % self.path)
-
 			# erases the content and rewrites with 'utf-8' encoding
 			if overwrite:
 				f.truncate(0)	# truncate the config size to 0
@@ -190,9 +189,10 @@ class OptionUnicode(OptionBaseType):
 	Type for unicode or option not specified. (decoded in __update_codec)
 	"""
 	opt_code = (None, 'unicode', 'Unicode')
+	default_charset = 'utf-8'
 
 	def get_value(self):
-		return self.value
+		return self.value.decode(self.default_charset)
 
 
 class OptionString(OptionBaseType):

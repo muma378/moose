@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
 import math
+import pickle
 import logging
 
 from moose.connection import query
 from moose.connection import database
 from moose.connection import fetch
 from moose.connection.cloud import azure
+from moose.utils.module_loading import import_string
 from moose.conf import settings
 
 from .base import AbstractAction, IllegalAction
@@ -68,12 +70,11 @@ class BaseExport(AbstractAction):
     def run(self, **kwargs):
         context = self.get_context(kwargs)
         queryset = self.fetch(context)
-
         output = []
         neffective = 0
-        dst = os.path.join(self.app.data_dirname, context['title'])
+        data_model_cls = import_string(self.data_model)
         for item in queryset:
-            dm = self.data_model(item)
+            dm = data_model_cls(item)
             if dm.is_effective():
                 neffective += 1
                 self.handle(dm, context)
@@ -90,7 +91,21 @@ class SimpleExport(BaseExport):
         'mongo_context': settings.DATABASES['mongo'],
     }
     fetcher_class = fetch.BaseFetcher
+    use_cache = True
 
     def fetch(self, context):
         task_id = context['task_id']
-        return self.fetcher.fetch(project_id=task_id)
+        if self.use_cache:
+            cache_pickle = os.path.join(self.app.data_dirname, str(task_id)+'.pickle')
+            # TODO: add expired date range
+            if os.path.exists(cache_pickle):
+                logger.warning("Using cached queyrset of task '%s'." % task_id)
+                with open(cache_pickle) as f:
+                    queryset = pickle.load(f)
+            else:
+                queryset = self.fetcher.fetch(project_id=task_id)
+                with open(cache_pickle, 'w') as f:
+                    pickle.dump(queryset, f)
+        else:
+            queryset = self.fetcher.fetch(project_id=task_id)
+        return queryset
