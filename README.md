@@ -6,24 +6,26 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
 
 ### 安装发布版
 这是较为推荐的安装方法：
-	1. 安装pip。最简单的方法是使用[pip安装脚本](https://pip.pypa.io/en/latest/installing/#installing-with-get-pip-py)。如果你的Python发布版已经安装了pip，你可能需要更新以避免由于版本过老导致安装失败。
-	2. 了解[virtualenv](https://virtualenv.pypa.io/en/stable/)或[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)并安装教程。这些工具提供了一个独立的Python环境，相比在全局范围内安装包要更加有效且实用，并且不需要管理员权限。这份[文档](https://docs.djangoproject.com/en/1.11/intro/contributing/)提供如何在Python3环境中安装virtualenv的指导。
-	3. 安装并且激活虚拟环境后，在命令提示符中输入**pip install Moose**。
+1. 安装pip。最简单的方法是使用[pip安装脚本](https://pip.pypa.io/en/latest/installing/#installing-with-get-pip-py)。如果你的Python发布版已经安装了pip，你可能需要更新以避免由于版本过老导致安装失败。
+2. 了解[virtualenv](https://virtualenv.pypa.io/en/stable/)或[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)并安装教程。这些工具提供了一个独立的Python环境，相比在全局范围内安装包要更加有效且实用，并且不需要管理员权限。这份[文档](https://docs.djangoproject.com/en/1.11/intro/contributing/)提供如何在Python3环境中安装virtualenv的指导。
+3. 安装并且激活虚拟环境后，在命令提示符中输入**pip install Moose**。
 
 ### 安装开发者版本
 如果你希望安装最新版本的Moose，可以通过以下教程来尝试：
-	1. 确认你已安装Git并且可以从命令行中访问。
-	2. 获取Moose的主分支代码：
+1. 确认你已安装Git并且可以从命令行中访问。
+2. 获取Moose的主分支代码：
 ```
 $ git clone https://github.com/muma378/moose.git	
 ```
+	
 	这会为你在当前目录下创建一个名为**moose**文件夹。
-	3. 确认你的Python解释器可以加载Moose代码。最常见的办法是使用[virtualenv](https://virtualenv.pypa.io/en/stable/)，[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)和 [pip](https://pip.pypa.io/)。这份[文档](https://docs.djangoproject.com/en/1.11/intro/contributing/)提供如何在Python3环境中安装virtualenv的指导。
-	4. 在安装和激活virtualenv之后，运行以下命令：
+3. 确认你的Python解释器可以加载Moose代码。最常见的办法是使用[virtualenv](https://virtualenv.pypa.io/en/stable/)，[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)和 [pip](https://pip.pypa.io/)。这份[文档](https://docs.djangoproject.com/en/1.11/intro/contributing/)提供如何在Python3环境中安装virtualenv的指导。
+4. 在安装和激活virtualenv之后，运行以下命令：
 ```
 $ pip install -e moose/	
 ```
-	这会使得Moose的代码可以被导入（importable），并且使得**moose-admin**等命令行工具可用。至此，我们就完成了安装！
+	
+	这会使得Moose的代码可以被导入（importable），并且使得**moose-admin**等命令行工具可用。至此，我们完成了安装！
 
 当你想要更新你的Moose代码时，只需要在moose文件夹内运行命令**git pull**，Git便会自动下载任何更新。
 
@@ -43,11 +45,11 @@ Moose完全由Python编写并且依赖于以下几个关键的Python包（Packag
 我们将以一个名为 **cityscape** 的图片标注项目开始，该项目需要在[标注平台](http://bz.datatang.com/Admin/task/markList)上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
 
 这篇教程将会着重讲述Moose相关的操作，包含以下要点：
-	1. 创建一个新的Moose项目；
-	2. 创建一个新的app并配置工单模板;
-	3. 编写action：upload，完成数据上传和建立索引；
-	4. 编写model，完成数据的导出功能；
-	5. 完成单元化测试。
+1. 创建一个新的Moose项目；
+2. 创建一个新的app并配置工单模板;
+3. 编写action：upload，完成数据上传和建立索引；
+4. 编写model，完成数据的导出功能；
+5. 完成单元化测试。
 
 ### 创建一个Moose项目
 
