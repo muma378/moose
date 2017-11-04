@@ -15,19 +15,19 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
 1. 确认你已安装Git并且可以从命令行中访问。
 2. 获取Moose的主分支代码：
 
-```
-$ git clone https://github.com/muma378/moose.git
-```
+    ```
+    $ git clone https://github.com/muma378/moose.git
+    ```
 
-这会为你在当前目录下创建一个名为**moose**文件夹。
+    这会为你在当前目录下创建一个名为**moose**文件夹。
 3. 确认你的Python解释器可以加载Moose代码。最常见的办法是使用[virtualenv](https://virtualenv.pypa.io/en/stable/)，[virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)和 [pip](https://pip.pypa.io/)。这份[文档](https://docs.djangoproject.com/en/1.11/intro/contributing/)提供如何在Python3环境中安装virtualenv的指导。
 4. 在安装和激活virtualenv之后，运行以下命令：
 
-```
-$ pip install -e moose/
-```
+    ```
+    $ pip install -e moose/
+    ```
 
-这会使得Moose的代码可以被导入（importable），并且使得**moose-admin**等命令行工具可用。至此，我们完成了安装！
+    现在，Moose的代码就可以被导入（importable），并且可以使用**moose-admin**等命令行工具了。至此，我们就完成了安装！
 
 当你想要更新你的Moose代码时，只需要在moose文件夹内运行命令**git pull**，Git便会自动下载任何更新。
 
@@ -57,11 +57,20 @@ Moose完全由Python编写并且依赖于以下几个关键的Python包（Packag
 
 在开始为一个数据标注（采集）项目编写相关的业务逻辑之前，我们需要创建一个Moose Project。在你想要保存代码的地方打开命令行，输入：
 
-```
-$ moose-admin startproject tutorial
-```
+    ```
+    $ moose-admin startproject tutorial
+    ```
 
-这
+这将会在当前文件夹中创建以下内容：
+
+    ```
+    tutorial/
+        tutorial/   # project's python module
+            __init__.py
+            settings.py     # settings/configuration for this Moose project
+            template.cfg    # global config template, use it if not specified
+        manage.py   # a command-line utility that let you interact with Moose in various ways
+    ```
 
 **app** 是automate中基本的执行单位，相当于一个独立的脚本，所有的操作都是基于它执行。首先，我们在命令行中输入以下命令以创建一个名为 _sayhi_ 的app：
 
