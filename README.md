@@ -44,230 +44,149 @@ Moose完全由Python编写并且依赖于以下几个关键的Python包（Packag
 ## 快速上手教程
 在这篇教程中，我们假设你已经安装好了Moose并且了解一个数据标注项目的基本流程，如果还没有的话请参考**安装指南**和**标注任务创建指南**。
 
-我们将以一个名为 **cityscape** 的图片标注项目开始，该项目需要在[标注平台](http://bz.datatang.com/Admin/task/markList)上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
+我们将以一个名为 **cityscape** 的图片标注项目开始(得益于各大厂商在自动驾驶研发上的投入，对街景图像的采集与标注的需求也变得旺盛)，该项目需要在[标注平台](http://bz.datatang.com/Admin/task/markList)上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
 
 这篇教程将会着重讲述Moose相关的操作，包含以下要点：
 1. 创建一个新的Moose项目；
-2. 创建一个新的app并配置工单模板;
+2. 创建一个新的application;
 3. 编写action：upload，完成数据上传和建立索引；
-4. 编写model，完成数据的导出功能；
+4. 编写template，解耦数据和功能；
+4. 编写model，导出标注数据；
 5. 完成单元化测试。
 
 ### 创建一个Moose项目
 
 在开始为一个数据标注（采集）项目编写相关的业务逻辑之前，我们需要创建一个Moose Project。在你想要保存代码的地方打开命令行，输入：
 
-    ```
-    $ moose-admin startproject tutorial
-    ```
+```
+$ moose-admin startproject tutorial
+```
 
 这将会在当前文件夹中创建以下内容：
 
-    ```
-    tutorial/
-        tutorial/   # project's python module
-            __init__.py
-            settings.py     # settings/configuration for this Moose project
-            template.cfg    # global config template, use it if not specified
-        manage.py   # a command-line utility that let you interact with Moose in various ways
-    ```
-
-**app** 是automate中基本的执行单位，相当于一个独立的脚本，所有的操作都是基于它执行。首先，我们在命令行中输入以下命令以创建一个名为 _sayhi_ 的app：
-
-```
-> ./bin/startapp sayhi
+```python
+tutorial/
+    tutorial/   # project's python module
+        __init__.py     # an empty file tells Python that this directory should be considered as a package
+        settings.py     # settings/configuration for this Moose project
+        template.cfg    # global tasks' config template
+    manage.py   # a command-line utility that let you interact with Moose in various ways
 ```
 
-输入该命令后，我们注意到在当前文件夹下出现了一些新的内容:
+### 创建一个新的application
+
+现在，你的工作环境——Moose Project——已经创建起来，我们可以开始真正的工作了。
+每一个你通过Moose编写的 **application** 都遵循一套特定的规则，他们既是Python的一个package，同时也是与一个“项目”——不同于前文提到的 *Moose Project*，这里指的是 **工程意义** 上的项目——相关的所有（代码层面上的）业务逻辑的集合。
+Moose提供了一系列的工具来自动创建相应的文件和文件夹，使得开发者可以专注于编写业务逻辑的代码而不是创建文件。为了创建(一个名叫 *cityscape* 的) **app**，你需要在之前创建的Moose Project的目录下（在与 **manage.py** 同一级目录里）输入：
 
 ```
-├ conf
-|  └ sayhi
-|      └ template.cfg
-├ data
-|  └ sayhi
-├ logs
-|  └ sayhi.log
-└ src
-   ├ apps
-   |   └ app_sayhi.py
-   └ requires
-       └ sayhi.req
+$ python manage.py startapp cityscape
 ```
 
-如图所示，automate为我们自动创建了conf和data目录下名为sayhi的文件夹，这两个目录分别用来存放app的配置文件和生成文件。其中 `conf/sayhi/template.cfg` 是配置文件的模板，我们会在之后的代码中使用到它。
-`src/apps/app_sayhi.py` 将是我们主要的代码编辑区域，只应包含业务逻辑相关的代码。打开该文件，里面已经提供了如下内容：
-
-```
-import settings
-from utils.parse import parse_config
-def main():
-    config = parse_config()
-def usage():
-    return ""
-```
-
-main()函数是app的入口，控制着整个app的流程，我们的代码就从这里开始。向 `app_sayhi.py` 中添加如下的代码：
-
-```
-import os
-import settings
-from utils.parse import parse_config
-from utils.dateutil import name_as_datetime
-def main():
-    config = parse_config()
-    name = config.get('data', 'name')
-    product_dir = os.path.join(settings.DATA_DIR, 'sayhi')
-    if not os.path.exists(product_dir)：
-        os.makedirs(product_dir)
-      with open(name_as_datetime(product_dir)) as f:
-          f.write("Hi, {0}".format(name))
-def usage():
-    return "say hi to a friend"
-```
-
-我们的app相当简单，不过对于我们最常见的情景已经足够了。它实现了从配置文件中获取_name_这个参数，并输出到以当前日期时间命名的文件当中去。我们将在下一节中介绍如何编写以及维护配置文件。
-
-### Generates configs
-我们已经完成了app的编码，在运行之前，还要编写配置文件以定义输入输出。打开 `conf/sayhi/template.cfg` ，添加如下内容：
-
-```
-[data]
-name = ?
-```
-
-之后，在命令行中输入：
-
-```
-> ./bin/gen_config sayhi
-```
-
-我们注意到 `conf/sayhi` 目录下新增加了如下内容：
-
-```
-└ sayhi
-   ├ .Nov21-0920.cfg        # it could be a differnent name
-     ├ config.cfg
-     └ template.cfg
-```
-
-打开 `conf/sayhi/config.cfg` ， 里面的内容和之前在 `template.cfg` 中定义的一模一样，我们将它稍作修改：
-
-```
-[data]
-name = Mary
-```
-
-至此，我们的配置文件就已经编写完成。
-
-### Run
-在上一节中我们完成了对输入输出的定义，只要在 `settings` 中注册我们的app就可以开始运行我们的程序了。打开 `settings_local.py` ，在 `apps` 中添加你的app的名称就可以了，以 `sayhi` 为例，输入以下内容：
+这将会为你创建一个叫 **cityscape** 的文件夹，内部结构如下：
 
 ```python
-apps = [
-    "sayhi",
-    ]
+cityscape/
+    configs/    # directory to put tasks' config files
+    data/       # directory for input/output data
+    __init__.py     
+    actions.py      # actions defined that application runs with
+    apps.py         # control center to glue all components
+    models.py       # object representation for data queried from the backend
+    template.cfg    # local tasks' config template
+    tests.py        
+```
+
+这其中尤其需要注意的是 *cityscape/apps.py* 。它是整个app的控制中心，负责连接各个单元和模块，使正确的配置文件（**configs**）被加载、动作（**actions**）能通过命令行被触发、数据被存储到正确的位置（**data**）。我们之后会了解到它是如何控制的，现在，你唯一需要做的是提供一些项目相关的信息：
+
+```python
+# -*- coding: utf-8 -*-
+from moose.apps import AppConfig
+
+class CityscapeConfig(AppConfig):
+    name = 'cityscape'
+    verbose_name = u"街景道路标注"
 
 ```
 
-现在，在命令行中输入以下内容：
+### 编写action：upload，完成数据上传和建立索引；
+
+项目很快开始运作起来，我们接到的第一个任务是创建一期标注任务，并且向我们提供了以下信息：
+
+* 数据来源：*/data/cityscape/vol1* 目录下的所有图片
+* 模板名称：*街景图片多边形标注 v1.1*
+* 索引格式：
+    ```js
+    {
+        "url": "path/to/image01.jpg", "dataTitle": "image01.jpg"
+    }
+    ```
+
+我们在这里不过多地解释这些信息代表的含义，如果你还不了解，请参考我们的文档 **《标注任务创建指南》** 。假设你已经根据这些信息在[标注平台](http://bz.datatang.com/Admin/task/markList)上创建了一期任务，并且返回了以下信息：
+
+* 任务ID：*10000*
+* 任务名称：*2017第2000期图片标注任务*
+* 任务批次：*cityscape - vol1*
+
+接下来要做的就是上传原始图片并且建立索引关系。这些动作被抽象成一个叫 **AbstractAction** 的类，我们在 *cityscape/actions.py* 定义它的实现：
+
+```python
+# -*- coding: utf-8 -*-
+import os
+import json
+from moose import actions
+from moose.connection.cloud import AzureBlobService
+from tutorial import settings
+
+class Upload(actions.AbstractAction):
+
+    def run(self, **kwargs):
+        """
+        Inherited classes must implement this interface,
+        which will be called then to perform the operation.
+        """
+        task_id = '10000'
+
+        # Phase1. establishes the connection to azure and do uploading files
+        azure = AzureBlobService(settings.AZURE)
+        # lists all files in the data directory
+        images = self.list_all_images('/data/cityscape/vol1')
+        blobs = azure.upload(task_id, images)
+
+        # Phase 2. creates the index file to declare the relationships
+        # between files uploaded and names to display
+        index_file = os.path.join(self.app.data_dirname, task_id+'.json')
+        with open(index_file, 'w') as f:
+            for blob_file in blobs:
+                item = {
+                    'url': blob_file,
+                    'dataTitle': os.path.basename(blob_file)
+                }
+                f.write(json.dumps(item))
 
 ```
-> ./bin/run sayhi
-excuting apps.app_sayhi
-done
-```
 
-现在再检查 `data/sayhi` 目录下的内容，我们发现新添加了一个命名规则与 `Nov21-0920.txt` 类似的文件（代表着数据被生成的时间），输出其中的内容：
+为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *list_all_images* 方法和 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.AbstractAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
 
-```
-> cat data/sayhi/Nov21-0920.txt
-Hi, Mary
-```
+为了使得这个 *Action* 可以在命令行里被调用，我们还需要做一件事情——在 *AppConfig* 中注册该动作。在 *cityscape/apps.py* 中添加以下内容：
 
-一旦一个app稳定下来后，针对每一次任务，我们便可以重复运行上一节(gen_config)与这一节(run)的操作，使得后续的任务变得简单可维护，这也正是Automate的意义所在。
+```python
+class CityscapeConfig(AppConfig):
 
-### Coding Specification
-#### Logging
-我们建议所有的提示性输出都应该通过日志文件系统被记录到日志中以方便定位和回溯。Python提供了一套完整的[日志机制]( [15.7. logging — Logging facility for Python — Python 2.7.12 documentation](https://docs.python.org/2/library/logging.html) )。我们在Automate中隐去了所有细节，每个app的编写者只需要导入 `settings` 模块中的 `logger` 对象，按照如下方式调用即可：
+    def ready(self):
+        self.register('Upload', 'upload')   # now we can type `-a upload` to refer the action 'cityscape.actions.Upload'
 
 ```
-from settings import logger
-logger.DEBUG("debug")
-logger.INFO("info")
-logger.WARNING("warning")
-logger.ERROR("error")
-logger.CRITICAL("critical")
-```
 
-_目前，我们只是将所有的日志输出到access.log，而将error级别及以上的错误输出到error.log以方便用户快速发现较为严重的错误。将来我们可能调整日志机制，为每个app提供相应的log文件以隔离不同app产生的日志文件_
-
-#### Virtual Environment
-不同的app可能会有对于同一个package不同版本的需求，同时，对于只使用其中某个app的人来说，也没有必要安装所有app的相关依赖包。因此我们提供了命令 `install` 去帮助用户快速地搭建起开发环境。
+注册完成之后，我们就可以在命令行中通过指定 *-a upload* 选项来运行我们之前在 *cityscape.actions.Upload* 中编写的代码了。在与之前相同的位置下输入：
 
 ```
-> echo "six==1.10.0" > src/requires/sayhi.req
-> ./bin/install sayhi
-building virtual environment...
-activating environment...
-installing packages...
-six==1.10.1
-done
+$ touch cityscape/configs/null.cfg
+$ python manage.py run cityscape -a upload -c null.cfg
 ```
 
-#### Clean
-针对编码和调试时经常出现的重复运行 `gen_config` 和 `run` 导致产生冗余的或无意义的配置和输出文件，我们提供了命令 `clean` 去帮助用户清理conf和data文件夹。输入命令
+此时，你应该可以在命令行中看见文件上传的进度条，以及生成的 *cityscape/data/10000.json* 文件了。至于在命令行中创建的 *null.cfg* 又是起什么作用，我们很快就会在下一节中讲到。
 
-```
-> ./bin/clean sayhi
-```
-会自动找出相应app中多余的配置和输出文件，打印在屏幕上，待用户确认后将其删除掉，使得每份副本只有最新生成的那一份被保留。
+### 编写template，解耦数据和功能
 
-## Basic Concept
-### Hierarchy
-Automate将传统的任务按照如下结构组织起来：
-
-* **bin** 框架提供的命令文件；
-* **conf** 每期任务对应的特定参数的配置文件，相当于传统脚本运行时的参数列表；
-* **data** 默认数据存储区域，脚本运行时读取及生成的数据默认存放在与之对应的文件夹下；
-* **logs** 脚本运行产生的对应的日志文件；
-* **tools** 运行时需要的相关工具，通常为二进制或其他语言编写的可执行文件；
-* **src** 代码目录：
-	* **apps** 每一类任务即一个app，也可理解成实现了特定接口的一个（组）脚本；
-	* **settings.py** 通用配置文件，包含框架运行的核心参数配置，不应修改；
-	* **settings_local.py** 本地配置文件，包含本地自定义的参数配置，可覆盖通用配置中的配置项；
-	* **core/*** 数据处理库和模块。
-
-### Commands
-Automate提供了一系列的命令以方便用户对任务进行快速配置和管理：
-
-* **list** 列出所有命令及使用方法；
-* **startapp** 生成app脚本文件以及相应的目录；
-* **genconf** 生成配置文件模板，默认调用app对应的_gen_template.py_，如果不存在则拷贝对应的_template.cnf_，如果不存在则拷贝_src_conf_common.cnf_;
-*
-* **run** 运行相应app；
-* **clean** 清除对应app内或为空或为冗余的配置文件和输出文件；
-* **install** 脚本依赖安装;
-* **history** 执行及生成数据的历史记录及对应关系（TODO）；
-* **crontab** 设定定时任务（TODO）；
-* **toolkit** 常用工具的命令行式调用（TODO）；
-
-### Libraries
-除了方便的命令接口，Automate也提供了对通用功能的抽象和封装：
-
-* **core**
-	* **handlers**
-		* _convert_ 音频，图片格式转换；
-		* _decrypt_ 加密解密功能；
-		* _download_ http或ftp方式获取数据；
-	* **storage**
-		* _database_ 提供对sqlserver和MongoDB数据库访问；
-		* _smb_proxy_ 提供对ftp的访问；
-	* **common**
-		* _mail_ 邮件系统，提供任务完成通知
-* **utils**
-	* _parse_ 配置文件解析；
-	* _stocking_ 出库相关的数据库查询操作；
-	* _traverse_ 文件遍历；
-	* _crop_ 图片剪切；
-	* _match_ 关键字匹配。
+如果你是一位有经验的开发者，那么你一定已经意识到我们之前的代码中存在一点问题——包含过多的“魔法常量”（*magic constant*），不仅如此，在实际的工作中我们还会发现，那些业务逻辑相关的代码通常是固定的，反而是这些“魔法常量”会频繁变化。
