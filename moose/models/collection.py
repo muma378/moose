@@ -14,16 +14,17 @@ class Collection(BaseModel):
     Therefore, there are multiple annotation and files in a model, it is more like
     a manager class than a model.
     """
+    member_cls = None
 
-    def __init__(self, annotation, member_cls):
+    def __init__(self, annotation):
         super(Collection, self).__init__(annotation)
         if not getattr(self, 'mark_results'):
             raise NotImplementedError(
-                "Subclass of 'GroupModel' must implement 'mark_results' to specify the "
+                "Subclass of 'Collection' must implement 'mark_results' to specify the "
                 "attribute possess annotation data.")
         self.members = []
         for mark_result in self.mark_results.get(self.mark_key):
-            self.members.append(member_cls(mark_result))
+            self.members.append(self.member_cls(mark_result))
 
     @property
     def filename(self):
@@ -94,7 +95,6 @@ class MemberModel(object):
 
     def to_string(self):
         return json.dumps(self.data, ensure_ascii=False).encode('utf-8')
-
 
     def export(self, root):
         filepath = os.path.join(root, self.normpath)

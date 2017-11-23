@@ -10,7 +10,7 @@ import fields
 
 class BaseModel(object):
     """
-    Boilerplate is a model to parse the annotation for templates, it aims to
+    Model is a object to parse the annotation for templates, it aims to
     eliminate the difference between projects with the same template. By providing
     an unified interface, the diversity of implementation can be ignored.
     """
@@ -60,6 +60,9 @@ class BaseModel(object):
     def datalink(self, task_id):
         return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(task_id))
 
+    def filelink(self, task_id):
+        return settings.AZURE_FILELINK.format(task_id=task_id, file_path=self.filepath)
+
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
     def is_effective(self):
@@ -84,7 +87,7 @@ class BaseModel(object):
     def to_string(self):
         return json.dumps(self.data, ensure_ascii=False).encode(settings.FILE_CHARSET)
 
-    def export(self, dst):
+    def dump(self, dst):
         filepath = os.path.join(dst, self.normpath)
         makeparents(filepath)
         filename, _ = os.path.splitext(filepath)
