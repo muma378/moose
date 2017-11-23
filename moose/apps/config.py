@@ -120,6 +120,8 @@ class AppConfig(object):
 				raise
 
 		else:
+			# TODO: rename entry from 'mscoco' to 'mscoco.apps.MscocoConfig'
+			# renames the directory 'apps' to 'app'
 			try:
 				# If this works, the app module specifies an app config class.
 				entry = module.default_app_config
