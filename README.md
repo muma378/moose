@@ -147,7 +147,7 @@ class Upload(actions.AbstractAction):
         """
         task_id = '10000'
 
-        # Phase1. establishes the connection to azure and do uploading files
+        # Phase 1. establishes the connection to azure and do uploading files
         azure = AzureBlobService(settings.AZURE)
         # lists all files in the data directory
         images = self.list_all_images('/data/cityscape/vol1')
@@ -191,7 +191,7 @@ $ python manage.py run cityscape -a upload -c null.cfg
 
 如果你是一位有经验的开发者，那么你一定已经意识到我们之前的代码中存在一点问题——包含过多的“魔法常量”（*magic constant*），不仅如此，在实际的工作中我们还会发现，那些业务逻辑相关的代码通常是固定的，反而是这些“魔法常量”会经常性地改变。
 
-为了避免频繁地修改我们的代码，我们使用订单（*order*）这一概念。通过将每次处理所需的参数按照.CONFIG的格式定义好——我们称之为 *订单模板*，后续的订单会自动按照该模板生成。通过填写相应的值来“告诉”application诸如任务ID、数据位置等必要的信息。一个常见的订单模板格式如下：
+为了避免频繁地修改我们的代码，我们提出订单（*order*）这一术语（terminology）。通过将每次处理所需的参数按照.CONFIG的格式定义好——我们称之为 *订单模板*，后续的订单会自动按照该模板生成。通过填写相应的内容来“告诉”application诸如任务ID、数据位置等必要的信息。一个常见的订单模板格式如下：
 
 ```
 ?cityscape/template.cfg
@@ -221,7 +221,7 @@ $ python manage.py genconf -c trial.cfg
 如果你是在Linux或macOS X平台上运行，并且已经安装了 *vim* 的话，那么此时会用vim的打开你刚才创建的 *cityscape/configs/trial.cfg* 已提供一个快速编辑的界面。
 
 ```
-你可以通过在 tutorial/tutorial/settings.py 中设置EDITOR的值来使用你喜欢的文本编辑器——只要保证它能通过在命令行里指定文件名的方式打开即可。
+你可以通过在 tutorial/tutorial/settings.py 中设置EDITOR的值来使用你喜欢的文本编辑器——只要保证它能通过在命令行里指定文件名的方式打开。
 此外，你还可以通过 editconf 命令快速打开一个订单文件，以对其进行修改。
 ```
 
@@ -250,13 +250,13 @@ class Upload(actions.AbstractAction):
         ···
 ```
 
-完成以上修改后，在命令行里运行（run）时通过指定订单文件名称就可以按照该订单的配置来执行——我们通过指定使用 *trail.cfg* 完成与上一节相同的功能：
+完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trail.cfg* 完成与上一节相同的功能：
 
 ```
 $ python manage.py run cityscape -a upload -c trail.cfg
 ```
 
-将 **action** 的接口独立出来之后我们发现，如之前期望的，很多动作是可以被复用的。我们也确实在 *moose.actions* 模块中定义了一些常见的动作，比如 *upload.SimpleUpload*, *upload.ReferredUpload*, *upload.MultipleUpload* 等等。我们查阅相应[API文档]()发现之前编写的 action: upload 已经被 *SimpleUpload* 实现了，只需要继承它并做些细微的调整即可。因此，我们的最终版本是这样的：
+将 **action** 的接口独立出来之后我们发现，如之前期望的，很多动作可以被复用。我们也确实在 *moose.actions* 模块中定义了一些常见的动作，比如 *upload.SimpleUpload*, *upload.ReferredUpload*, *upload.MultipleUpload* 等等。通过查阅相应的[API文档]()发现之前编写的 action: upload 已经被 *SimpleUpload* 实现了，只需要继承它并做些细微的调整即可。因此，我们的最终版本是这样的：
 
 ```python
 # cityscape/actions.py
