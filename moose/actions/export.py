@@ -12,6 +12,7 @@ from moose.utils.module_loading import import_string
 from moose.conf import settings
 
 from .base import AbstractAction, IllegalAction
+from .download import download, DownloadStat
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,11 @@ class SimpleExport(BaseExport):
     fetcher_class = fetch.BaseFetcher
     use_cache = True
 
+    def handle(self, model, context):
+        title = context['title']
+        dst = os.path.join(self.app.data_dirname, title)
+        model.dump(dst)
+
     def fetch(self, context):
         task_id = context['task_id']
         if self.use_cache:
@@ -109,3 +115,32 @@ class SimpleExport(BaseExport):
         else:
             queryset = self.fetcher.fetch(project_id=task_id)
         return queryset
+
+
+class DownloadAndExport(SimpleExport):
+    """
+    Downloads raw files meanwhile exporting the result.
+    """
+    overwrite_conflict = False
+
+    def run(self, **kwargs):
+        context = self.get_context(kwargs)
+        queryset = self.fetch(context)
+        stat = DownloadStat()
+        output = []
+        urls = []
+        neffective = 0
+        data_model_cls = import_string(self.data_model)
+        for item in queryset:
+            dm = data_model_cls(item)
+            if dm.is_effective():
+                neffective += 1
+                self.handle(dm, context)
+                urls.append((dm.filelink(context['task_id']), dm.filepath))
+
+        dst = os.path.join(self.app.data_dirname, context['title'])
+        stat = DownloadStat()
+        download(urls, dst, stat, overwrite=self.overwrite_conflict)
+        output.append("%d results processed." % neffective)
+        output.append(str(stat))
+        return '\n'.join(output)

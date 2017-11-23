@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import math
-import logging
+import json
 
 from moose.connection.cloud import AzureBlobService
 from moose.shortcuts import ivisit
@@ -9,6 +9,7 @@ from moose.conf import settings
 
 from .base import AbstractAction, IllegalAction
 
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +40,7 @@ class BaseUpload(AbstractAction):
     """
     use_azure = True
     gen_index = True
+    default_pattern = None
 
     def get_context(self, kwargs):
         if kwargs.get('app'):
@@ -47,7 +49,7 @@ class BaseUpload(AbstractAction):
             raise IllegalAction("Missing argument: 'app_config'.")
 
         if self.use_azure:
-            sazure_setting = kwargs.get('azure', settings.AZURE)
+            azure_setting = kwargs.get('azure', settings.AZURE)
 
             if azure_setting:
                 self.azure = AzureBlobService(azure_setting)
@@ -69,7 +71,7 @@ class BaseUpload(AbstractAction):
 
         context = {
             'root': config.common['root'],
-            'relpath': config.common['relpath'],
+            'relpath': config.common['relpath'] if config.common['relpath'] else config.common['root'],
             'task_id': config.upload['task_id'],
         }
 
@@ -87,7 +89,7 @@ class BaseUpload(AbstractAction):
         Finds all files located in root which matches the given pattern.
         """
         root        = context['root']
-        pattern     = context.get('pattern', None)
+        pattern     = context.get('pattern', self.default_pattern)
         ignorecase  = context.get('ignorecase', True)
         logger.debug("Visit '%s' with pattern: %s..." % (root, pattern))
 
@@ -116,6 +118,7 @@ class BaseUpload(AbstractAction):
         files = self.lookup_files(context)
         passed, removed = self.partition(files, context)
 
+        blob_pairs = []
         relpath = context['relpath']
         for filepath in passed:
             blobname = os.path.relpath(filepath, relpath)

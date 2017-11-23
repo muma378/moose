@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import abc
+import threading
 
 class IllegalAction(Exception):
 	"""action was halted somehow"""
@@ -24,3 +25,10 @@ class AbstractAction:
 	@abc.abstractmethod
 	def run(self, **kwargs):
 		raise NotImplementedError
+
+
+class MixinAction(threading.Thread):
+	"""
+	A mixin class to provide the object extra ability.
+	"""
+	pass
