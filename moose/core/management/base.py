@@ -396,13 +396,13 @@ class ConfigsCommand(BaseCommand):
         if self.multiple_configs_allowed:
             parser.add_argument(
                 '-c', '--config', metavar='config_descs', action='append',
-                help=help_text,
+                help=help,
                 )
         else:
             # only one config description was allowed to specified
             parser.add_argument(
                 '-c', '--config', metavar='config_desc', action='store',
-                help=help_text,
+                help=help,
             )
 
 

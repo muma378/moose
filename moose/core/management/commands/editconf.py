@@ -16,9 +16,8 @@ class Command(ConfigsCommand):
 
     # TODO: edits the config file with arguments, no need to open an editor
     # replaces the option with a value specified in the command line.
-	def add_arguments(self, parser):
-		super(Command, self).add_arguments(parser)
-
+    def add_arguments(self, parser):
+        super(Command, self).add_arguments(parser)
 
     def handle_config_loader(self, app_config, config_loader, **options):
         subprocess.check_call([self.editor, config_loader.path])
