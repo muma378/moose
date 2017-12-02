@@ -4,7 +4,7 @@ import copy
 import json
 import inspect
 
-from moose.utils._os import makedirs, makeparents
+from moose.utils._os import makedirs
 from moose.conf import settings
 import fields
 
@@ -87,12 +87,6 @@ class BaseModel(object):
     def to_string(self):
         return json.dumps(self.data, ensure_ascii=False).encode(settings.FILE_CHARSET)
 
-    def dump(self, dst):
-        filepath = os.path.join(dst, self.normpath)
-        makeparents(filepath)
-        filename, _ = os.path.splitext(filepath)
-        with open(filename+self.output_suffix, 'w') as f:
-            f.write(self.to_string())
 
 
 class BaseTaskInfo(object):

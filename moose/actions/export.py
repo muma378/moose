@@ -8,6 +8,7 @@ from moose.connection import query
 from moose.connection import database
 from moose.connection import fetch
 from moose.connection.cloud import azure
+from moose.utils._os import makedirs, makeparents
 from moose.utils.module_loading import import_string
 from moose.conf import settings
 
@@ -97,7 +98,14 @@ class SimpleExport(BaseExport):
     def handle(self, model, context):
         title = context['title']
         dst = os.path.join(self.app.data_dirname, title)
-        model.dump(dst)
+        self.dump(model, dst)
+
+    def dump(self, model, dst):
+        filepath = os.path.join(dst, model.normpath)
+        makeparents(filepath)
+        filename, _ = os.path.splitext(filepath)
+        with open(filename+model.output_suffix, 'w') as f:
+            f.write(model.to_string())
 
     def fetch(self, context):
         task_id = context['task_id']
