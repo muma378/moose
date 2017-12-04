@@ -51,8 +51,8 @@ Moose完全由Python编写并且依赖于以下几个关键的Python包（Packag
 2. 创建一个新的application;
 3. 编写动作(action)：upload，完成数据上传和索引建立；
 4. 创建订单(order)，定义动作接口；
-4. 抽象模型(model)，导出标注数据；
-5. 完成单元化测试。
+5. 抽象模型(model)，导出标注数据；
+6. 完成单元化测试。
 
 ### 创建一个Moose项目
 
@@ -273,7 +273,7 @@ class Upload(actions.upload.SimpleUpload):
 
 由于标注结果的格式通常不统一，并且项目内可能会因为需求或效率的变化而使用不同的模板，这导致产生的数据差异较大，功能难以被复用。因此，我们需要抽象出一层“适配器”的角色，通过定义并向其他对象暴露一系列统一的接口，其他对象只需要调用该接口，不用了解具体实现。同时，这些接口在子类中被继承和实现（或映射），不需要去关心这个接口将被用于做什么。
 
-我们在 *moose.models.BaseModel* 中定义了一些常见的接口，诸如：*filepath*、 *data*、*filelink(task_id)*、*is_effective()* 等等，有些提供了默认实现，另外一些则要求子类必须实现。他们具体的作用可以参考[API文档 model]()。现在，我们按如下：
+我们在 *moose.models.BaseModel* 中定义了一些常见的接口，诸如：*filepath*、 *data*、*filelink(task_id)*、*is_effective()* 等等，有些提供了默认实现，另外一些则要求子类必须实现。他们具体的作用可以参考[API文档 model]()。现在，我们输入以下内容：
 
 ```python
 # cityscape/actions.py
@@ -309,12 +309,16 @@ class CityscapeModel(models.BaseModel):
 
 ```
 
-我们简单解释一下其中的设计要点及依赖关系：
-* 与 *SimpleUpload* 相似, *actions.export.SimpleExport* 控制整个（导出）动作的流程，包括从数据库中提取标注数据 => 加载数据以实例化 *Model*  => 调用实例化后的接口，获取一致的数据并进行相应处理；
-* *BaseExport.query_class* 定义了查询类，通过继承 *connection.query.BaseQuery* 实现自定义查询——也就是说当查询条件发生了变化才需要进行修改；
-* *BaseExport.query_context* 定义了数据库使用的驱动类（*\*_handler*）和表实际名称到查询类中使用的别名的映射（*\*_context*）——也就是说只有当使用的数据库发生了变化才需要修改；
-* 每条标注数据以 *{'source': {'url': ''}, 'result': {'markResult': ''}}* 的格式返回，其中，顶层的字段 *source* 和 *result* 分别对应数据库中的表示该数据原始信息和标注信息的两张表，它们的子字段则可能随模板不同而变化；
-* 为了方便接下来对标注数据中的 *annotation['result']['markResult']* 的调用，*CityscapeModel* 通过声明 *mark_result = fields.ResultMappingField(prop='markResult')* 完成了字典的键值到类的属性的映射；
-* *cityscape.models.CityscapeModel* 继承 *models.BaseModel* 并实现了接口 *data* 以提供一个可读性更好的数据格式，这个接口随后会被 *SimpleExport* 的 *dump()* 调用以将其写至文本文件中，完成我们所谓的导出功能。
+我们解释一下其中的设计要点：
+* 与 *SimpleUpload* 相似, *actions.export.SimpleExport* 控制整个（导出）动作的流程，包括**从数据库中提取标注数据 => 加载数据以实例化Model  => 调用实例化后的接口，对标准化后的数据进行处理**；
+* *BaseExport.query_class* 定义了查询类，通过继承 *connection.query.BaseQuery* 实现自定义查询——也就是说**当查询条件发生了变化**才需要进行修改；
+* *BaseExport.query_context* 定义了数据库使用的驱动类（*\*_handler*）和表实际名称到查询类中使用的别名的映射（*\*_context*）——也就是说只有**当使用的数据库发生了变化**才需要修改；
+* 每条标注数据以 *{'source': {'url': ''}, 'result': {'markResult': ''}}* 的格式返回，其中，顶层的字段 *source* 和 *result* 分别对应数据库中的表示该数据**原始信息和标注信息**的两张表，它们的子字段则可能随模板不同而变化；
+* 为了方便接下来对标注结果中 *annotation['result']['markResult']* 的调用，*CityscapeModel* 通过声明 *mark_result = fields.ResultMappingField(prop='markResult')* 完成了**字典的键值到类的属性的映射**；
+* *cityscape.models.CityscapeModel* 继承 *models.BaseModel* 并实现了接口 *data* 以提供一个**可读性更好的数据格式**，这个接口随后会被 *SimpleExport* 的 *dump()* 调用以将其写至文本文件中，完成我们所谓的导出功能。
 
-这个过程
+基于原始数据和处理数据分离的原则设计，即使中途更换了模板，我们也只需新建一个 *NewCityscapeModel* 提供同样的标准化接口（如*data*），并修改 *data_model = 'cityscape.models.NewCityscapeModel'* 即可。
+
+
+### 接下来......
+到这里，你就已经掌握了Moose最核心的思想和内容，其他的特性和内容万变不离其宗，基本上都是在这层设计思想上不断细化和完善的结果。这听起来似乎剩下的内容都不重要，然而，正像我们设计Moose的初衷是为了最大化的复用代码、节省时间，其他的模块和语法糖也是基于同样的目的。所以，去浏览下这些功能吧，你了解的模块和特性越多，你将来所花费的时间也会越少。因为很有可能你碰到的问题，我们已经碰到过了！
