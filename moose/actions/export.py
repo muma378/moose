@@ -134,7 +134,6 @@ class DownloadAndExport(SimpleExport):
     def run(self, **kwargs):
         context = self.get_context(kwargs)
         queryset = self.fetch(context)
-        stat = DownloadStat()
         output = []
         urls = []
         neffective = 0
