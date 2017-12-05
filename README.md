@@ -214,7 +214,7 @@ title = 2017第?期图片标注任务
 
 我们将上面的模板复制到 *cityscape/template.cfg* 文件中，然后在命令行中运行：
 
-```python
+```
 $ python manage.py genconf -c trial.cfg
 ```
 
