@@ -1,0 +1,16 @@
+${unicode_literals}from moose import models
+
+class ${camel_case_app_name}Model(models.GeoJSONModel):
+
+    @property
+    def filepath(self):
+        return self.source['?']
+
+    @property
+    def data(self):
+        segmentations = []
+        for geometry, properties in self.ifeatures:
+            segmentations.append({
+                '': '',
+            })
+        return segmentations

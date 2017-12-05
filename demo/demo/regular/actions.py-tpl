@@ -1,0 +1,17 @@
+${unicode_literals}from moose import actions
+
+from moose import actions
+
+class Upload(actions.upload.SimpleUpload):
+    default_pattern = ('*.jpg', '*.png')
+
+    def index(self, blob_pairs, context):
+        catalog = []
+        for blobname, filename in blob_pairs:
+            catalog.append({
+                '': ''
+            })
+        return catalog
+
+class Export(actions.export.SimpleExport):
+    data_model = '${app_name}.models.${camel_case_app_name}Model'

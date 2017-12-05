@@ -1,0 +1,10 @@
+${unicode_literals}from moose.apps import AppConfig
+
+
+class ${camel_case_app_name}Config(AppConfig):
+    name = '${app_name}'
+    verbose_name = u""
+
+    def ready(self):
+        self.register('Upload', 'upload')
+        self.register('Export', 'export')

@@ -163,6 +163,7 @@ AZURE_FILELINK = 'http://crowdfile.blob.core.chinacloudapi.cn/{task_id}/{file_pa
 PREFERRED_PROJECT_NAME = u"%d第%d期图片标注任务"
 
 TIME_ZONE = 'Asia/Shanghai'
+FILE_CHARSET = 'utf-8'
 
 RESERVED_FILES = [
     '.gitignore',
