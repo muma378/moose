@@ -12,7 +12,7 @@ Welcome to Moose's documentation!
 
    overview
    install
-   tutorial
+   quickstart
    api
    contributing
    news
