@@ -1,5 +1,6 @@
-.. _install:
+.. _intro-install:
 
+==============
 安装指南
 ==============
 
@@ -24,13 +25,13 @@ Moose 运行在Python 2.7和Python 3.3及以上版本。
 
     $ git clone https://github.com/muma378/moose.git
 
-   这会为你在当前目录下创建一个名为**moose**文件夹。
+   这会为你在当前目录下创建一个名为 **moose** 文件夹。
 3. 确认你的Python解释器可以加载Moose代码。最常见的办法是使用 `virtualenv <https://virtualenv.pypa.io/en/stable/>`_， `virtualenvwrapper <https://virtualenvwrapper.readthedocs.io/en/latest/>`_ 和 `pip <https://pip.pypa.io/>`_ 。
 4. 在安装和激活virtualenv之后，运行以下命令：::
 
     $ pip install -e moose/
 
-   现在，Moose的代码就可以被导入（importable），并且可以使用**moose-admin**等命令行工具了。至此，我们就完成了安装！
+   现在，Moose的代码就可以被导入（importable），并且可以使用 **moose-admin** 等命令行工具了。至此，我们就完成了安装！
 
 当你想要更新你的Moose代码时，只需要在moose文件夹内运行命令 **git pull**，Git便会自动下载任何更新。
 
