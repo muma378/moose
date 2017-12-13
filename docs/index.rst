@@ -19,7 +19,7 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
    intro/examples
 
 :doc:`intro/overview`
-    了解Moose是什么以及它适用于什么场景。
+    了解Moose是什么以及它用于解决什么问题。
 
 :doc:`intro/install`
     在你的电脑上安装Moose。
