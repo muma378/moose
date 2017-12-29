@@ -22,10 +22,17 @@ class BaseExport(AbstractAction):
     Class to simulate the action of exporting, 5 procedures are accomplished
     in sequence:
 
-    `parse`
+    `get_context`
         Converts config object to a dict of context.
 
-    `explore`
+    `parse`
+        Entry for subclass to get the user-defined data.
+
+    `fetch`
+        Query and fetch annotation data from the database.
+
+    `handle`
+        Entry for subclass to
     """
     data_model = ''
     query_class = None
@@ -94,6 +101,7 @@ class SimpleExport(BaseExport):
     }
     fetcher_class = fetch.BaseFetcher
     use_cache = True
+    warranty_period = 1     # hour
 
     def handle(self, model, context):
         title = context['title']
@@ -107,12 +115,16 @@ class SimpleExport(BaseExport):
         with open(filename+model.output_suffix, 'w') as f:
             f.write(model.to_string())
 
+    def is_expired(self, filepath):
+        delta = time.time() - os.stat(filepath).st_ctime
+        return delta > self.warranty_period * 3600
+
+
     def fetch(self, context):
         task_id = context['task_id']
         if self.use_cache:
             cache_pickle = os.path.join(self.app.data_dirname, str(task_id)+'.pickle')
-            # TODO: add expired date range
-            if os.path.exists(cache_pickle):
+            if os.path.exists(cache_pickle) and not self.is_expired(cache_pickle):
                 logger.warning("Using cached queyrset of task '%s'." % task_id)
                 with open(cache_pickle) as f:
                     queryset = pickle.load(f)

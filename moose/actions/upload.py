@@ -6,6 +6,7 @@ import json
 from moose.connection.cloud import AzureBlobService
 from moose.shortcuts import ivisit
 from moose.conf import settings
+from moose.utils.encoding import smart_text
 
 from .base import AbstractAction, IllegalAction
 
@@ -84,11 +85,10 @@ class BaseUpload(AbstractAction):
         """
         return {}
 
-    def lookup_files(self, context):
+    def lookup_files(self, root, context):
         """
         Finds all files located in root which matches the given pattern.
         """
-        root        = context['root']
         pattern     = context.get('pattern', self.default_pattern)
         ignorecase  = context.get('ignorecase', True)
         logger.debug("Visit '%s' with pattern: %s..." % (root, pattern))
@@ -115,7 +115,7 @@ class BaseUpload(AbstractAction):
         """
         List files to upload and belonged container.
         """
-        files = self.lookup_files(context)
+        files = self.lookup_files(context['root'], context)
         passed, removed = self.partition(files, context)
 
         blob_pairs = []
@@ -230,7 +230,7 @@ class ReferredUpload(SimpleUpload):
         return catalog
 
 
-class MultipleUpload(AbstractAction):
+class MultipleUpload(SimpleUpload):
     """
     Upload multiple tasks in an action.
     """
@@ -258,3 +258,21 @@ class MultipleUpload(AbstractAction):
             start = i * num_per_share
             end = min(start+num_per_share, len(blob_pairs))
             yield container_name, blob_pairs[start:end]
+
+
+class DirsUpload(SimpleUpload):
+    remove_dirname = True
+
+    def parse(self, config, kwargs):
+        return {
+            'dirnames': [ smart_text(x) for x in config.upload.get('dirnames', [''])]
+        }
+
+    def split(self, all_blob_pairs, context):
+        task_ids = context['task_id']
+        dirnames = context['dirnames']
+        for dirname, task_id in zip(dirnames, task_ids):
+            sub_blob_pairs = filter(lambda x: dirname in x[1], all_blob_pairs)
+            if self.remove_dirname:
+                sub_blob_pairs = [ (os.path.relpath(x[0], dirname), x[1]) for x in sub_blob_pairs]
+            yield str(task_id), sub_blob_pairs

@@ -12,6 +12,13 @@ logger = logging.getLogger(__name__)
 
 class BaseDownloader(threading.Thread):
     """
+    Class to handle downloading jobs in a multi-threading way,
+    it performs like a "pipeline", which defines an INPUT end and
+    an OUTPUT end. They both are queues to accept data from the
+    last node and send to the following one.
+
+    Meanwhile, we defined functions `set_up` and `tear_down` to
+    simulate the queues' action.
 
     """
     def __init__(self, src_queue=None, dst_queue=None,
@@ -63,7 +70,22 @@ class DownloadStat:
         return 'Download Result: OK: %d, FAILED: %d' % (self.nok, self.nfail)
 
 
-def download(urls, dirpath, stat, overwrite=False):
+def download(urls, dirpath, overwrite=False):
+    """
+    A convenient way to download files to a directory. It returns a
+    "DownloadStat" object to report the statistic of result.
+
+    `urls`
+        A list of pair consists of filelink and relpath.
+        ('http://www.abc.com/path/to/location.jpg', 'path/to/location.jpg')
+
+    `dirpath`
+        Path to put all downloaded files.
+
+    `overwrite`
+        A flag to indicate whether to overwrite files existed.
+    """
+    stat = DownloadStat()
     src_queue = Queue()
 
     def write(response):
@@ -88,3 +110,4 @@ def download(urls, dirpath, stat, overwrite=False):
         src_queue.put(task)
 
     src_queue.join()
+    return stat
