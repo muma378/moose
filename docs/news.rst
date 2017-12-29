@@ -3,6 +3,11 @@
 Release notes
 =============
 
+Moose 0.9.3Beta (2017-12-29)
+-----------------------------
+* 由于 MySQLdb_ 在Windows和Mac OSX上安装经常失败导致Moose安装中断，因此我们移除了对 MySQLdb_ 和 pysmb_ 的依赖声明。依赖这两个包的模块依然存在，但由于使用较少基本不会造成较大影响，但如果需要时请尝试手动安装。
+
+
 Moose 0.9.0Beta (2017-12-06)
 -----------------------------
 
@@ -13,3 +18,7 @@ Moose 0.9.0Beta (2017-12-06)
 * 运行App；
 * 抽象了常用的连接；
 * 内置常见的行为类；
+
+
+.. _MySQLdb: https://mysqlclient.readthedocs.io/
+.. _pysmb: https://pysmb.readthedocs.io/

@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
 
 
-VERSION = (0, 9, 0, 'alpha', 0)
+VERSION = (0, 9, 2, 'alpha', 0)
 
 def get_version(version=None):
-    return '0.9.0'
+    return '0.9.2'
 
 __version__ = get_version(VERSION)
 
