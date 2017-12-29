@@ -63,16 +63,16 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
     定义接口，创建订单。
 
 :doc:`topics/app-templates`
-    打包你的app，实现更少的编码。
+    打包app，复用代码结构。
 
 :doc:`topics/connections`
-    从Azure，Mongo，SQLServer和MySQL等外部连接中提取数据。
+    连接Azure，Mongo，SQLServer/MySQL以及SMB。
 
 :doc:`topics/process`
-    提供便捷和统一的多媒体处理类和函数。
+    便捷和统一的多媒体处理类和函数。
 
 :doc:`topics/settings`
-    了解Moose中各个配置项的含义。
+    了解Moose的各个配置项。
 
 :doc:`topics/exceptions`
     异常抛出说明和推荐使用惯例。
@@ -94,4 +94,4 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
     参与到Moose的开发中来！
 
 :doc:`news`
-    更新日志
+    更新日志。
