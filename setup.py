@@ -47,10 +47,8 @@ setup(
     install_requires=[
         'opencv-python>=3.3.0.10',
         'Pillow>=3.4.1',
-        'MySQL-python>=1.2.5',
         'pymongo>=3.5.1',
         'pymssql>=2.1.3',
-        'pysmb>=1.1.17',
         'azure>=2.0.0rc6',
         'chardet>=3.0.4',
     ],
