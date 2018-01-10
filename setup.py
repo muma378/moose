@@ -51,6 +51,7 @@ setup(
         'pymssql>=2.1.3',
         'azure>=2.0.0rc6',
         'chardet>=3.0.4',
+        'pytz>=2017.2',
     ],
     zip_safe=False,
     classifiers=[

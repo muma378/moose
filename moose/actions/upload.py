@@ -44,11 +44,6 @@ class BaseUpload(AbstractAction):
     default_pattern = None
 
     def get_context(self, kwargs):
-        if kwargs.get('app'):
-            self.app = kwargs['app']
-        else:
-            raise IllegalAction("Missing argument: 'app_config'.")
-
         if self.use_azure:
             azure_setting = kwargs.get('azure', settings.AZURE)
 

@@ -108,8 +108,8 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
             # Phase 1. establishes the connection to azure and do uploading files
             azure = AzureBlobService(settings.AZURE)
-            # lists all files in the data directory
-            images = self.list_all_images('/data/cityscape/vol1')
+            # Assume there was only one file in '/data/cityscape/vol1'.
+            images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
             blobs = azure.upload(task_id, images)
 
             # Phase 2. creates the index file to declare the relationships
@@ -125,22 +125,30 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
 
 
-为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *list_all_images* 方法和 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.AbstractAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
+为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.AbstractAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
 
 为了使得这个 *Action* 可以在命令行里被调用，我们还需要做一件事情——在 *AppConfig* 中注册该动作。在 *cityscape/apps.py* 中添加以下内容： ::
 
     class CityscapeConfig(AppConfig):
+        name = 'cityscape'
+        verbose_name = u"街景道路标注"
 
         def ready(self):
             self.register('Upload', 'upload')   # now we can type `-a upload` to refer the action 'cityscape.actions.Upload'
 
 
-注册完成之后，我们就可以在命令行中通过指定 *-a upload* 选项来运行我们之前在 *cityscape.actions.Upload* 中编写的代码了。在与之前相同的位置下输入： ::
+注册完成之后，我们就可以在命令行中通过指定 *-a upload* 选项来运行我们之前在 *cityscape.actions.Upload* 中编写的代码了。在'cityscape/configs/'下创建一个文件叫"placeholder.cfg", 我们在其中输入以下内容： ::
 
-    $ touch cityscape/configs/null.cfg
-    $ python manage.py run cityscape -a upload -c null.cfg
+    [meta]
+    keys = upload
 
-此时，你应该可以在命令行中看见文件上传的进度条，以及生成的 *cityscape/data/10000.json* 文件了。至于在命令行中创建的 *null.cfg* 是起什么作用，我们会在下一节中进行详细说明。
+    [upload]
+
+然后在与之前相同的位置下输入： ::
+
+    $ python manage.py run cityscape -a upload -c placeholder.cfg
+
+此时，你应该可以在命令行中看见文件上传的进度条，以及生成的 *cityscape/data/10000.json* 文件了。至于我们手动创建的 *placeholder.cfg* 是起什么作用，我们会在下一节中进行详细说明。
 
 创建订单(order)，定义动作接口
 --------------------------------
@@ -169,7 +177,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
 我们将上面的模板复制到 *cityscape/template.cfg* 文件中，然后在命令行中运行： ::
 
-    $ python manage.py genconf -c trial.cfg
+    $ python manage.py genconf cityscape -c trial.cfg
 
 如果你是在Linux或macOS X平台上运行，并且已经安装了 *vim* 的话，那么此时会用vim的打开你刚才创建的 *cityscape/configs/trial.cfg* 已提供一个快速编辑的界面。
 
@@ -186,6 +194,9 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     [upload]
     task_id = 10000
 
+    [export]
+    title = 2017第2000期图片标注任务
+
 ::
 
     # cityscape/actions.py
@@ -196,7 +207,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
             task_id = config.upload['task_id']
             ···
 
-            images = self.list_all_images(config.common['root'])
+            images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
             ···
 
 完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trail.cfg* 完成与上一节相同的功能： ::
@@ -235,7 +246,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
     # Create your models here.
     class CityscapeModel(models.BaseModel):
-        mark_result = fields.ResultMappingField(prop='markResult')
+        mark_result = fields.ResultMappingField(prop_name='markResult')
 
         @property
         def filepath(self):
@@ -261,8 +272,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 - 为了方便接下来对标注结果中 *annotation['result']['markResult']* 的调用，*CityscapeModel* 通过声明 *mark_result = fields.ResultMappingField(prop='markResult')* 完成了 **字典的键值到类的属性的映射**；
 - *cityscape.models.CityscapeModel* 继承 *models.BaseModel* 并实现了接口 *data* 以提供一个 **可读性更好的数据格式**，这个接口随后会被 *SimpleExport* 的 *dump()* 调用以将其写至文本文件中，完成我们所谓的导出功能。
 
-基于原始数据和处理数据分离的原则设计，即使中途更换了模板，我们也只需新建一个 *NewCityscapeModel* 提供同样的标准化接口（如 *data* ），并修改 *data_model = 'cityscape.models.NewCityscapeModel'* 即可。
+基于原始数据和处理数据分离的原则设计，即使中途更换了模板，我们也只需新建一个 *NewCityscapeModel* 提供同样的标准化接口（如 *data* ），并修改 *data_model = 'cityscape.models.NewCityscapeModel'* 即可。此时，我们在命令行中输入： ::
 
+    $ python manage.py run cityscape -a export -c trail.cfg
+
+即可完成导出标注结果。
 
 接下来......
 ---------------
