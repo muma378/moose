@@ -10,3 +10,4 @@ class CityscapeConfig(AppConfig):
     def ready(self):
         self.register('StandardUpload', 'upload', default=True)
         self.register('Export', 'export')
+        self.register('PastTasksUpload', 'upload')

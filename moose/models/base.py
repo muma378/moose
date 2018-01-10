@@ -5,6 +5,7 @@ import json
 import inspect
 
 from moose.utils._os import makedirs
+from moose.utils.encoding import force_bytes
 from moose.conf import settings
 import fields
 
@@ -61,7 +62,7 @@ class BaseModel(object):
         return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(task_id))
 
     def filelink(self, task_id):
-        return settings.AZURE_FILELINK.format(task_id=task_id, file_path=self.filepath)
+        return settings.AZURE_FILELINK.format(task_id=task_id, file_path=force_bytes(self.filepath))
 
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
@@ -85,8 +86,7 @@ class BaseModel(object):
         raise NotImplementedError("Subclass of BaseModel must provide data() method.")
 
     def to_string(self):
-        return json.dumps(self.data, ensure_ascii=False).encode(settings.FILE_CHARSET)
-
+        return force_bytes(json.dumps(self.data, ensure_ascii=False))
 
 
 class BaseTaskInfo(object):

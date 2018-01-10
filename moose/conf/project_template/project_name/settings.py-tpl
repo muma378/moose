@@ -21,6 +21,13 @@ INSTALLED_APPS = []
 # List of strings representing apps to output logs to self-defined files.
 LOGGING_APPS = []
 
+# Patterns of images to be found, not including '*.bmp', '*.gif', '*.tiff'
+# cause it may bring problem in drawing pictures
+IMAGE_PATTERN = ('*.jpg', '*.png', '*.jpeg')
+ALL_IMAGE_PATTERN = ('*.jpg', '*.png', '*.jpeg', '*.bmp', '*.gif', '*.tiff')
+
+AUDIO_PATTERN = ('*.wav', '*.mp3')
+
 
 ###########
 # CONFIGS #

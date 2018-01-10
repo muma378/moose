@@ -18,7 +18,8 @@ class BaseDownloader(threading.Thread):
     last node and send to the following one.
 
     Meanwhile, we defined functions `set_up` and `tear_down` to
-    simulate the queues' action.
+    generate and digest data.
+
 
     """
     def __init__(self, src_queue=None, dst_queue=None,

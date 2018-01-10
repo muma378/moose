@@ -20,7 +20,7 @@ class AbstractAction:
 	__metaclass__ = abc.ABCMeta
 
 	def __init__(self, app_config):
-		self.app_config = app_config
+		self.app = app_config
 
 	@abc.abstractmethod
 	def run(self, **kwargs):

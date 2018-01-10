@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import math
+import time
 import pickle
 import logging
 
@@ -40,11 +41,6 @@ class BaseExport(AbstractAction):
     fetcher_class = None
 
     def get_context(self, kwargs):
-        if kwargs.get('app'):
-            self.app = kwargs['app']
-        else:
-            raise IllegalAction("Missing argument: 'app_config'.")
-
         if kwargs.get('config'):
             config = kwargs.get('config')
         else:
@@ -107,6 +103,10 @@ class SimpleExport(BaseExport):
         title = context['title']
         dst = os.path.join(self.app.data_dirname, title)
         self.dump(model, dst)
+        self.draw(model, dst)
+
+    def draw(self, model, dst):
+        pass
 
     def dump(self, model, dst):
         filepath = os.path.join(dst, model.normpath)
@@ -118,7 +118,6 @@ class SimpleExport(BaseExport):
     def is_expired(self, filepath):
         delta = time.time() - os.stat(filepath).st_ctime
         return delta > self.warranty_period * 3600
-
 
     def fetch(self, context):
         task_id = context['task_id']
@@ -158,8 +157,7 @@ class DownloadAndExport(SimpleExport):
                 urls.append((dm.filelink(context['task_id']), dm.filepath))
 
         dst = os.path.join(self.app.data_dirname, context['title'])
-        stat = DownloadStat()
-        download(urls, dst, stat, overwrite=self.overwrite_conflict)
+        stat = download(urls, dst, overwrite=self.overwrite_conflict)
         output.append("%d results processed." % neffective)
         output.append(str(stat))
         return '\n'.join(output)
