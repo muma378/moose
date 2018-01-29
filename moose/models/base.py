@@ -34,16 +34,16 @@ class BaseModel(object):
                     self.__setattr__(field, obj.get_val(self.annotation))
 
     @property
-    def filename(self):
-        return os.path.basename(self.filepath)
-
-    @property
     def filepath(self):
         raise NotImplementedError
 
     @property
+    def filename(self):
+        return os.path.basename(self.filepath)
+
+    @property
     def normpath(self):
-        return os.path.normcase(self.filepath)
+        return os.path.normpath(self.filepath)
 
     @property
     def name(self):
@@ -62,7 +62,7 @@ class BaseModel(object):
         return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(task_id))
 
     def filelink(self, task_id):
-        return settings.AZURE_FILELINK.format(task_id=task_id, file_path=force_bytes(self.filepath))
+        return settings.AZURE_FILELINK.format(task_id=str(task_id), file_path=force_bytes(self.filepath))
 
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
