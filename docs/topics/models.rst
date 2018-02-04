@@ -178,6 +178,110 @@ moose.models.GeoJSONModel
 示例中的 ``SatelliteModel`` 同样对 :meth:`~.filepath` 和 :meth:`~.data` 提供了实现，但是稍有不同的是，在方法 :meth:`~.data` 中，通过对 :meth:`~.ifeatures` 的迭代，我们获得了所有的被标注对象的标签和坐标值，将其组装并返回。
 
 
+.. _topics-fields-ref:
+
+moose.models.fields
+=====================
+
+通过上面两个例子，大家基本能了解到，所谓Model对数据的建模，是对外部数据进行计算和重组，以使其表现出更一致和更有意义的接口。就像把乐高积木的一块块组件搭建起来，构成一个有门有窗有塔楼的城堡一样。即使每套乐高积木的组件可能不尽相同，但是我们总能通过一些转换和搭配组装起一个基本功能一致的城堡。
+
+与此同时，对于那些不需要计算和重组等复杂操作的数据，我们提供了 ``fields`` 这一模块，用以完成字典的键到类的属性的映射，避免多层嵌套的引用。
+
+
+fields.AbstractMappingField
+----------------------------
+
+.. class:: fields.AbstractMappingField
+
+    抽象类，定义了 get_val() 这一虚函数，它的所有子类都应实现该方法。
+
+
+fields.CommonMappingField
+----------------------------
+
+.. class:: fields.CommonMappingField(dict_name, prop_name, default=None)
+
+    :class:`~.AbstractMappingField` 的子类，定义了对 ``source`` 或 ``result`` 表的键值的映射。
+
+    :param str dict_name: 只能为 ``source`` 或 ``result``，代表所选择映射的表；
+    :param str prop_name: 代表 ``source`` 或 ``result`` 对应表中的键名；
+    :param default: ``prop_name`` 不存在是默认返回的值。
+
+    .. method:: get_val(anno):
+
+        从对应表（dict_name）中取出对应键值（prop_name）的过程。 ::
+
+            def get_val(self, anno):
+        		return anno[self.dict_name].get(self.prop_name, self.default)
+
+        :param dict anno: 同 :class: `~.BaseModel` 的实例化参数 ``annotation`` 一样，通过 :class:`~moose.connection.fetch` 查询并提取出来的结果。
+
+fields.SourceMappingField
+----------------------------
+
+.. class:: fields.SourceMappingField(prop_name, default=None)
+
+    :class:`~.CommonMappingField` 的子类，定义了对 ``source`` 表的键值的映射。
+
+    .. attribute:: dict_name
+
+        为常量"source"。
+
+
+fields.ResultMappingField
+----------------------------
+
+.. class:: fields.ResultMappingField(prop_name, default=None)
+
+    :class:`~.CommonMappingField` 的子类，定义了对 ``result`` 表的键值的映射。
+
+    .. attribute:: dict_name
+
+        为常量"result"。
+
+
+fields.LambdaMappingField
+----------------------------
+
+.. class:: fields.LambdaMappingField(lambda_fn)
+
+    :class:`~.AbstractMappingField` 的子类，定义了匿名函数 ``lambda_fn`` 完成相应的函数映射。
+
+    :param lambda lambda_fn: 定义了从 ``anno`` 到 ``fn(anno)`` 的过程映射。
+
+
+下面这个例子你已经见到过了，我们稍作了修改： ::
+
+    from moose.models import BaseModel, fields
+
+    class UigurlangModel(BaseModel):
+        """
+        @template_name: 图像文本单词转写V1.0
+        """
+        file_name = fields.SourceMappingField(prop_name='url')
+        mark_result = fields.ResultMappingField(prop_name='markResult')
+
+        @property
+        def data(self):
+            return {
+                "filename": self.file_name,
+                "data": self.mark_result
+                }
+
+其中 ``data`` 与下面的例子是一样的作用： ::
+
+    class UigurlangModel(BaseModel):
+
+        @property
+        def data(self):
+            return {
+                "filename": self.source['url'],
+                "data": self.result['markResult']
+                }
+
+看起来似乎下面这种写法更简洁，然而当实际操作中你被无尽的 ``[]`` 和 ``''`` 淹没的时候，就不会这样认为了！
+
+
 .. _MVC模式: https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller
 .. _GeoJSON: http://geojson.org/
 .. _RFC 7946: https://tools.ietf.org/html/rfc7946
