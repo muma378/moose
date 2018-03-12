@@ -11,5 +11,6 @@ class TrialConfig(AppConfig):
     def ready(self):
         self.register('Upload', 'upload')
         self.register('UploadDirs', 'upload_dirs')
+        self.register('SatellitePicsUpload', 'uploadsp')
         self.register('Export', 'export')
         self.register('DrawAndExport', 'draw')
