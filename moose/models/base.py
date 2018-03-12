@@ -67,9 +67,9 @@ class BaseModel(object):
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
     def is_effective(self):
-        if self.result.get("effective"):
+        if self.result.has_key("effective"):
             return self.result['effective'] in self.effective_values
-        elif self.result.get("Effective"):
+        elif self.result.has_key("Effective"):
             return self.result['Effective'] in self.effective_values
         else:
             raise NotImplementedError("Unknown property to get the validity.")

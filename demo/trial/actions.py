@@ -12,6 +12,19 @@ from demo import settings
 class Upload(actions.upload.SimpleUpload):
     default_pattern = ('*.jpg', '*.png')
 
+
+class SatellitePicsUpload(Upload):
+    """
+    @template_name: 卫星图片标注V2.2
+    """
+    def index(self, blob_pairs, context):
+        catalog = []
+        for blobname, filename in blob_pairs:
+            catalog.append({
+                'url': blobname,
+            })
+        return catalog
+
 class Export(actions.export.SimpleExport):
     data_model = 'trial.models.TrialModel'
 

@@ -117,9 +117,11 @@ def makedirs(dirpath):
     """
     if not os.path.exists(dirpath):
     	os.makedirs(dirpath)
+    return dirpath
 
 def makeparents(filepath):
     """
     Creates directoriea for a filepath.
     """
     makedirs(os.path.dirname(filepath))
+    return filepath

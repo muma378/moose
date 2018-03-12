@@ -15,6 +15,7 @@ class Collection(BaseModel):
     a manager class than a model.
     """
     member_cls = None
+    mark_key = None
 
     def __init__(self, annotation):
         super(Collection, self).__init__(annotation)
