@@ -65,9 +65,9 @@ CONNECTION_SETTINGS = {
 
 # Configs for Azure Blob Service
 AZURE = {
-  'ACCOUNT': '',
-  'KEY': '',
-  'ENDPOINT': '',
+  'ACCOUNT': 'crowdfile',
+  'KEY': 'LPKAQIkvntlpsZm+EBTB2JfjILpObuRfYzwhmBk31/ILoafSLzwkJaBQDhwcW4rpXks7UGi3+e2+1eCHHCn+SQ==',
+  'ENDPOINT': 'core.chinacloudapi.cn',
   "TIMEOUT": 300,
 }
 
@@ -75,11 +75,11 @@ DATABASE_NAME = '[10.0.0.201].CrowdDB.dbo'
 
 DATABASES = {
     'sqlserver': {
-        'HOST': '',
-        'PORT': '',
-        'USER': '',
-        'PASSWORD': '',
-        'DATABASE': '',
+        'HOST': 'crowdser.chinacloudapp.cn',
+        'PORT': '9280',
+        'USER': 'sa',
+        'PASSWORD': '2015_zaixianSimple',
+        'DATABASE': 'CrowdDB',
         'CHARSET': 'UTF-8',
         'TABLE_ALIAS': {
             'table_result': '[10.0.0.201].CrowdDB.dbo.DataResult',
@@ -90,17 +90,17 @@ DATABASES = {
         },
     },
     'mongo': {
-        'HOST': '',
-        'PORT': '',
-        'USER': '',
-        'PASSWORD': '',
+        'HOST': 'crowdser.chinacloudapp.cn',
+        'PORT': '38011',
+        'USER': 'crowd_read',
+        'PASSWORD': 'crowdread',
     },
     'mysql': {
-        'HOST': '',
-        'PORT': '',
-        'USER': '',
-        'PASSWORD': '',
-        'DATABASE': '',
+        'HOST': '139.217.7.145',
+        'PORT': '3306',
+        'USER': 'root',
+        'PASSWORD': 'C19c3Y^3QjvW',
+        'DATABASE': 'CrowdDB',
         'CHARSET': 'utf8',
         'TABLE_ALIAS': {
             'table_result': 'dataresult',
@@ -111,17 +111,17 @@ DATABASES = {
         },
     },
     'mongo-indie': {
-        'HOST': '',
-        'PORT': '',
-        'USER': '',
-        'PASSWORD': '',
-        'DATABASE': '',
+        'HOST': '139.217.7.145',
+        'PORT': '27011',
+        'USER': 'crowdadmin',
+        'PASSWORD': '2015_zaixianSimple',
+        'DATABASE': 'CrowdData',
     },
 }
 
 # Config for Server Message Block protocol
 SMB = {
-    'HOST': '',
+    'HOST': '10.10.8.123',
     'PORT': 139, # 139 if using NetBIOS over tcp/ip, 445 if direct hosting over tcp/ip
     'USERNAME': 'USERNAME',
     'PASSWORD': '********',
@@ -133,8 +133,8 @@ SMB = {
 }
 
 WEB_SETTINGS = {
-    "username": "",
-    "password": "",
+    "username": "crowd_tech",
+    "password": "2017_data@Tech",
 }
 
 BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
