@@ -2,11 +2,13 @@
 import os
 import math
 import json
+from collections import defaultdict
 
 from moose.connection.cloud import AzureBlobService
 from moose.shortcuts import ivisit
 from moose.conf import settings
 from moose.utils.encoding import smart_text
+from moose.utils.datautils import islicel
 
 from .base import AbstractAction, IllegalAction
 
@@ -271,3 +273,77 @@ class DirsUpload(SimpleUpload):
             if self.remove_dirname:
                 sub_blob_pairs = [ (os.path.relpath(x[0], dirname), x[1]) for x in sub_blob_pairs]
             yield str(task_id), sub_blob_pairs
+
+class VideosUpload(SimpleUpload):
+    nframes_per_item = 300
+    use_short_name = True
+    hostname = 'http://crowdfile.blob.core.chinacloudapi.cn/'
+    image_suffix = 'jpg'
+
+    def index(self, blob_pairs, context):
+        catalog = []
+        groups = self.group(blob_pairs)
+        for dirname, filenames in groups.items():
+            title = os.path.basename(dirname)
+            for i, names in islicel(filenames, self.nframes_per_item):
+                catalog.append({
+                    'title': title+'-'+str(i+1),
+                    'itype': self.image_suffix,
+                    'puri': self.hostname,
+                    'images': [{'src': os.path.splitext(x)[0]} for x in names]
+                })
+        return catalog
+
+    def group(self, blob_pairs):
+        """
+        Groups files by dirnames.
+        """
+        groups = defaultdict(list)
+        for blobname, filename in blob_pairs:
+            dirname = os.path.dirname(filename)
+            groups[dirname].append(blobname)
+        return groups
+
+    def enumerate(self, context):
+        """
+        List files to upload and belonged container.
+        """
+        files = self.lookup_files(context['root'], context)
+        passed, removed = self.partition(files, context)
+
+        blob_pairs = []
+        relpath = context['relpath']
+        for filepath in passed:
+            blobname = os.path.relpath(filepath, relpath)
+            if not self.check_file(filepath):
+                continue
+            blob_pairs.append((blobname, filepath))
+        logger.debug("%d files are effective finally." % len(blob_pairs))
+
+        from moose.utils.shortname import build_trie
+        if self.use_short_name:
+            self.name_mapper = {}
+            tree = build_trie([x[0] for x in blob_pairs])
+            import pdb; pdb.set_trace()
+
+        for task_id, blob_pairs in self.split(blob_pairs, context):
+            yield task_id, blob_pairs
+
+    def run(self, **kwargs):
+        context = self.get_context(kwargs)
+        enumerater = self.enumerate(context)
+
+        output = []
+        for container_name, blob_pairs in enumerater:
+            if self.use_azure:
+                blobs = self.azure.upload(container_name, blob_pairs)
+                output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
+
+            if self.gen_index:
+                index_file = os.path.join(self.app.data_dirname, container_name+'.json')
+                catalog = self.index(blob_pairs, context)
+                with open(index_file, 'w') as f:
+                    f.write(self.to_string(catalog))
+                output.append("Index was written to '%s'." % index_file)
+
+        return '\n'.join(output)
