@@ -49,7 +49,7 @@ setup(
         'Pillow>=3.4.1',
         'pymongo>=3.5.1',
         'pymssql>=2.1.3',
-        'azure>=2.0.0rc6',
+        'azure-storage-blob>=1.1.0',
         'chardet>=3.0.4',
         'pytz>=2017.2',
     ],
