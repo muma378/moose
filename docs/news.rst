@@ -3,7 +3,7 @@
 Release notes
 =============
 
-Moose 0.9.5Beta (2017-03-13)
+Moose 0.9.5Beta (2018-03-13)
 -----------------------------
 * 移除了对 `azure>=2.0.0rc` 的依赖，改为对 `azure-storage-blob>=1.1.0` 依赖；
 * 添加了 `action.upload.VideosUpload` 以支持对视频拆帧的图片的通用上传；
