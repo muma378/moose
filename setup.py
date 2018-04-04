@@ -36,7 +36,7 @@ setup(
     author='Xiao Yang',
     author_email='xiaoyang0117@gmail.com',
     description=('Your manager for endless iterative tasks.'),
-    long_description=open('README.md').read(),
+    long_description=open('README.md', 'rb').read(),
     license='BSD',
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
