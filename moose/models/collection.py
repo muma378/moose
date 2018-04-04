@@ -16,8 +16,8 @@ class Collection(BaseModel):
     member_cls = None
     mark_key = None
 
-    def __init__(self, annotation):
-        super(Collection, self).__init__(annotation)
+    def __init__(self, annotation, **context):
+        super(Collection, self).__init__(annotation, **context)
         if not getattr(self, 'mark_results'):
             raise NotImplementedError(
                 "Subclass of 'Collection' must implement 'mark_results' to specify the "
@@ -69,8 +69,9 @@ class Collection(BaseModel):
 # duck interface
 class MemberModel(object):
     output_suffix = '.json'
-    def __init__(self, annotation):
+    def __init__(self, annotation, **context):
         self.annotation = annotation
+        self.context = context
 
     @property
     def filename(self):

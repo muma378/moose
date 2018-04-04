@@ -79,7 +79,7 @@ class BaseExport(AbstractAction):
         neffective = 0
         data_model_cls = import_string(self.data_model)
         for item in queryset:
-            dm = data_model_cls(item)
+            dm = data_model_cls(item, **context)
             if dm.is_effective():
                 neffective += 1
                 self.handle(dm, context)
@@ -150,7 +150,7 @@ class DownloadAndExport(SimpleExport):
         neffective = 0
         data_model_cls = import_string(self.data_model)
         for item in queryset:
-            dm = data_model_cls(item)
+            dm = data_model_cls(item, **context)
             if dm.is_effective():
                 neffective += 1
                 self.handle(dm, context)

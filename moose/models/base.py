@@ -18,10 +18,11 @@ class BaseModel(object):
     output_suffix = '.json'
     effective_values = ('1', 1)
 
-    def __init__(self, annotation):
+    def __init__(self, annotation, **context):
         self.annotation = annotation
         self.source = annotation['source']
         self.result = annotation['result']
+        self.context = context
         self._active()
 
     def _active(self):
