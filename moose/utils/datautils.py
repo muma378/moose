@@ -6,7 +6,7 @@ def stripl(l):
     """
     Strips all elements in a list.
     """
-    return map(lambda x: x.strip(), l)
+    return filter(lambda x:x, map(lambda x: x.strip(), l))
 
 
 def islice(n, m):

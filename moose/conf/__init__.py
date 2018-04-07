@@ -1,8 +1,8 @@
 """
 Settings and configuration for Django.
 
-Values will be read from the module specified by the DJANGO_SETTINGS_MODULE environment
-variable, and then from django.conf.global_settings; see the global settings file for
+Values will be read from the module specified by the MOOSE_SETTINGS_MODULE environment
+variable, and then from moose.conf.global_settings; see the global settings file for
 a list of all possible variables.
 """
 
@@ -20,9 +20,9 @@ ENVIRONMENT_VARIABLE = "MOOSE_SETTINGS_MODULE"
 
 class LazySettings(LazyObject):
     """
-    A lazy proxy for either global Django settings or a custom settings object.
+    A lazy proxy for either global Moose settings or a custom settings object.
     The user can manually configure settings prior to using them. Otherwise,
-    Django uses the settings module pointed to by DJANGO_SETTINGS_MODULE.
+    Moose uses the settings module pointed to by MOOSE_SETTINGS_MODULE.
     """
     def _setup(self, name=None):
         """

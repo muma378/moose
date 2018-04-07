@@ -61,6 +61,27 @@ DATABASES = {}
 # Classes used to implement DB routing behavior.
 DATABASE_ROUTERS = []
 
+###########
+# CONFIGS #
+###########
+
+CONF_TEMPLATE_NAME = 'template.cfg'
+CONF_IN_USING_NAME = 'config.cfg'
+
+CONFIGS_DIRNAME = 'configs'
+CONFIG_CACHE_NAME = '.config'
+CONFIG_EXTENSION = '.cfg'
+
+CONFIG_META_KEYWORD = 'meta'
+CONFIG_KEYS_KEYWORD = 'keys'
+CONFIG_LIST_SEP = ','
+CONFIG_RANGE_SEP= '-'
+CONFIG_META_SECTION_CONCATE = '_'
+CONFIG_DESC_EXPR_SEP = ':'
+CONFIG_DISCOVER_BY_TAG = 't'
+CONFIG_DISCOVER_BY_ATTR = 'a'
+CONFIG_DESC_ATTR_VAL_SEP = '='
+
 # The email backend to use. For possible shortcuts see django.core.mail.
 # The default is to use the SMTP backend.
 # Third-party backends can be specified by providing a Python path
@@ -90,28 +111,6 @@ LOGGING_APPS = []
 
 # List of locations of the template source files, in search order.
 TEMPLATE_DIRS = []
-
-# List of callables that know how to import templates from various sources.
-# See the comments in django/core/template/loader.py for interface
-# documentation.
-TEMPLATE_LOADERS = [
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-]
-
-# List of processors used by RequestContext to populate the context.
-# Each one should be a callable that takes the request object as its
-# only parameter and returns a dictionary to add to the context.
-TEMPLATE_CONTEXT_PROCESSORS = [
-    'django.contrib.auth.context_processors.auth',
-    'django.template.context_processors.debug',
-    'django.template.context_processors.i18n',
-    'django.template.context_processors.media',
-    'django.template.context_processors.static',
-    'django.template.context_processors.tz',
-    # 'django.template.context_processors.request',
-    'django.contrib.messages.context_processors.messages',
-]
 
 # Output to use in template system for invalid (e.g. misspelled) variables.
 TEMPLATE_STRING_IF_INVALID = ''

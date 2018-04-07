@@ -2,11 +2,10 @@ import unittest
 import ConfigParser
 
 from moose.conf import settings
-from moose.core.configs import config
-from moose.core.configs.config import OptionParser
+from moose.core.configs.loader import \
+	Config, ConfigLoader, OptionParser, SectionParser
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
 
-settings.configure()
 
 class ConfigLoaderTestCase(unittest.TestCase):
 	"""
@@ -49,10 +48,10 @@ class ConfigLoaderTestCase(unittest.TestCase):
 		pass
 
 	def test_parse(self):
-		loader = config.ConfigLoader(self.test_config_path)
+		loader = ConfigLoader(self.test_config_path)
 		test_config = loader.parse()
 
-		self.assertTrue(isinstance(test_config, config.Config))
+		self.assertTrue(isinstance(test_config, Config))
 		self.assertEqual(test_config.common['name'], 'sample-test')
 		self.assertEqual(test_config.upload['task_name'], ('a', 'b', 'c', 'd'))
 		self.assertEqual(test_config.upload['task_id'], 1)
@@ -62,7 +61,7 @@ class SectionParserTestCase(unittest.TestCase):
 	def setUp(self):
 		config_parser = ConfigParser.ConfigParser()
 		config_parser.read("tests/sample_data/configs/sample.conf")
-		self.section_parser = config.SectionParser(config_parser)
+		self.section_parser = SectionParser(config_parser)
 
 	def test_get_meta_key(self):
 		self.assertEqual(self.section_parser.get_meta_key('common'), 'meta_common')
@@ -114,3 +113,6 @@ class OptionParserTestCase(unittest.TestCase):
 		# tests initializion with undefined type
 		with self.assertRaises(ImproperlyConfigured):
 			opt = OptionParser('abc', 'undefined')
+
+if __name__ == "__main__":
+    unittest.main()
