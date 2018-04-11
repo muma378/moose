@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-import ConfigParser
+
+
 from moose.utils._os import npath
+from moose.utils.six.moves import configparser
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
 
 
@@ -18,7 +20,7 @@ class ConfigWriter(object):
 		self._config = self.__load_template()
 
 	def __load_template(self):
-		config = ConfigParser.RawConfigParser()
+		config = configparser.RawConfigParser()
 		config.read(self.template_path)
 		return config
 
