@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 import codecs
-import ConfigParser
 
 import chardet
 
+from moose.utils import six
 from moose.utils._os import npath
 from moose.utils.datautils import stripl
+from moose.utils.six.moves import configparser
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
 from moose.conf import settings
 
@@ -65,7 +66,7 @@ class ConfigLoader(object):
 
 	def __update_codec(self):
 		# character encoding detect
-		with open(self.path, 'r+') as f:
+		with open(self.path, 'rb') as f:
 			overwrite = False
 			content = f.read()
 			result = chardet.detect(content)
@@ -99,7 +100,7 @@ class ConfigLoader(object):
 
 	def _parse(self):
 		# A wrapper to parse config files
-		config_parser = ConfigParser.ConfigParser()
+		config_parser = configparser.ConfigParser()
 		config_parser.read(self.path)
 
 		# TODO: a more clear format of config
@@ -192,8 +193,12 @@ class OptionUnicode(OptionBaseType):
 	default_charset = 'utf-8'
 
 	def get_value(self):
-		return self.value.decode(self.default_charset)
-
+		if six.PY2:
+			# type of str
+			return self.value.decode(self.default_charset)
+		else:
+			# type of str (unicode in python3)
+			return self.value
 
 class OptionString(OptionBaseType):
 	"""

@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 from distutils.sysconfig import get_python_lib
@@ -36,7 +37,7 @@ setup(
     author='Xiao Yang',
     author_email='xiaoyang0117@gmail.com',
     description=('Your manager for endless iterative tasks.'),
-    long_description=open('README.md', 'rb').read(),
+    long_description=io.open('README.md', encoding='utf-8').read(),
     license='BSD',
     packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,

@@ -1,7 +1,7 @@
 import unittest
-import ConfigParser
 
 from moose.conf import settings
+from moose.utils.six.moves import configparser
 from moose.core.configs.loader import \
 	Config, ConfigLoader, OptionParser, SectionParser
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
@@ -55,11 +55,15 @@ class ConfigLoaderTestCase(unittest.TestCase):
 		self.assertEqual(test_config.common['name'], 'sample-test')
 		self.assertEqual(test_config.upload['task_name'], ('a', 'b', 'c', 'd'))
 		self.assertEqual(test_config.upload['task_id'], 1)
-		self.assertEqual(test_config.export['task_id'], [100, 101, 102, 103])
+		self.assertSequenceEqual(test_config.export['task_id'], [100, 101, 102, 103])
+
+		self.assertEqual(test_config.export['task_id'][0] , 100)
+		self.assertEqual(test_config.export['task_id'][1] , 101)
+		self.assertEqual(test_config.export['task_id'][-1] , 103)
 
 class SectionParserTestCase(unittest.TestCase):
 	def setUp(self):
-		config_parser = ConfigParser.ConfigParser()
+		config_parser = configparser.ConfigParser()
 		config_parser.read("tests/sample_data/configs/sample.conf")
 		self.section_parser = SectionParser(config_parser)
 
@@ -103,7 +107,7 @@ class OptionParserTestCase(unittest.TestCase):
 
 	def test_range_opt(self):
 		opt = OptionParser('100-103', 'range')
-		self.assertEqual(opt.get_value(), [100, 101, 102, 103])
+		self.assertSequenceEqual(opt.get_value(), [100, 101, 102, 103])
 
 		opt_error = OptionParser('123', 'range')
 		with self.assertRaises(ImproperlyConfigured):

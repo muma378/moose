@@ -71,7 +71,6 @@ class ConfigsRegistryTestCase(unittest.TestCase):
 
 	def test_synchronize(self):
 		testapp1_configs = ConfigsRegistry.get_or_create(self.testapp1)
-
 		self.assertFalse(testapp1_configs.find_by_name('sample3.cfg'))
 		sample3_conf_path = os.path.join(get_conf_dirname(self.testapp1), 'sample3.cfg')
 		# appends the new config `sample3.cfg`

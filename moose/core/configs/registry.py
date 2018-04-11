@@ -50,7 +50,7 @@ class ConfigsRegistry(object):
 	def synchronize(self):
 		conf_dirname = get_conf_dirname(self.app_config)
 		# get all config files
-		config_files = filter(lambda x: x.endswith(settings.CONFIG_EXTENSION), os.listdir(conf_dirname))
+		config_files = list(filter(lambda x: x.endswith(settings.CONFIG_EXTENSION), os.listdir(conf_dirname)))
 
 		# a flag to indicates if any config was parsed at this time
 		anyone_changed = False
@@ -63,10 +63,15 @@ class ConfigsRegistry(object):
 			anyone_changed = anyone_changed or is_changed
 
 		# removes the deleted
+		to_delete = []
 		for config_name in self._configs.keys():
 			if config_name not in config_files:
-				del self._configs[config_name]
-				anyone_changed = True
+				to_delete.append(config_name)
+
+		# dictionary is not allowed to change size in py3
+		for config_name in to_delete:
+			del self._configs[config_name]
+			anyone_changed = True
 
 		return anyone_changed
 
@@ -104,7 +109,7 @@ class ConfigsRegistry(object):
 		# Step 2. try to load it from the pickle
 		tuned = False
 		if os.path.exists(conf_cache_file):
-			with open(conf_cache_file, 'r') as f:
+			with open(conf_cache_file, 'rb') as f:
 				try:
 					all_configs = pickle.load(f)
 					configs = cls(installed_app, all_configs)
@@ -123,7 +128,7 @@ class ConfigsRegistry(object):
 
 		# Content was changed since the last dumping
 		if tuned:
-			with open(conf_cache_file, 'w') as f:
+			with open(conf_cache_file, 'wb') as f:
 				pickle.dump(configs._configs, f)
 
 		# Saves it to the memory
