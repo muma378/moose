@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class BaseExtract(actions.base.AbstractAction):
+class BaseExtract(AbstractAction):
     """
     Class to simulate the action of extracting frames from
     a video with opencv-python,
@@ -70,37 +70,43 @@ class BaseExtract(actions.base.AbstractAction):
         logger.debug("%d files found." % len(files))
         return files
 
-    def get_extractor(self, cap, context):
+    def get_extractor(self, context):
         raise NotImplementedError
 
+    def dump(self, extractor, dst, context):
+        self.cap.dump(extractor, dst)
+
     def run(self, **kwargs):
+        output = []
         context = self.get_context(kwargs)
         src = context['src']
         files = self.lookup_files(src, context)
+        output.append('%d files found to extract frames.' % len(files))
         for video_path in files:
             video_dirname, _ = os.path.splitext(video_path)
             dst = os.path.join(context['root'], os.path.relpath(video_dirname, src))
             if os.path.exists(dst):
                 continue
-            cap = video.VideoCapture(video_path)
-            if int(cap.fps) != cap.fps:
+            self.cap = video.VideoCapture(video_path)
+            if int(self.cap.fps) != self.cap.fps:
                 logger.warning("FPS of %s is %f, not a integer." % (cap.video_name, cap.fps))
-            extractor = self.get_extractor(cap, context)
+            extractor = self.get_extractor(context)
             makedirs(dst)
-            cap.dump(extractor, dst)
+            self.dump(extractor, dst, context)
+        return '\n'.join(output)
 
 class PeriodicExtract(BaseExtract):
     """
     Captures frames in an interval
     """
-    def get_extractor(self, cap, context):
+    def get_extractor(self, context):
         interval = context['step']
-        return cap.capture(step=interval)
+        return self.cap.capture(step=interval)
 
 class IndexListExtract(BaseExtract):
     """
     Captures frames as the index list describes
     """
-    def get_extractor(self, cap, context):
+    def get_extractor(self, context):
         idx_list = context['frames']
-        return cap.extract(idx_list)
+        return self.cap.extract(idx_list)
