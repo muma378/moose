@@ -5,4 +5,4 @@ from moose.actions import export
 from moose.actions import download
 
 __all__ = ['IllegalAction', 'AbstractAction', 'upload', 'download',
-            'export']
+            'export', 'extract']
