@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 class BaseUpload(AbstractAction):
     """
-    Class to simulate the action of uploading, 5 procedures are accomplished
-    in sequence:
+    Class to simulate the action of uploading files to Microsoft
+    Azure Storage, 5 procedures are accomplished in sequence:
     `
     Get-Context -> Enumerate-Files -> Upload -> Write-Index
     `
