@@ -27,6 +27,7 @@ class CommandRecord(object):
 		self.app_config = app_config
 		self.command = command
 		self.message = message
+		self.output  = None
 		# start to time when initializing
 		self._launch_time = datetime.now()
 		self._ending_time = None

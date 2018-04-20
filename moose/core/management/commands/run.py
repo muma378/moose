@@ -38,7 +38,7 @@ class Command(AppCommand):
 		super(Command, self).add_arguments(parser)
 
 		parser.add_argument(
-			'-a', '--action',
+			'-a', '--action', action='append', dest='actions',
 			help='Specify an action to perform, registered at \'apps.py\' before.',
 		)
 		parser.add_argument(
@@ -59,6 +59,67 @@ class Command(AppCommand):
 		)
 
 	def handle_app_config(self, app_config, **options):
+		# TODO: stupid have to set values before getting comment
+		# there is no necessary connection between the 2 methods
+		self.action_aliases	= options['actions']
+		self.configs		= options['configs']
+
+		keep_quite	= options['quite']
+		recipients	= options['recipients']
+		message		= options.get('message', self.comment())
+
+		# start to time
+		record = CommandRecord(app_config, self, message)
+
+		output = []
+		for action_alias in self.action_aliases:
+			result = self.handle_action(app_config, action_alias, self.configs)
+			output.append(result)
+
+		# to close the timer
+		record.done()
+		output_str = '\n'.join(output)
+		record.output = output_str
+
+		# puts the record into the system
+		if not keep_quite:
+			records.add(record)
+
+		# sends emails if option '-e' provided
+		if recipients:
+			mail_sender = CommandRunNotifier(recipients)
+			context = mail_sender.get_context(record, self, output_str)
+			mail_sender.send(context)
+
+		return output_str
+
+
+	def handle_action(self, app_config, action_alias, configs):
+
+		# get user-defined class for the action
+		action_klass = app_config.get_action_klass(action_alias)
+		if action_klass:
+			actor = action_klass(app_config)
+		else:
+			raise CommandError("Unknown action alias '%s'." % self.action_alias)
+
+		# run with configs and get the output
+		output = []
+		for conf_desc in configs:
+			config_loader = find_matched_conf(app_config, conf_desc)
+			if not config_loader:
+				# Instead of raising an exception, makes a report after all done
+				err_msg = "No matched config found for description '%s', aborted." % conf_desc
+				output.append(err_msg)
+				continue
+			else:
+				config = config_loader._parse()
+				output.append(actor.run(config=config))
+
+		return '\n'.join(output)
+
+
+	def __handle_app_config(self, app_config, **options):
 		self.action_alias = options['action']
 		self.configs 	  = options['configs']
 
@@ -91,11 +152,12 @@ class Command(AppCommand):
 
 		# to close the timer
 		record.done()
+		output_str = '\n'.join(output)
+		record.output = output_str
 
 		if not keep_quite:
 			records.add(record)
 
-		output_str = '\n'.join(output)
 		if recipients:
 			mail_sender = CommandRunNotifier(recipients)
 			context = mail_sender.get_context(record, self, output_str)
