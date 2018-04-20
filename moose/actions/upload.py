@@ -274,6 +274,7 @@ class DirsUpload(SimpleUpload):
                 sub_blob_pairs = [ (os.path.relpath(x[0], dirname), x[1]) for x in sub_blob_pairs]
             yield str(task_id), sub_blob_pairs
 
+
 class VideosUpload(SimpleUpload):
     nframes_per_item = 300
     use_short_name = True
@@ -302,6 +303,8 @@ class VideosUpload(SimpleUpload):
         for blobname, filename in blob_pairs:
             dirname = os.path.dirname(filename)
             groups[dirname].append(blobname)
+        for dirname, _ in groups.items():
+            groups[dirname].sort()
         return groups
 
     def enumerate(self, context):

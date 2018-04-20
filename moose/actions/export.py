@@ -148,16 +148,21 @@ class DownloadAndExport(SimpleExport):
         output = []
         urls = []
         neffective = 0
+
         data_model_cls = import_string(self.data_model)
+        models = []
         for item in queryset:
             dm = data_model_cls(item, **context)
             if dm.is_effective():
                 neffective += 1
-                self.handle(dm, context)
+                models.append(dm)
                 urls.append((dm.filelink(context['task_id']), dm.filepath))
 
         dst = os.path.join(self.app.data_dirname, context['title'])
         stat = download(urls, dst, overwrite=self.overwrite_conflict)
-        output.append("%d results processed." % neffective)
         output.append(str(stat))
+
+        for dm in models:
+            self.handle(dm, context)
+        output.append("%d results processed." % neffective)
         return '\n'.join(output)
