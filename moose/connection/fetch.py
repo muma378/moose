@@ -47,7 +47,7 @@ class BaseFetcher(object):
         return {r[key]: r for r in records}
 
     def fetch(self, **context):
-        project_id = context['project_id']
+        project_id = str(context['project_id'])
 
         # get sql queryset
         queryset = self.querier.query(**context)
