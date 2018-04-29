@@ -124,8 +124,8 @@ class BaseUpload(AbstractAction):
             blob_pairs.append((blobname, filepath))
         logger.debug("%d files are effective finally." % len(blob_pairs))
 
-        for task_id, blob_pairs in self.split(blob_pairs, context):
-            yield task_id, blob_pairs
+        splitter = self.split(blob_pairs, context)
+        return splitter
 
     def split(self, blob_pairs, context):
         """
@@ -214,8 +214,8 @@ class ReferredUpload(SimpleUpload):
             blob_pairs.append((url, blobname))
         logger.debug("%d files are effective finally." % len(blob_pairs))
 
-        for task_id, blob_pairs in self.split(blob_pairs, context):
-            yield task_id, blob_pairs
+        splitter = self.split(blob_pairs, context)
+        return splitter
 
     def index(self, blob_pairs, context):
         catalog = []
@@ -327,10 +327,10 @@ class VideosUpload(SimpleUpload):
         if self.use_short_name:
             self.name_mapper = {}
             tree = build_trie([x[0] for x in blob_pairs])
-            import pdb; pdb.set_trace()
+            # TODO: build a trie to compress the name
 
-        for task_id, blob_pairs in self.split(blob_pairs, context):
-            yield task_id, blob_pairs
+        splitter = self.split(blob_pairs, context)
+        return splitter
 
     def run(self, **kwargs):
         context = self.get_context(kwargs)

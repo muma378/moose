@@ -29,7 +29,7 @@ class BaseExtract(AbstractAction):
 
     """
 
-    default_pattern = ('*.mp4', '*.mov', '*.flv')
+    default_pattern = ('*.mp4', '*.mov', '*.flv', '*.avi')
 
     def get_context(self, kwargs):
         if kwargs.has_key('config'):

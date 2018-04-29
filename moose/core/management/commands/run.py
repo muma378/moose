@@ -166,4 +166,4 @@ class Command(AppCommand):
 		return output_str
 
 	def comment(self):
-		return "run '%s' with <%s>." % (self.action_alias, ','.join(self.configs))
+		return "run '%s' with <%s>." % (' '.join(self.action_aliases), ','.join(self.configs))
