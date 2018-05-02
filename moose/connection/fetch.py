@@ -2,6 +2,8 @@
 import logging
 
 from moose.core.exceptions import ImproperlyConfigured
+from moose.utils.module_loading import import_string
+from moose.utils import six
 from . import query
 from . import database
 
@@ -16,30 +18,39 @@ class BaseFetcher(object):
 
     `context`
         Specify compoenents composing the fetcher, including:
-        - sql_hander: Subclass of BaseSQLHandler to connect database;
+        - sql_handler: Subclass of BaseSQLHandler to connect database;
         - sql_context: A dict to represent configs for the sql connections,
             meanwhile including tables' alias in the database;
         - mongo_handler: Subclass of MongoDBHandler to connect mongodb;
         - mongo_context: A dict to represent configs for mongo connections;
     """
-    # TODO: using parameters sql_handler and mongo_handler makes more sense?
     def __init__(self, query_cls, context):
-        self.sql_hander = context['sql_hander'](context['sql_context'])
+        self.sql_handler = self.__load_or_import(context['sql_handler'], \
+                                database.SQLServerHandler, context['sql_context'])
         sql_table_alias = context['sql_context']['TABLE_ALIAS']
-        self.querier = query_cls(self.sql_hander, sql_table_alias)
-        self.mongo = context['mongo_handler'](context['mongo_context'])
+        self.querier = query_cls(self.sql_handler, sql_table_alias)
+        self.mongodb = self.__load_or_import(context['mongo_handler'], \
+                            database.MongoDBHandler, context['mongo_context'])
+
+    def __load_or_import(self, handler_cls, base_cls, context):
+        if isinstance(handler_cls, six.string_types):
+            handler_cls = import_string(handler_cls)
+        if issubclass(handler_cls, base_cls):
+            return handler_cls(context)
+        else:
+            raise ImproperlyConfigured("Handlers must be a subclass of {}.".format(base_cls))
 
     def _fetch_source(self, project_id):
-        self.mongo.set_database(project_id)
+        self.mongodb.set_database(project_id)
         records = []
-        for record in self.mongo.fetch_source():
+        for record in self.mongodb.fetch_source():
             records.append(record)
         return records
 
     def _fetch_result(self, project_id):
-        self.mongo.set_database(project_id)
+        self.mongodb.set_database(project_id)
         records = []
-        for record in self.mongo.fetch_result():
+        for record in self.mongodb.fetch_result():
             records.append(record)
         return records
 
