@@ -67,6 +67,7 @@ CONNECTION_SETTINGS = {
 AZURE = {
   'ACCOUNT': '',
   'KEY': '',
+  # 'SAS_TOKEN': '',
   'ENDPOINT': '',
   "TIMEOUT": 300,
 }
@@ -117,6 +118,13 @@ DATABASES = {
         'PASSWORD': '',
         'DATABASE': '',
     },
+}
+
+QUERY_CONTEXT = {
+    'sql_handler': 'moose.connection.database.SQLServerHandler',
+    'sql_context': DATABASES['sqlserver'],
+    'mongo_handler': 'moose.connection.database.MongoDBHandler',
+    'mongo_context': DATABASES['mongo'],
 }
 
 # Config for Server Message Block protocol

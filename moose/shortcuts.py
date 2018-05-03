@@ -3,21 +3,7 @@ import os
 import fnmatch
 
 
-def ivisit(src, dst=None, pattern=None, ignorecase=True):
-    """
-    A iterator to find all files in path `src` and match the Unix shell-like
-    `pattern` if provided. The value of `pattern` could be a string or a tuple,
-    and would perform a case-sensitive comparision if `ignorecase` was set
-    to False.
-
-    Details for unix shell-like wildcards can be seen from:
-        https://docs.python.org/2/library/fnmatch.html#module-fnmatch
-
-    If `dst` was provided, returns a pair consists of source path and
-    destination with sub-directories. For example, if `src` was set to '/a'
-    `dst` was set to '/b', while a file was located at '/a/c/d.txt', will
-    yield a tuple ('/a/c/d.txt', '/b/c/d.txt')
-    """
+def get_matchfn(pattern, ignorecase):
     # syntax sugar, converts string to a tuple with one element
     if isinstance(pattern, str) or isinstance(pattern, unicode):
         pattern = (pattern, )
@@ -33,6 +19,24 @@ def ivisit(src, dst=None, pattern=None, ignorecase=True):
     else:
         # returns True always
         anymatch = lambda s, ps: True
+    return anymatch
+
+def ivisit(src, dst=None, pattern=None, ignorecase=True):
+    """
+    A iterator to find all files in path `src` and match the Unix shell-like
+    `pattern` if provided. The value of `pattern` could be a string or a tuple,
+    and would perform a case-sensitive comparision if `ignorecase` was set
+    to False.
+
+    Details for unix shell-like wildcards can be seen from:
+        https://docs.python.org/2/library/fnmatch.html#module-fnmatch
+
+    If `dst` was provided, returns a pair consists of source path and
+    destination with sub-directories. For example, if `src` was set to '/a'
+    `dst` was set to '/b', while a file was located at '/a/c/d.txt', will
+    yield a tuple ('/a/c/d.txt', '/b/c/d.txt')
+    """
+    anymatch = get_matchfn(pattern, ignorecase)
 
     # traverse the source path
     for dirpath, dirnames, filenames in os.walk(src):

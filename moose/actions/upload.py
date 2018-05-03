@@ -323,10 +323,10 @@ class VideosUpload(SimpleUpload):
             blob_pairs.append((blobname, filepath))
         logger.debug("%d files are effective finally." % len(blob_pairs))
 
-        from moose.utils.shortname import build_trie
-        if self.use_short_name:
-            self.name_mapper = {}
-            tree = build_trie([x[0] for x in blob_pairs])
+        #from moose.utils.shortname import build_trie
+        #if self.use_short_name:
+            # self.name_mapper = {}
+            #tree = build_trie([x[0] for x in blob_pairs])
             # TODO: build a trie to compress the name
 
         splitter = self.split(blob_pairs, context)

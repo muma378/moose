@@ -15,7 +15,6 @@ def build_trie(strings_list):
     for string in strings_list:
         sub_tree = tree
         for char in string:
-            import pdb; pdb.set_trace()
             new_node = Node(identifier=char)
             if sub_tree.contains(new_node):
                 # if already exists
