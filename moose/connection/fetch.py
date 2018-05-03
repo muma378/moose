@@ -4,8 +4,7 @@ import logging
 from moose.core.exceptions import ImproperlyConfigured
 from moose.utils.module_loading import import_string
 from moose.utils import six
-from . import query
-from . import database
+from . import query, database
 
 class BaseFetcher(object):
     """
@@ -28,6 +27,9 @@ class BaseFetcher(object):
         self.sql_handler = self.__load_or_import(context['sql_handler'], \
                                 database.SQLServerHandler, context['sql_context'])
         sql_table_alias = context['sql_context']['TABLE_ALIAS']
+        if not issubclass(query_cls, query.BaseGuidQuery):
+            raise ImproperlyConfigured(\
+                "Query handler must be a subclass of query.BaseGuidQuery.")
         self.querier = query_cls(self.sql_handler, sql_table_alias)
         self.mongodb = self.__load_or_import(context['mongo_handler'], \
                             database.MongoDBHandler, context['mongo_context'])
@@ -38,7 +40,8 @@ class BaseFetcher(object):
         if issubclass(handler_cls, base_cls):
             return handler_cls(context)
         else:
-            raise ImproperlyConfigured("Handlers must be a subclass of {}.".format(base_cls))
+            raise ImproperlyConfigured(\
+                "Database handlers must be a subclass of {}.".format(base_cls))
 
     def _fetch_source(self, project_id):
         self.mongodb.set_database(project_id)
