@@ -16,6 +16,10 @@ from moose.conf import settings
 from .base import AbstractAction, IllegalAction
 from .download import download, DownloadStat
 
+print(
+    "Package 'moose.actions.export' is deprecative, please consider "
+    "using 'moose.actions.exports'.")
+
 logger = logging.getLogger(__name__)
 
 class BaseExport(AbstractAction):
@@ -35,10 +39,13 @@ class BaseExport(AbstractAction):
     `handle`
         Entry for subclass to
     """
+    # model to represent a data record
     data_model = ''
     query_class = None
-    query_context = {}
     fetcher_class = None
+    query_context = {}
+    # exports effective data only
+    effective_only = True
 
     def get_context(self, kwargs):
         if kwargs.get('config'):
@@ -66,15 +73,22 @@ class BaseExport(AbstractAction):
     def parse(self, config, kwargs):
         return {}
 
-    def fetch(self, context):
+    def fetch(self, task_id, context):
         raise NotImplementedError
 
     def handle(self, model, context):
         pass
 
     def run(self, **kwargs):
+        environment = self.get_context(kwargs)
+        output = []
+        for context in self.schedule(environment):
+            self.handle(context)
+
+
+    def run(self, **kwargs):
         context = self.get_context(kwargs)
-        queryset = self.fetch(context)
+        queryset = self.fetch(context['task_id'], context)
         output = []
         neffective = 0
         data_model_cls = import_string(self.data_model)
@@ -89,13 +103,8 @@ class BaseExport(AbstractAction):
 
 class SimpleExport(BaseExport):
     query_class = query.AllGuidQuery
-    query_context = {
-        'sql_hander': database.SQLServerHandler,
-        'sql_context': settings.DATABASES['sqlserver'],
-        'mongo_handler': database.MongoDBHandler,
-        'mongo_context': settings.DATABASES['mongo'],
-    }
     fetcher_class = fetch.BaseFetcher
+    query_context = settings.QUERY_CONTEXT
     use_cache = True
     warranty_period = 1     # hour
 
@@ -103,10 +112,6 @@ class SimpleExport(BaseExport):
         title = context['title']
         dst = os.path.join(self.app.data_dirname, title)
         self.dump(model, dst)
-        self.draw(model, dst)
-
-    def draw(self, model, dst):
-        pass
 
     def dump(self, model, dst):
         filepath = os.path.join(dst, model.normpath)
@@ -119,8 +124,7 @@ class SimpleExport(BaseExport):
         delta = time.time() - os.stat(filepath).st_ctime
         return delta > self.warranty_period * 3600
 
-    def fetch(self, context):
-        task_id = context['task_id']
+    def fetch(self, task_id, context):
         if self.use_cache:
             cache_pickle = os.path.join(self.app.data_dirname, str(task_id)+'.pickle')
             if os.path.exists(cache_pickle) and not self.is_expired(cache_pickle):
@@ -144,7 +148,8 @@ class DownloadAndExport(SimpleExport):
 
     def run(self, **kwargs):
         context = self.get_context(kwargs)
-        queryset = self.fetch(context)
+        task_id = context['task_id']
+        queryset = self.fetch(task_id, context)
         output = []
         urls = []
         neffective = 0
@@ -165,4 +170,5 @@ class DownloadAndExport(SimpleExport):
         for dm in models:
             self.handle(dm, context)
         output.append("%d results processed." % neffective)
+
         return '\n'.join(output)

@@ -4,7 +4,7 @@ import copy
 import json
 import inspect
 
-from moose.utils._os import makedirs
+from moose.utils._os import makedirs, safe_join
 from moose.utils.encoding import force_bytes
 from moose.conf import settings
 import fields
@@ -23,6 +23,7 @@ class BaseModel(object):
         self.source = annotation['source']
         self.result = annotation['result']
         self.context = context
+        self.set_base_context(context)
         self._active()
 
     def _active(self):
@@ -33,6 +34,26 @@ class BaseModel(object):
                 if isinstance(obj, fields.AbstractMappingField):
                     # replace the field-object with real value
                     self.__setattr__(field, obj.get_val(self.annotation))
+
+    def set_base_context(self, context):
+        self.app     = context['app']
+        self.title   = context['title']
+        self.task_id = context['task_id']
+        self.set_context(context)
+
+    def set_context(self, context):
+        """
+        Entry point for subclassed models to set custom context
+        """
+        pass
+
+    @property
+    def dest_root(self):
+        return safe_join(self.app.data_dirname, self.title)
+
+    @property
+    def dest_filepath(self):
+        return safe_join(self.dest_root, self.filepath)
 
     @property
     def filepath(self):
@@ -59,11 +80,13 @@ class BaseModel(object):
     def user_id(self):
         return self.result['_personInProjectId']
 
-    def datalink(self, task_id):
-        return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(task_id))
+    @property
+    def datalink(self):
+        return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(self.task_id))
 
-    def filelink(self, task_id):
-        return settings.AZURE_FILELINK.format(task_id=str(task_id), file_path=force_bytes(self.filepath))
+    @property
+    def filelink(self):
+        return settings.AZURE_FILELINK.format(task_id=str(self.task_id), file_path=force_bytes(self.filepath))
 
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'

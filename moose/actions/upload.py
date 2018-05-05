@@ -45,18 +45,20 @@ class BaseUpload(AbstractAction):
     gen_index = True
     default_pattern = None
 
-    def get_context(self, kwargs):
-        if self.use_azure:
-            azure_setting = kwargs.get('azure', settings.AZURE)
+    azure_setting = {}
 
-            if azure_setting:
-                self.azure = AzureBlobService(azure_setting)
-            else:
-                logger.error("Missing argument: 'azure'")
-                raise IllegalAction(
-                    "Missing argument: 'azure'. If you were not going to "
-                    "use 'azure' in the action, please set class varaible "
-                    "'use_azure' to False.")
+    def get_context(self, kwargs):
+        # uses the custom settings if defined
+        azure_setting = self.azure_setting or settings.AZURE
+
+        if azure_setting:
+            self.azure = AzureBlobService(azure_setting)
+        else:
+            logger.error("Missing argument: 'azure'")
+            raise IllegalAction(
+                "Missing argument: 'azure'. If you were not going to "
+                "use 'azure' in the action, please set class varaible "
+                "'use_azure' to False.")
 
         if kwargs.get('config'):
             config = kwargs.get('config')
@@ -69,7 +71,8 @@ class BaseUpload(AbstractAction):
 
         context = {
             'root': config.common['root'],
-            'relpath': config.common['relpath'] if config.common['relpath'] else config.common['root'],
+            # use root by default
+            'relpath': config.common.get('relpath', config.common['root']),
             'task_id': config.upload['task_id'],
         }
 
@@ -192,8 +195,8 @@ class ReferredUpload(SimpleUpload):
     use_azure = False
 
     def lookup_files(self, context):
-        refered_task = context['refered_task']
-        blob_names = self.azure.list_blobs(refered_task)
+        referred_task = context['refer']
+        blob_names = self.azure.list_blobs(referred_task)
         return blob_names
 
     def enumerate(self, context):
@@ -204,13 +207,13 @@ class ReferredUpload(SimpleUpload):
         passed, removed = self.partition(files, context)
 
         relpath = context['relpath']
-        refered_task = context['refered_task']
+        referred_task = context['refer']
         for blobname in passed:
             filepath = os.path.join(relpath, blobname)
             if not self.check_file(filepath):
                 continue
 
-            url = settings.AZURE_FILELINK.format(task_id=refered_task, file_path=blobname)
+            url = settings.AZURE_FILELINK.format(task_id=referred_task, file_path=blobname)
             blob_pairs.append((url, blobname))
         logger.debug("%d files are effective finally." % len(blob_pairs))
 
@@ -276,17 +279,17 @@ class DirsUpload(SimpleUpload):
 
 
 class VideosUpload(SimpleUpload):
-    nframes_per_item = 300
-    use_short_name = True
-    hostname = 'http://crowdfile.blob.core.chinacloudapi.cn/'
     image_suffix = 'jpg'
+    use_short_name = False
+    nframes_per_item = 300
+    hostname = 'http://crowdfile.blob.core.chinacloudapi.cn/'
 
     def index(self, blob_pairs, context):
         catalog = []
         groups = self.group(blob_pairs)
-        for dirname, filenames in groups.items():
+        for dirname, blobnames in groups.items():
             title = os.path.basename(dirname)
-            for i, names in islicel(filenames, self.nframes_per_item):
+            for i, names in islicel(blobnames, self.nframes_per_item):
                 catalog.append({
                     'title': title+'-'+str(i+1),
                     'itype': self.image_suffix,
@@ -303,7 +306,7 @@ class VideosUpload(SimpleUpload):
         for blobname, filename in blob_pairs:
             dirname = os.path.dirname(filename)
             groups[dirname].append(blobname)
-        for dirname, _ in groups.items():
+        for dirname in groups.keys():
             groups[dirname].sort()
         return groups
 

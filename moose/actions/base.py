@@ -34,7 +34,7 @@ class BaseAction(AbstractAction):
 	"""
 	A standard base action is splited into 3 steps:
 
-	1. Get Environment
+	1. Parse
 		Converts options in *.cfg file to a dict named `environment`.
 		At this stage, you can keep arguments will be used in the
 		following steps and throw away ones won't.
@@ -46,26 +46,56 @@ class BaseAction(AbstractAction):
 		different context. At this stage, you are able to control how
 		they flow and the order to be handled.
 
-	3. Handle
-		Handles the job with the context provided above. Each handle()
-		should returns a `string` representing the result.
+	3. Execute
+		Handles the job with context provided above. Each execute()
+		should return a `string` representing the output.
 	"""
 
-	def get_environment(self, kwargs):
-		raise NotImplementedError('subclasses of BaseAction must provide a get_environment()')
+	def parse(self, kwargs):
+		raise NotImplementedError('subclasses of BaseAction must provide a parse()')
 
 	def schedule(self, environment):
 		raise NotImplementedError('subclasses of BaseAction must provide a schedule()')
 
-	def handle(self, context):
+	def execute(self, context):
 		raise NotImplementedError('subclasses of BaseAction must provide a handle()')
 
 	def run(self, **kwargs):
-		environment = self.get_environment(kwargs)
+		environment = self.parse(kwargs)
 		output = []
 		for context in self.schedule(environment):
-			output.append(self.handle(context))
+			output.append(self.execute(context))
 		return '\n'.join(output)
+
+
+class SimpleAction(BaseAction):
+	"""
+
+	"""
+	def get_config(self, kwargs):
+		if kwargs.get('config'):
+			config = kwargs.get('config')
+		else:
+			logger.error("Missing argument: 'config'.")
+			raise IllegalAction(
+				"Missing argument: 'config'. This error is not supposed to happen, "
+				"if the action class was called not in command-line, please provide "
+				"the argument `config = config_loader._parse()`.")
+		return config
+
+	def set_environment(self, env, config, kwargs):
+		"""
+		Entry point for subclassed commands to add custom environment.
+		"""
+		pass
+
+	def set_context(self, context, i):
+		"""
+		Entry point for subclassed commands to add custom context.
+		"""
+		pass
+
+
 
 class BaseStat:
 	"""
