@@ -173,8 +173,7 @@ class SimpleExport(BaseExport):
     A simple implementation of the action `export`. Defines the default
     value of query_* properties and performace of handle_model.
     """
-    # fetcher_class   = fetch.BaseFetcher
-    fetcher_class   = None
+    fetcher_class   = fetch.BaseFetcher
     query_class     = query.AllGuidQuery
     query_context   = settings.QUERY_CONTEXT
 
