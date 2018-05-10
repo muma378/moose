@@ -25,7 +25,7 @@ class BaseFetcher(object):
     """
     def __init__(self, query_cls, context):
         self.sql_handler = self.__load_or_import(context['sql_handler'], \
-                                database.SQLServerHandler, context['sql_context'])
+                                database.BaseSQLHandler, context['sql_context'])
         sql_table_alias = context['sql_context']['TABLE_ALIAS']
         if not issubclass(query_cls, query.BaseGuidQuery):
             raise ImproperlyConfigured(\
