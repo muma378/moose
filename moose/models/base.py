@@ -9,6 +9,14 @@ from moose.utils.encoding import force_bytes
 from moose.conf import settings
 import fields
 
+class FieldMissing(Exception):
+    """Required field is not provided"""
+    pass
+
+class FieldInvalid(Exception):
+    """Required field is somehow invalid"""
+    pass
+
 class BaseModel(object):
     """
     Model is a object to parse the annotation for templates, it aims to
@@ -38,7 +46,7 @@ class BaseModel(object):
     def set_base_context(self, context):
         self.app     = context['app']
         self.title   = context['title']
-        self.task_id = context['task_id']
+        self.task_id = str(context['task_id'])
         self.set_context(context)
 
     def set_context(self, context):
@@ -82,11 +90,11 @@ class BaseModel(object):
 
     @property
     def datalink(self):
-        return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(self.task_id))
+        return settings.DATALINK_TEMPLATE.format(task_id=self.task_id, data_guid=self.guid)
 
     @property
     def filelink(self):
-        return settings.AZURE_FILELINK.format(task_id=str(self.task_id), file_path=force_bytes(self.filepath))
+        return settings.AZURE_FILELINK.format(task_id=self.task_id, file_path=force_bytes(self.filepath))
 
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
@@ -111,6 +119,21 @@ class BaseModel(object):
 
     def to_string(self):
         return force_bytes(json.dumps(self.data, ensure_ascii=False))
+
+    @property
+    def user_info(self):
+        if self.context.has_key('users_table'):
+            try:
+                return self.context['users_table'][self.user_id]
+            except KeyError as e:
+                return (None, None)
+                raise FieldInvalid(\
+                    "Unable to find id:'{}' in `users_table`.".format(self.user_id))
+        else:
+            raise FieldMissing("Field `users_table` is missing in the context.")
+
+    def to_row(self):
+        return [self.filepath, self.datalink, ] + list(self.user_info)
 
 
 class BaseTaskInfo(object):

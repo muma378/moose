@@ -54,6 +54,7 @@ setup(
         'chardet>=3.0.4',
         'pytz>=2017.2',
         'python-utils>=2.3.0',
+        'openpyxl>=2.5.0'
     ],
     zip_safe=False,
     classifiers=[
