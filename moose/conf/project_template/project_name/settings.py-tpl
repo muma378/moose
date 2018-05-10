@@ -88,6 +88,8 @@ DATABASES = {
             'table_person': '[10.0.0.201].CrowdDB.dbo.Person',
             'table_project': '[10.0.0.201].CrowdDB.dbo.Project',
             'table_person_in_project': '[10.0.0.201].CrowdDB.dbo.PersonInProject',
+            'table_person_in_team': '[10.0.0.201].CrowdDB.dbo.PersonInTeam',
+        	'table_team': '[10.0.0.201].CrowdDB.dbo.Team',
         },
     },
     'mongo': {
