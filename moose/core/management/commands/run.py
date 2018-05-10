@@ -13,7 +13,7 @@ class CommandRunNotifier(BaseTemplateMail):
 	content in the email to send.
 	"""
 
-	subject_template = "[moose] {r.app_label} - {c.action_alias}"
+	subject_template = "[moose] {r.app_label} - {c.action_aliases}"
 	content_template = (
 		"Task '{r.id}' you started is finised, here is the information:\n"
 		"\t\"{r}\"\n\n"
@@ -95,7 +95,6 @@ class Command(AppCommand):
 
 
 	def handle_action(self, app_config, action_alias, configs):
-
 		# get user-defined class for the action
 		action_klass = app_config.get_action_klass(action_alias)
 		if action_klass:
