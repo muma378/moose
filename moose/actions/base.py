@@ -2,6 +2,11 @@
 import abc
 import threading
 
+from moose.core.management.color import color_style
+from moose.core.management.base import OutputWrapper
+from moose.core.exceptions import ImproperlyConfigured
+from moose.utils.module_loading import import_string
+
 class IllegalAction(Exception):
 	"""Action was halted somehow"""
 	pass
@@ -51,6 +56,23 @@ class BaseAction(AbstractAction):
 		should return a `string` representing the output.
 	"""
 
+	stats_dump = True
+	stats_class = 'moose.actions.stats.StatsCollector'
+
+	def __init__(self, app_config, stdout=None, stderr=None, style=None):
+		super(BaseAction, self).__init__(app_config)
+
+		# Sets stdout and stderr, which were supposed to passed from command
+		if isinstance(stdout, OutputWrapper) or isinstance(stderr, OutputWrapper):
+			self.stdout, self.stderr = stdout, stderr
+			self.style = style or color_style()
+		else:
+			raise ImproperlyConfigured("Field `stdout` or `stderr` is not an \
+				instance of `OutputWrapper`.")
+
+		# Imports stats class
+		self.stats = import_string(self.stats_class)(self)
+
 	def parse(self, kwargs):
 		raise NotImplementedError('subclasses of BaseAction must provide a parse()')
 
@@ -61,11 +83,12 @@ class BaseAction(AbstractAction):
 		raise NotImplementedError('subclasses of BaseAction must provide a handle()')
 
 	def run(self, **kwargs):
+		self.output = []
 		environment = self.parse(kwargs)
-		output = []
 		for context in self.schedule(environment):
-			output.append(self.execute(context))
-		return '\n'.join(output)
+			self.execute(context)
+			self.stats.close_action(self, '')
+		return '\n'.join(self.output)
 
 
 class SimpleAction(BaseAction):
@@ -94,18 +117,3 @@ class SimpleAction(BaseAction):
 		Entry point for subclassed commands to add custom context.
 		"""
 		pass
-
-
-
-class BaseStat:
-	"""
-	An active counter to stash all statistic.
-	"""
-	pass
-
-
-class MixinAction(threading.Thread):
-	"""
-	A mixin class to provide the object extra ability.
-	"""
-	pass
