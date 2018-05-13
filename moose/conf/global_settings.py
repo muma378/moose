@@ -81,6 +81,7 @@ CONFIG_DESC_EXPR_SEP = ':'
 CONFIG_DISCOVER_BY_TAG = 't'
 CONFIG_DISCOVER_BY_ATTR = 'a'
 CONFIG_DESC_ATTR_VAL_SEP = '='
+CONFIG_DESC_SECT_OPT_SEP = '.'
 
 # The email backend to use. For possible shortcuts see django.core.mail.
 # The default is to use the SMTP backend.

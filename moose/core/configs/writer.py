@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-
 from moose.utils._os import npath
 from moose.utils.six.moves import configparser
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
@@ -34,5 +33,5 @@ class ConfigWriter(object):
 		if os.path.exists(conf_path):
 			raise ImproperlyConfigured("Config path '%s' exists already." % conf_path)
 
-		with open(conf_path, 'wb') as configfile:
+		with open(conf_path, 'w') as configfile:
 			self._config.write(configfile)

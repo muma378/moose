@@ -66,31 +66,34 @@ class ConfigLoader(object):
 
 	def __update_codec(self):
 		# character encoding detect
-		with open(self.path, 'rb') as f:
+		with open(self.path, 'rb+') as f:
 			overwrite = False
 			content = f.read()
-			result = chardet.detect(content)
-			if not result:
-				raise ImproperlyConfigured(
-					"Unknown encoding for '%s'." % self.path)
 
 			# coding with utf-N-BOM, removes the BOM signs '\xff\xfe' or '\xfe\xff'
 			if content.startswith(codecs.BOM_LE) or content.startswith(codecs.BOM_BE):
 				content = content[2:]
 				overwrite = True	# flag to rewrite the config file
+			else:
+				result = chardet.detect(content)
+				if not result or result['confidence'] < 0.9:
+					raise ImproperlyConfigured(
+						"Unknown encoding for '%s', please use codecs "
+						"'UTF-8' to encode the file." % self.path)
 
-			file_encoding = result['encoding']
-			# coding with other codecs except for ascii or utf-8
-			if file_encoding!='ascii' and file_encoding!=settings.FILE_CHARSET:
-				try:
-					content = content.decode(file_encoding).encode(settings.FILE_CHARSET)
-					overwrite = True
-				except UnicodeDecodeError as e:
-					raise ImproperlyConfigured(
-						"Unknown encoding for '%s'." % self.path)
-				except UnicodeEncodeError as e:
-					raise ImproperlyConfigured(
-						"Unrecognized symbols in '%s'." % self.path)
+				file_encoding = result['encoding']
+
+				# coding with other codecs except for ascii or utf-8
+				if file_encoding!='ascii' and file_encoding!=settings.FILE_CHARSET:
+					try:
+						content = content.decode(file_encoding).encode(settings.FILE_CHARSET)
+						overwrite = True
+					except UnicodeDecodeError as e:
+						raise ImproperlyConfigured(
+							"Unknown encoding for '%s'." % self.path)
+					except UnicodeEncodeError as e:
+						raise ImproperlyConfigured(
+							"Unrecognized symbols in '%s'." % self.path)
 			# erases the content and rewrites with 'utf-8' encoding
 			if overwrite:
 				f.truncate(0)	# truncate the config size to 0
