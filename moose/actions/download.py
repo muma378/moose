@@ -117,12 +117,12 @@ def download(urls, dirpath, workers=10, overwrite=False):
     return stat
 
 class DownloadWorker(threading.Thread):
-    def __init__(self, queue, callback, stat, timeout, overwrite=False):
+    def __init__(self, queue, callback, stats, timeout, overwrite=False):
         super(DownloadWorker, self).__init__()
         self.queue     = queue
         self.callback  = callback
         # a mutex to count in threads
-        self.stat      = stat
+        self.stats     = stats
         self.timeout   = timeout
         self.overwrite = overwrite
 
@@ -134,7 +134,7 @@ class DownloadWorker(threading.Thread):
                 self.write(data, data_model.dest_filepath)
                 self.callback(data_model)
                 self.queue.task_done()
-                self.stat.nok += 1
+                self.stats.inc_value("download/ok")
             except Queue.Empty as e:
                 break
 
@@ -144,17 +144,15 @@ class DownloadWorker(threading.Thread):
             data = response.read()
             return data
         except urllib2.HTTPError, e:
-            self.stat.nfail += 1
+            self.stats.inc_value("download/http_error")
             logger.error('falied to connect to %s, may for %s' % (url, e.reason))
         except urllib2.URLError, e:
-            self.stat.nfail += 1
-            self.stat.failed_list.append(url)
+            self.stats.inc_value("download/url_error")
             logger.error('unable to open url %s for %s' % (url, e.reason))
-
 
     def write(self, data, filepath):
         if os.path.exists(filepath):
-            self.stat.nconflict += 1
+            self.stats.inc_value("download/conflict")
             if not self.overwrite:
                 return
 
@@ -165,10 +163,9 @@ class DownloadWorker(threading.Thread):
 
 
 class DataModelDownloader(object):
-    def __init__(self, callback, output, timeout=None, overwrite=False, nworkers=10):
+    def __init__(self, callback, stats, timeout=None, overwrite=False, nworkers=10):
         self.queue = Queue.Queue()
-        self.stat = DownloadStat()
-        self.output = output
+        self.stats = stats
         self.callback = callback
         self.timeout = timeout or settings.DEFAULT_TIMEOUT
         self.overwrite = overwrite
@@ -176,7 +173,7 @@ class DataModelDownloader(object):
 
     def start(self):
         for i in range(self.nworkers):
-            worker = DownloadWorker(self.queue, self.callback, self.stat, \
+            worker = DownloadWorker(self.queue, self.callback, self.stats, \
                         self.timeout, self.overwrite)
             worker.setDaemon(True)
             worker.start()

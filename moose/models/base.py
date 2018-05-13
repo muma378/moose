@@ -135,6 +135,8 @@ class BaseModel(object):
     def to_row(self):
         return [self.filepath, self.datalink, ] + list(self.user_info)
 
+    def stats(self, stats_collector):
+        raise NotImplementedError("Subclass of BaseModel must provide stats() method.")
 
 class BaseTaskInfo(object):
     def __init__(self, task_name):

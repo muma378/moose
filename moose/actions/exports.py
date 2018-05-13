@@ -144,10 +144,9 @@ class BaseExport(SimpleAction):
 
         """
         queryset = self.fetch(context)
-        output = []
+        self.stats.set_value("query/all", len(queryset))
         for data_model in self.enumerate_model(queryset, context):
-            output.append(self.handle_model(data_model))
-        return '\n'.join(output)
+            self.handle_model(data_model)
 
     def enumerate_model(self, queryset, context):
         """
@@ -157,7 +156,9 @@ class BaseExport(SimpleAction):
         for item in queryset:
             data_model = self.data_model_cls(item, app=self.app, **context)
             if self.effective_only and not data_model.is_effective():
+                self.stats.inc_value("query/ineffective")
                 continue
+            self.stats.inc_value("query/effective")
             yield data_model
 
     def handle_model(self, data_model):
@@ -187,7 +188,7 @@ class SimpleExport(BaseExport):
         queryset = self.fetch(context)
         output = []
         if self.download_source:
-            self.downloader = DataModelDownloader(self.handle_model, output)
+            self.downloader = DataModelDownloader(self.handle_model, self.stats)
             self.downloader.start()
 
             for data_model in self.enumerate_model(queryset, context):
@@ -201,6 +202,7 @@ class SimpleExport(BaseExport):
 
     def handle_model(self, data_model):
         self.dump(data_model)
+        data_model.stats(self.stats)
 
     def dump(self, data_model):
         # creates the upper directory to save json files
