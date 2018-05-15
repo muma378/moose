@@ -310,7 +310,7 @@ class BaseCommand(object):
                 style_output = self.style.SUCCESS(output)
                 self.stdout.write(style_output)
         except ImproperlyConfigured as e:
-            self.stderr.write(e)
+            self.stderr.write(repr(e))
             sys.exit(1)
         finally:
             pass
