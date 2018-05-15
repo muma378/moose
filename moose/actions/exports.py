@@ -2,12 +2,13 @@
 import os
 import math
 import time
+import copy
 import pickle
 import hashlib
 import logging
 
 from moose.process.image import draw
-from moose.utils._os import makedirs, makeparents
+from moose.utils._os import makedirs, makeparents, npath
 from moose.connection import query, database, fetch
 from moose.utils.module_loading import import_string
 from moose.conf import settings
@@ -84,8 +85,8 @@ class BaseExport(SimpleAction):
                 "The number of values in options `task_id` and `title` is not equal.")
 
         # copys the whole environment by default
-        context = dict(env)
         for i, (task_id, title) in enumerate(zip(task_ids, titles)):
+            context = copy.deepcopy(env)
             context['task_id']  = task_id
             context['title']    = title
             # set custom context if necessary
@@ -141,7 +142,6 @@ class BaseExport(SimpleAction):
     def execute(self, context):
         """
         Defines how a job was finished in sequence.
-
         """
         queryset = self.fetch(context)
         self.stats.set_value("query/all", len(queryset))
@@ -234,4 +234,4 @@ class ImagesExport(SimpleExport):
             blend_path = image_prefix + self.blend_label + self.image_suffix
             draw.blend(image_path, blend_path, data_model.datalist, self.pallet)
         except AttributeError as e:
-            logger.error("Unable to read {}.".format(image_path))
+            logger.error("Unable to read {}.".format(npath(image_path)))

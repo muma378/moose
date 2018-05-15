@@ -2,14 +2,15 @@
 import os
 import math
 import json
+import copy
 from collections import defaultdict
 
-from moose.connection.cloud import AzureBlobService
-from moose.shortcuts import ivisit
 from moose.conf import settings
+from moose.shortcuts import ivisit
 from moose.utils._os import safe_join
 from moose.utils.encoding import smart_text
 from moose.utils.datautils import islicel
+from moose.connection.cloud import AzureBlobService
 
 from .base import IllegalAction, InvalidConfig, SimpleAction
 
@@ -21,7 +22,7 @@ def getseq(list_or_ele):
     return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
 
 
-class BaseUpload(AbstractAction):
+class BaseUpload(SimpleAction):
     """
     Class to simulate the action of uploading files to Microsoft
     Azure Storage, 5 procedures are accomplished in sequence:
@@ -69,7 +70,7 @@ class BaseUpload(AbstractAction):
         }
 
         self.set_environment(environment, config, kwargs)
-        return context
+        return environment
 
     def set_environment(self, env, config, kwargs):
         """
@@ -111,8 +112,8 @@ class BaseUpload(AbstractAction):
         files = self.lookup_files(env)
         passed, removed = self.partition(files, env)
 
-        context = dict(env)
         for i, (task_id, blob_pairs) in enumerate(self.split(passed, env)):
+            context = copy.deepcopy(env)
             context['task_id']  = task_id
             context['blobs']    = blob_pairs
             self.set_context(context, i)
@@ -143,14 +144,17 @@ class BaseUpload(AbstractAction):
         """
         raise NotImplementedError
 
-    def to_sting(self, catalog):
+    def to_string(self, catalog):
         raise NotImplementedError
 
     def execute(self, context):
         output = []
         blob_pairs = context['blobs']
+        container_name = context['task_id']
         if self.upload_files:
+            self.stats.set_value("upload/total", blob_pairs)
             blobs = self.azure.upload(container_name, blob_pairs)
+            self.stats.set_value("upload/upload", len(blobs))
             output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
 
         if self.generate_index:
