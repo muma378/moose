@@ -7,7 +7,7 @@ import inspect
 from moose.utils._os import makedirs, safe_join
 from moose.utils.encoding import force_bytes
 from moose.conf import settings
-import fields
+from . import fields
 
 class FieldMissing(Exception):
     """Required field is not provided"""
@@ -24,7 +24,7 @@ class BaseModel(object):
     an unified interface, the diversity of implementation can be ignored.
     """
     output_suffix = '.json'
-    effective_values = ('1', 1)
+    effective_values = ('1', 1, 'true')
 
     def __init__(self, annotation, **context):
         self.annotation = annotation
@@ -132,8 +132,11 @@ class BaseModel(object):
         else:
             raise FieldMissing("Field `users_table` is missing in the context.")
 
-    def to_row(self):
+    def overview(self):
         return [self.filepath, self.datalink, ] + list(self.user_info)
+
+    def normalize(self):
+        pass
 
     def stats(self, stats_collector):
         raise NotImplementedError("Subclass of BaseModel must provide stats() method.")

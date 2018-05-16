@@ -8,8 +8,8 @@ import hashlib
 import logging
 
 from moose.process.image import draw
+from moose.connection import query, fetch
 from moose.utils._os import makedirs, makeparents, npath
-from moose.connection import query, database, fetch
 from moose.utils.module_loading import import_string
 from moose.conf import settings
 
@@ -41,7 +41,8 @@ class BaseExport(SimpleAction):
     effective_only  = True
     # Whether the fetched result to be kept and how long (in hour)
     use_cache       = True
-    warranty_period = 1
+    cache_dirname   = settings.DATACACHE_DIRNAME
+    cache_lifetime  = settings.DATACACHE_LIFETIME
 
     def parse(self, kwargs):
         # Gets config from the kwargs
@@ -118,7 +119,7 @@ class BaseExport(SimpleAction):
         if self.use_cache:
             # gets the unique identifier by `queryargs`
             cache_id = hashlib.md5(repr(queryargs)).hexdigest()
-            cache_pickle = os.path.join(self.app.data_dirname, cache_id)
+            cache_pickle = os.path.join(self.app.data_dirname, self.cache_dirname, cache_id)
             if os.path.exists(cache_pickle) and \
                     not self.is_expired(cache_pickle):
                 logger.warning("Using cached queryset '%s'." % cache_id)
@@ -126,6 +127,7 @@ class BaseExport(SimpleAction):
                     queryset = pickle.load(f)
             else:
                 queryset = self.fetcher.fetch(**queryargs)
+                makeparents(cache_pickle)
                 with open(cache_pickle, 'w') as f:
                     pickle.dump(queryset, f)
         else:
@@ -137,7 +139,7 @@ class BaseExport(SimpleAction):
         Makes sure the file was not created before the warranty period.
         """
         delta = time.time() - os.stat(filepath).st_ctime
-        return delta > self.warranty_period * 3600
+        return delta > self.cache_lifetime * 3600
 
     def execute(self, context):
         """
@@ -151,7 +153,6 @@ class BaseExport(SimpleAction):
     def enumerate_model(self, queryset, context):
         """
         Generates the model of data to be handled later,
-
         """
         for item in queryset:
             data_model = self.data_model_cls(item, app=self.app, **context)

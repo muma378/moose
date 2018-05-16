@@ -81,3 +81,13 @@ class BaseFetcher(object):
             else:
                 logger.error("Unable to find match result record for guid: '%s'" % str(result_guid))
         return records
+
+class SourceFetcher(BaseFetcher):
+
+    def fetch(self, **context):
+        project_id = str(context['project_id'])
+
+        # get mongo result
+        source_records = self._indexing(self._fetch_source(project_id))
+
+        return source_records

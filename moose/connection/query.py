@@ -161,3 +161,9 @@ class UsersInProjectQuery(BaseUsersQuery):
         "pip.ProjectId = {project_id} and pip.PersonId=ps.id and "
         "pit.ProviderUserKey = pip.ProviderUserGuid and t.Id=pit.TeamId "
     )
+
+class ProjectInfoQuery(BaseQuery):
+
+    statement_template = (
+        "select * from {table_project} where id={project_id}"
+    )

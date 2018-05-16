@@ -133,7 +133,7 @@ class SQLServerHandler(BaseSQLHandler):
         import pymssql
 
         logger.debug(
-                "Trying to connect to SQLServer servered on '%s:%s'..." % (settings_dict['HOST'], settings_dict['HOST']))
+                "Trying to connect to SQLServer servered on '%s:%s'..." % (settings_dict['HOST'], settings_dict['PORT']))
         conn = None
         try:
             conn = pymssql.connect(
@@ -146,7 +146,7 @@ class SQLServerHandler(BaseSQLHandler):
             )
         except (pymssql.InterfaceError, pymssql.OperationalError) as e:
             logger.error(e.message)
-            raise ImproperlyConfigured
+            raise ImproperlyConfigured("Failed to connect to SQL database '%s'." % settings_dict['HOST'])
         except KeyError as e:
             logger.error(
                 "Fields missing, please check %s was in settings." % e.message)
