@@ -152,7 +152,7 @@ class BaseUpload(SimpleAction):
         blob_pairs = context['blobs']
         container_name = context['task_id']
         if self.upload_files:
-            self.stats.set_value("upload/total", blob_pairs)
+            self.stats.set_value("upload/total", len(blob_pairs))
             blobs = self.azure.upload(container_name, blob_pairs)
             self.stats.set_value("upload/upload", len(blobs))
             output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))

@@ -82,12 +82,16 @@ class BaseAction(AbstractAction):
 	def execute(self, context):
 		raise NotImplementedError('subclasses of BaseAction must provide a handle()')
 
+	def teardown(self, env):
+		pass
+
 	def run(self, **kwargs):
 		self.output = []
 		environment = self.parse(kwargs)
 		for context in self.schedule(environment):
 			self.execute(context)
 			self.stats.close_action(self, '')
+		self.teardown(environment)
 		return '\n'.join(self.output)
 
 
