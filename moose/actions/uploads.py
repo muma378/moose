@@ -226,7 +226,7 @@ class MultipleUpload(SimpleUpload):
     """
     Upload multiple tasks in an action.
     """
-    def parse(self, env, config, kwargs):
+    def set_environment(self, env, config, kwargs):
         # optional fields
         env['nshare'] = config.upload.get('nshare', 1),
         env['pattern'] = config.upload.get('pattern', None),
@@ -256,10 +256,8 @@ class MultipleUpload(SimpleUpload):
 class DirsUpload(SimpleUpload):
     remove_dirname = True
 
-    def parse(self, config, kwargs):
-        return {
-            'dirnames': [ smart_text(x) for x in config.upload.get('dirnames', [''])]
-        }
+    def set_environment(self, env, config, kwargs):
+        env['dirnames'] = [ smart_text(x) for x in config.upload.get('dirnames', [''])]
 
     def split(self, files, env):
         task_ids = env['task_id']
