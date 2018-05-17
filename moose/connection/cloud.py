@@ -115,7 +115,7 @@ class AzureBlobService(object):
         if not os.path.exists(filepath):
             logger.error("File doesn't exist: %s." % filepath)
             return None
-        logger.debug("Creates blob '{}'@[{}]".format(blob_name, container_name))
+        logger.debug("Creates blob '{}'@[{}]".format(npath(blob_name), container_name))
         blob = self.block_blob_service.create_blob_from_path(
             container_name, blob_name, filepath)
         return blob

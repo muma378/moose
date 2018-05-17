@@ -181,6 +181,7 @@ class SectionParser(object):
 
 
 class OptionBaseType(object):
+	default_charset = 'utf-8'
 	def __init__(self, val):
 		self.value = val
 
@@ -193,7 +194,6 @@ class OptionUnicode(OptionBaseType):
 	Type for unicode or option not specified. (decoded in __update_codec)
 	"""
 	opt_code = (None, 'unicode', 'Unicode')
-	default_charset = 'utf-8'
 
 	def get_value(self):
 		if six.PY2:
@@ -217,8 +217,14 @@ class OptionSequence(OptionBaseType):
 	opt_code = ('list', 'sequence', 'List', 'Sequence')
 
 	def get_value(self):
+		if six.PY2:
+			# type of str
+			value = self.value.decode(self.default_charset)
+		else:
+			# type of str (unicode in python3)
+			value = self.value
 		# splited by a sep such as ','
-		return tuple(stripl(self.value.split(settings.CONFIG_LIST_SEP)))
+		return tuple(stripl(value.split(settings.CONFIG_LIST_SEP)))
 
 class OptionInteger(OptionBaseType):
 	opt_code = ('int', 'Integer')
