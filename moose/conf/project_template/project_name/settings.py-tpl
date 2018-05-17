@@ -28,6 +28,15 @@ ALL_IMAGE_PATTERN = ('*.jpg', '*.png', '*.jpeg', '*.bmp', '*.gif', '*.tiff')
 
 AUDIO_PATTERN = ('*.wav', '*.mp3')
 
+###########
+# LOGGING #
+###########
+
+# The callable to use to configure logging
+LOGGING_CONFIG = 'logging.config.dictConfig'
+
+# Custom logging configuration.
+LOGGING = {}
 
 ###########
 # CONFIGS #
@@ -130,6 +139,10 @@ QUERY_CONTEXT = {
     'mongo_context': DATABASES['mongo'],
 }
 
+# Database cache
+DATACACHE_DIRNAME = '.database'
+DATACACHE_LIFETIME = 1
+
 # Config for Server Message Block protocol
 SMB = {
     'HOST': '',
@@ -148,15 +161,13 @@ WEB_SETTINGS = {
     "password": "",
 }
 
-BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
-
-
 DOWNLOAD_SETTINGS = {
     "queue_buffer": 2500,
     "queue_timeout": 60,
     "download_timeout": 60,
 }
 
+BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
 
 # Host for sending email.
 EMAIL_HOST = 'mail.datatang.com'
