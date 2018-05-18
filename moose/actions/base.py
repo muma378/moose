@@ -89,8 +89,8 @@ class BaseAction(AbstractAction):
 		self.output = []
 		environment = self.parse(kwargs)
 		for context in self.schedule(environment):
-			self.execute(context)
-			self.stats.close_action(self, '')
+			stats_id = self.execute(context)
+			self.stats.close_action(self, stats_id)
 		self.teardown(environment)
 		return '\n'.join(self.output)
 

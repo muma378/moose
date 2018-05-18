@@ -141,6 +141,9 @@ class BaseExport(SimpleAction):
         delta = time.time() - os.stat(filepath).st_ctime
         return delta > self.cache_lifetime * 3600
 
+    def destroy(self, context):
+        pass
+
     def execute(self, context):
         """
         Defines how a job was finished in sequence.
@@ -149,6 +152,11 @@ class BaseExport(SimpleAction):
         self.stats.set_value("query/all", len(queryset))
         for data_model in self.enumerate_model(queryset, context):
             self.handle_model(data_model)
+        self.destroy(self, context)
+        return self.get_stats_id(context)
+
+    def get_stats_id(self, context):
+        return ''
 
     def enumerate_model(self, queryset, context):
         """
@@ -187,7 +195,6 @@ class SimpleExport(BaseExport):
 
         """
         queryset = self.fetch(context)
-        output = []
         if self.download_source:
             self.downloader = DataModelDownloader(self.handle_model, self.stats)
             self.downloader.start()
@@ -199,7 +206,7 @@ class SimpleExport(BaseExport):
         else:
             for data_model in self.enumerate_model(queryset, context):
                 self.handle_model(data_model)
-        return '\n'.join(output)
+        return self.get_stats_id(context)
 
     def handle_model(self, data_model):
         self.dump(data_model)

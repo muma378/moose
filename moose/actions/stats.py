@@ -39,11 +39,11 @@ class StatsCollector(object):
     def open_action(self, action):
         pass
 
-    def close_action(self, action, reason):
+    def close_action(self, action, identity):
         if self._dump:
             logger.info("Dumping Moose stats:\n" + pprint.pformat(self._stats),
                         extra={'action': action})
-        self._persist_stats(self._stats, action)
+        self._persist_stats(self._stats, identity)
 
     def _persist_stats(self, stats, action):
         pass
@@ -55,8 +55,17 @@ class MemoryStatsCollector(StatsCollector):
         super(MemoryStatsCollector, self).__init__(action)
         self.action_stats = {}
 
-    def _persist_stats(self, stats, action):
-        self.action_stats[action.name] = stats
+    def _persist_stats(self, stats, identity):
+        self.action_stats[identity] = stats
+
+class SperatedStatsCollector(MemoryStatsCollector):
+
+    def close_action(self, action, identity):
+        if self._dump:
+            logger.info("Dumping Moose stats:\n" + pprint.pformat(self._stats),
+                        extra={'action': action})
+        self._persist_stats(self._stats, identity)
+        self.clear_stats()
 
 
 class DummyStatsCollector(StatsCollector):
