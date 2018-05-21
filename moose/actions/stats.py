@@ -58,6 +58,7 @@ class MemoryStatsCollector(StatsCollector):
     def _persist_stats(self, stats, identity):
         self.action_stats[identity] = stats
 
+
 class SperatedStatsCollector(MemoryStatsCollector):
 
     def close_action(self, action, identity):
