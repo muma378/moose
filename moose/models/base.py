@@ -2,9 +2,12 @@
 import os
 import copy
 import json
+import Queue
 import inspect
+import urllib2
+import threading
 
-from moose.utils._os import makedirs, safe_join
+from moose.utils._os import makedirs, makeparents, safe_join
 from moose.utils.encoding import force_bytes
 from moose.conf import settings
 from . import fields
@@ -26,10 +29,12 @@ class BaseModel(object):
     output_suffix = '.json'
     effective_values = ('1', 1, 'true')
 
-    def __init__(self, annotation, **context):
+    def __init__(self, annotation, app, stats, **context):
         self.annotation = annotation
         self.source = annotation['source']
         self.result = annotation['result']
+        self.app    = app
+        self.stats  = stats
         self.context = context
         self.set_base_context(context)
         self._active()
@@ -44,7 +49,6 @@ class BaseModel(object):
                     self.__setattr__(field, obj.get_val(self.annotation))
 
     def set_base_context(self, context):
-        self.app     = context['app']
         self.title   = context['title']
         self.task_id = str(context['task_id'])
         self.set_context(context)
@@ -138,9 +142,80 @@ class BaseModel(object):
     def normalize(self):
         pass
 
-    def stats(self, stats_collector):
-        raise NotImplementedError("Subclass of BaseModel must provide stats() method.")
 
 class BaseTaskInfo(object):
     def __init__(self, task_name):
         pass
+
+
+class DownloadWorker(threading.Thread):
+    def __init__(self, queue, callback, stats, timeout, overwrite=False):
+        super(DownloadWorker, self).__init__()
+        self.queue     = queue
+        self.callback  = callback
+        # a mutex to count in threads
+        self.stats     = stats
+        self.timeout   = timeout
+        self.overwrite = overwrite
+
+    def run(self):
+        while True:
+            try:
+                data_model = self.queue.get(timeout=self.timeout)
+                data = self.fetch(data_model.filelink)
+                self.write(data, data_model.dest_filepath)
+                self.callback(data_model)
+                self.queue.task_done()
+                self.stats.inc_value("download/ok")
+            except Queue.Empty as e:
+                break
+
+    def fetch(self, url):
+        try:
+            response = urllib2.urlopen(url, timeout=self.timeout)
+            data = response.read()
+            return data
+        except urllib2.HTTPError, e:
+            self.stats.inc_value("download/http_error")
+            logger.error('falied to connect to %s, may for %s' % (url, e.reason))
+        except urllib2.URLError, e:
+            self.stats.inc_value("download/url_error")
+            logger.error('unable to open url %s for %s' % (url, e.reason))
+
+    def write(self, data, filepath):
+        if os.path.exists(filepath):
+            self.stats.inc_value("download/conflict")
+            if not self.overwrite:
+                return
+
+        makeparents(filepath)
+        with open(filepath, 'w') as f:
+            f.write(data)
+        return
+
+
+class ModelDownloader(object):
+    def __init__(self, callback, stats, timeout=None, overwrite=False, nworkers=10):
+        self.queue     = Queue.Queue()
+        self.callback  = callback
+        self.stats     = stats
+        self.timeout   = timeout or settings.DEFAULT_TIMEOUT
+        self.overwrite = overwrite
+        self.nworkers  = nworkers
+
+    def start(self):
+        for i in range(self.nworkers):
+            worker = DownloadWorker(self.queue, self.callback, self.stats, \
+                        self.timeout, self.overwrite)
+            worker.setDaemon(True)
+            worker.start()
+
+    def add_task(self, data_model):
+        try:
+            self.queue.put(data_model)
+        except Queue.Full as e:
+            logger.error('Try to put an element in a full queue.')
+            raise e
+
+    def join(self):
+        self.queue.join()

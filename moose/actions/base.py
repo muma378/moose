@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import abc
-import threading
+import sys
+# TODO: Defines actions work in multithreading
+# import threading
 
 from moose.core.management.color import color_style
 from moose.core.management.base import OutputWrapper
@@ -22,13 +24,8 @@ class AbstractAction:
 	Actions are abstract to operations handled in processing data. such as
 	uploading files to azure, dumping data from database and etc.
 
-	Abstract Factory Pattern(https://en.wikipedia.org/wiki/Abstract_factory_pattern)
-	is used in implementing the module.
 	"""
 	__metaclass__ = abc.ABCMeta
-
-	def __init__(self, app_config):
-		self.app = app_config
 
 	@abc.abstractmethod
 	def run(self, **kwargs):
@@ -37,7 +34,7 @@ class AbstractAction:
 
 class BaseAction(AbstractAction):
 	"""
-	A standard base action is splited into 3 steps:
+	A standard base action is splited into 4 steps:
 
 	1. Parse
 		Converts options in *.cfg file to a dict named `environment`.
@@ -54,6 +51,9 @@ class BaseAction(AbstractAction):
 	3. Execute
 		Handles the job with context provided above. Each execute()
 		should return a `string` representing the output.
+
+	4. Teardown
+		Handles the rest works after executing all context.
 	"""
 
 	stats_dump = True
@@ -62,16 +62,19 @@ class BaseAction(AbstractAction):
 	def __init__(self, app_config, stdout=None, stderr=None, style=None):
 		super(BaseAction, self).__init__(app_config)
 
+		# Sets app_config
+		self.app = app_config
+
 		# Sets stdout and stderr, which were supposed to passed from command
-		if isinstance(stdout, OutputWrapper) or isinstance(stderr, OutputWrapper):
-			self.stdout, self.stderr = stdout, stderr
-			self.style = style or color_style()
-		else:
-			raise ImproperlyConfigured("Field `stdout` or `stderr` is not an \
-				instance of `OutputWrapper`.")
+		self.stdout = stdout or sys.stdout
+		self.stderr = stderr or sys.stderr
+		self.style  = style or color_style()
 
 		# Imports stats class
 		self.stats = import_string(self.stats_class)(self)
+
+		# String to record and display after all works done
+		self.output = []
 
 	def parse(self, kwargs):
 		raise NotImplementedError('subclasses of BaseAction must provide a parse()')
@@ -86,7 +89,6 @@ class BaseAction(AbstractAction):
 		pass
 
 	def run(self, **kwargs):
-		self.output = []
 		environment = self.parse(kwargs)
 		for context in self.schedule(environment):
 			stats_id = self.execute(context)
@@ -97,7 +99,11 @@ class BaseAction(AbstractAction):
 
 class SimpleAction(BaseAction):
 	"""
-
+	Provides entry points for concrete actions. This is more like a
+	contract-oriented programming: declares interfaces that subclasses call
+	but descendant classes define.
+	In this way, actions are able to abstract common features in subclasses
+	meanwhile implement the custom functions in subclasses of subclass.
 	"""
 	def get_config(self, kwargs):
 		if kwargs.get('config'):
@@ -112,12 +118,24 @@ class SimpleAction(BaseAction):
 
 	def set_environment(self, env, config, kwargs):
 		"""
-		Entry point for subclassed commands to add custom environment.
+		Entry point for concrete actions to add custom environment,
+		called at the end of `parse()`.
 		"""
 		pass
 
 	def set_context(self, context, i):
 		"""
-		Entry point for subclassed commands to add custom context.
+		Entry point for concrete actions to add custom context,
+		called at the end of `schedule()`.
 		"""
 		pass
+
+	def terminate(self, context):
+		"""
+		Entry point for concrete actions to terminate the execution.
+		called at the end of `execute()`.
+		"""
+		pass
+
+    def get_stats_id(self, context):
+        return ''

@@ -2,173 +2,230 @@
 import os
 import math
 import time
+import copy
 import pickle
+import hashlib
 import logging
 
-from moose.connection import query
-from moose.connection import database
-from moose.connection import fetch
-from moose.connection.cloud import azure
-from moose.utils._os import makedirs, makeparents
+from moose.connection import query, fetch
+from moose.models import ModelDownloader
+from moose.toolbox.image import draw
+from moose.utils._os import makedirs, makeparents, npath
 from moose.utils.module_loading import import_string
 from moose.conf import settings
 
-from .base import AbstractAction, IllegalAction
-from .download import download, DownloadStat
-
-print(
-    "Package 'moose.actions.export' is deprecative, please consider "
-    "using 'moose.actions.exports'.")
+from .base import IllegalAction, InvalidConfig, SimpleAction
 
 logger = logging.getLogger(__name__)
 
-class BaseExport(AbstractAction):
+def getseq(list_or_ele):
+    return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
+
+
+class BaseExport(SimpleAction):
     """
-    Class to simulate the action of exporting, 5 procedures are accomplished
-    in sequence:
+    Class to simulate the action of exporting,
 
-    `get_context`
-        Converts config object to a dict of context.
-
-    `parse`
-        Entry for subclass to get the user-defined data.
-
-    `fetch`
-        Query and fetch annotation data from the database.
-
-    `handle`
-        Entry for subclass to
     """
-    # model to represent a data record
-    data_model = ''
-    query_class = None
-    fetcher_class = None
-    query_context = {}
-    # exports effective data only
-    effective_only = True
+    # Object style for a data in records, like 'appname.models.AppnameModel'
+    data_model      = ''
+    # A class object in 'moose.connection.fetch', inherited `BaseFetcher`
+    fetcher_class   = None
+    # A class object in 'moose.connection.query', inherited `BaseGuidQuery`,
+    # to be passed in `fetcher_class` as the first argument.
+    query_class     = None
+    # Query context to be passed in `fetcher_class`, find more details in
+    # `settings.QUERY_CONTEXT`
+    query_context   = {}
+    # Exports effective data only?
+    effective_only  = True
+    # Whether the fetched result to be kept and how long (in hour)
+    use_cache       = True
+    cache_dirname   = settings.DATACACHE_DIRNAME
+    cache_lifetime  = settings.DATACACHE_LIFETIME
 
-    def get_context(self, kwargs):
-        if kwargs.get('config'):
-            config = kwargs.get('config')
-        else:
-            logger.error("Missing argument: 'config'.")
-            raise IllegalAction(
-                "Missing argument: 'config'. This error is not supposed to happen, "
-                "if the action class was called not in command-line, please provide "
-                "the argument `config = config_loader._parse()`.")
+    def parse(self, kwargs):
+        # Gets config from the kwargs
+        config = self.get_config(kwargs)
 
+        # Initialize the fetcher
         if self.fetcher_class:
             self.fetcher = self.fetcher_class(self.query_class, self.query_context)
 
-        context = {
-            'root': config.common['root'],
+        # If data_model was defined as a string with dot,
+        # for example 'appname.models.AppnameModel'
+        if self.data_model:
+            self.data_model_cls = import_string(self.data_model)
+
+        # Sets base environment
+        environment = {
+            'root'   : config.common['root'],
             'relpath': config.common['relpath'],
             'task_id': config.upload['task_id'],
-            'title': config.export['title']
+            'title'  : config.export['title']
         }
 
-        context.update(self.parse(config, kwargs))
-        return context
+        # Sets custom environment
+        self.set_environment(environment, config, kwargs)
+        return environment
 
-    def parse(self, config, kwargs):
-        return {}
+    def schedule(self, env):
+        """
+        Generates the context to execute in the following steps.
+        """
+        task_ids = getseq(env['task_id'])
+        titles = getseq(env['title'])
+        if len(task_ids) != len(titles):
+            raise InvalidConfig(
+                "The number of values in options `task_id` and `title` is not equal.")
 
-    def fetch(self, task_id, context):
-        raise NotImplementedError
-
-    def handle(self, model, context):
-        pass
-
-    def run(self, **kwargs):
-        environment = self.get_context(kwargs)
-        output = []
-        for context in self.schedule(environment):
-            self.handle(context)
+        # copys the whole environment by default
+        for i, (task_id, title) in enumerate(zip(task_ids, titles)):
+            context = copy.deepcopy(env)
+            context['task_id']  = task_id
+            context['title']    = title
+            # set custom context if necessary
+            self.set_context(context, i)
+            yield context
 
 
-    def run(self, **kwargs):
-        context = self.get_context(kwargs)
-        queryset = self.fetch(context['task_id'], context)
-        output = []
-        neffective = 0
-        data_model_cls = import_string(self.data_model)
-        for item in queryset:
-            dm = data_model_cls(item, **context)
-            if dm.is_effective():
-                neffective += 1
-                self.handle(dm, context)
+    def get_queryargs(self, context):
+        """
+        Called by `fetch()` to get arguments for quering database,
+        which means, converts `context` to `kwargs`.
+        """
+        return {
+            'project_id': context['task_id'],
+            }
 
-        output.append("%d results processed." % neffective)
-        return '\n'.join(output)
-
-class SimpleExport(BaseExport):
-    query_class = query.AllGuidQuery
-    fetcher_class = fetch.BaseFetcher
-    query_context = settings.QUERY_CONTEXT
-    use_cache = True
-    warranty_period = 1     # hour
-
-    def handle(self, model, context):
-        title = context['title']
-        dst = os.path.join(self.app.data_dirname, title)
-        self.dump(model, dst)
-
-    def dump(self, model, dst):
-        filepath = os.path.join(dst, model.normpath)
-        makeparents(filepath)
-        filename, _ = os.path.splitext(filepath)
-        with open(filename+model.output_suffix, 'w') as f:
-            f.write(model.to_string())
-
-    def is_expired(self, filepath):
-        delta = time.time() - os.stat(filepath).st_ctime
-        return delta > self.warranty_period * 3600
-
-    def fetch(self, task_id, context):
+    def fetch(self, context):
+        """
+        Gets queryset with query arguments provided by `get_queryargs()`,
+        Dumps the result fetched to a pickle file if `use_cache` was set,
+        and loads only if it was not out of the date.
+        """
+        queryargs = self.get_queryargs(context)
         if self.use_cache:
-            cache_pickle = os.path.join(self.app.data_dirname, str(task_id)+'.pickle')
-            if os.path.exists(cache_pickle) and not self.is_expired(cache_pickle):
-                logger.warning("Using cached queyrset of task '%s'." % task_id)
+            # gets the unique identifier by `queryargs`
+            cache_id = hashlib.md5(repr(queryargs)).hexdigest()
+            cache_pickle = os.path.join(self.app.data_dirname, self.cache_dirname, cache_id)
+            if os.path.exists(cache_pickle) and \
+                    not self.is_expired(cache_pickle):
+                logger.warning("Using cached queryset '%s'." % cache_id)
                 with open(cache_pickle) as f:
                     queryset = pickle.load(f)
             else:
-                queryset = self.fetcher.fetch(project_id=task_id)
+                queryset = self.fetcher.fetch(**queryargs)
+                makeparents(cache_pickle)
                 with open(cache_pickle, 'w') as f:
                     pickle.dump(queryset, f)
         else:
-            queryset = self.fetcher.fetch(project_id=task_id)
+            queryset = self.fetcher.fetch(**queryargs)
         return queryset
 
+    def is_expired(self, filepath):
+        """
+        Makes sure the file was not created before the warranty period.
+        """
+        delta = time.time() - os.stat(filepath).st_ctime
+        return delta > self.cache_lifetime * 3600
 
-class DownloadAndExport(SimpleExport):
-    """
-    Downloads raw files meanwhile exporting the result.
-    """
-    overwrite_conflict = False
 
-    def run(self, **kwargs):
-        context = self.get_context(kwargs)
-        task_id = context['task_id']
-        queryset = self.fetch(task_id, context)
-        output = []
-        urls = []
-        neffective = 0
+    def execute(self, context):
+        """
+        Defines how a job was finished in sequence.
+        """
+        queryset = self.fetch(context)
+        self.stats.set_value("query/all", len(queryset))
+        for data_model in self.enumerate_model(queryset, context):
+            self.handle_model(data_model)
+        self.terminate(context)
+        return self.get_stats_id(context)
 
-        data_model_cls = import_string(self.data_model)
-        models = []
+    def enumerate_model(self, queryset, context):
+        """
+        Generates the model of data to be handled later.
+        """
         for item in queryset:
-            dm = data_model_cls(item, **context)
-            if dm.is_effective():
-                neffective += 1
-                models.append(dm)
-                urls.append((dm.filelink(context['task_id']), dm.filepath))
+            data_model = self.data_model_cls(item, self.app, self.stats, **context)
+            if self.effective_only and not data_model.is_effective():
+                self.stats.inc_value("query/ineffective")
+                continue
+            self.stats.inc_value("query/effective")
+            yield data_model
 
-        dst = os.path.join(self.app.data_dirname, context['title'])
-        stat = download(urls, dst, overwrite=self.overwrite_conflict)
-        output.append(str(stat))
+    def handle_model(self, data_model):
+        """
+        Entry point for subclassed actions to handle a data record.
+        """
+        raise NotImplementedError(\
+            'subclasses of BaseExport must provide a handle_model()')
 
-        for dm in models:
-            self.handle(dm, context)
-        output.append("%d results processed." % neffective)
 
-        return '\n'.join(output)
+class SimpleExport(BaseExport):
+    """
+    A simple implementation of the action `export`. Defines the default
+    value of query_* properties and performace of handle_model.
+    """
+    fetcher_class   = fetch.BaseFetcher
+    query_class     = query.AllGuidQuery
+    query_context   = settings.QUERY_CONTEXT
+
+    download_source = True
+
+    def handle_model_by_callback(self, queryset, callback, context):
+        downloader = ModelDownloader(callback, self.stats)
+        downloader.start()
+
+        for data_model in self.enumerate_model(queryset, context):
+            downloader.add_task(data_model)
+
+        downloader.join()
+
+    def execute(self, context):
+        """
+        Defines how a job was finished in sequence.
+        """
+        queryset = self.fetch(context)
+        if self.download_source:
+            self.handle_model_by_callback(queryset, self.handle_model, context)
+        else:
+            for data_model in self.enumerate_model(queryset, context):
+                self.handle_model(data_model)
+        self.terminate(context)
+        return self.get_stats_id(context)
+
+    def handle_model(self, data_model):
+        self.dump(data_model)
+
+    def dump(self, data_model):
+        # creates the upper directory to save json files
+        makeparents(data_model.dest_filepath)
+        filename, _ = os.path.splitext(data_model.dest_filepath)
+        with open(filename+data_model.output_suffix, 'w') as f:
+            f.write(data_model.to_string())
+
+class ImagesExport(SimpleExport):
+    """
+    Downloads source files meanwhile draws mask and blended pictures
+    """
+    # A table of labels mapping to colors
+    pallet       = None
+    mask_label  = '_mask'
+    blend_label = '_blend'
+    image_suffix  = '.png'
+
+    def handle_model(self, data_model):
+        self.dump(data_model)
+        self.draw(data_model)
+
+    def draw(self, data_model):
+        image_path = data_model.dest_filepath
+        image_prefix, _ = os.path.splitext(image_path)
+        try:
+            mask_path = image_prefix + self.mask_label + self.image_suffix
+            draw.draw_polygons(image_path, mask_path, data_model.datalist, self.pallet)
+            blend_path = image_prefix + self.blend_label + self.image_suffix
+            draw.blend(image_path, blend_path, data_model.datalist, self.pallet)
+        except AttributeError as e:
+            logger.error("Unable to read {}.".format(npath(image_path)))

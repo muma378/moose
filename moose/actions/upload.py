@@ -2,21 +2,27 @@
 import os
 import math
 import json
+import copy
 from collections import defaultdict
 
-from moose.connection.cloud import AzureBlobService
-from moose.shortcuts import ivisit
 from moose.conf import settings
+from moose.shortcuts import ivisit
+from moose.utils._os import safe_join
 from moose.utils.encoding import smart_text
 from moose.utils.datautils import islicel
+from moose.connection.cloud import AzureBlobService
 
-from .base import AbstractAction, IllegalAction
+from .base import IllegalAction, InvalidConfig, SimpleAction
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class BaseUpload(AbstractAction):
+def getseq(list_or_ele):
+    return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
+
+
+class BaseUpload(SimpleAction):
     """
     Class to simulate the action of uploading files to Microsoft
     Azure Storage, 5 procedures are accomplished in sequence:
@@ -41,56 +47,44 @@ class BaseUpload(AbstractAction):
         Convert the list of index to string(json).
 
     """
-    use_azure = True
-    gen_index = True
+    upload_files = True
+    # default to settings.AZURE
+    azure_setting = {}
+    generate_index = True
     default_pattern = None
 
-    azure_setting = {}
 
-    def get_context(self, kwargs):
+    def parse(self, kwargs):
+        # Gets config from the kwargs
+        config = self.get_config(kwargs)
+
         # uses the custom settings if defined
-        azure_setting = self.azure_setting or settings.AZURE
+        if self.azure_setting:
+            self.azure = AzureBlobService(self.azure_setting)
 
-        if azure_setting:
-            self.azure = AzureBlobService(azure_setting)
-        else:
-            logger.error("Missing argument: 'azure'")
-            raise IllegalAction(
-                "Missing argument: 'azure'. If you were not going to "
-                "use 'azure' in the action, please set class varaible "
-                "'use_azure' to False.")
-
-        if kwargs.get('config'):
-            config = kwargs.get('config')
-        else:
-            logger.error("Missing argument: 'config'.")
-            raise IllegalAction(
-                "Missing argument: 'config'. This error is not supposed to happen, "
-                "if the action class was called not in command-line, please provide "
-                "the argument `config = config_loader._parse()`.")
-
-        context = {
-            'root': config.common['root'],
+        environment = {
+            'root'   : config.common['root'],
             # use root by default
             'relpath': config.common.get('relpath', config.common['root']),
             'task_id': config.upload['task_id'],
         }
 
-        context.update(self.parse(config, kwargs))
-        return context
+        self.set_environment(environment, config, kwargs)
+        return environment
 
-    def parse(self, config, kwargs):
+    def set_environment(self, env, config, kwargs):
         """
         Entry point for subclassed upload actions to update context.
         """
-        return {}
+        pass
 
-    def lookup_files(self, root, context):
+    def lookup_files(self, env):
         """
         Finds all files located in root which matches the given pattern.
         """
-        pattern     = context.get('pattern', self.default_pattern)
-        ignorecase  = context.get('ignorecase', True)
+        root        = env['root']
+        pattern     = env.get('pattern', self.default_pattern)
+        ignorecase  = env.get('ignorecase', True)
         logger.debug("Visit '%s' with pattern: %s..." % (root, pattern))
 
         files   = []
@@ -99,7 +93,7 @@ class BaseUpload(AbstractAction):
         logger.debug("%d files found." % len(files))
         return files
 
-    def partition(self, files, context):
+    def partition(self, files, env):
         """
         Entry point for subclassed upload actions to remove unwanted files.
         """
@@ -111,30 +105,37 @@ class BaseUpload(AbstractAction):
         """
         return True
 
-    def enumerate(self, context):
+    def schedule(self, env):
         """
         List files to upload and belonged container.
         """
-        files = self.lookup_files(context['root'], context)
-        passed, removed = self.partition(files, context)
+        files = self.lookup_files(env)
+        passed, removed = self.partition(files, env)
 
+        for i, (task_id, blob_pairs) in enumerate(self.split(passed, env)):
+            context = copy.deepcopy(env)
+            context['task_id']  = task_id
+            context['blobs']    = blob_pairs
+            self.set_context(context, i)
+            yield context
+
+    def get_blob_pairs(self, files, relpath):
         blob_pairs = []
-        relpath = context['relpath']
-        for filepath in passed:
+        for filepath in files:
             blobname = os.path.relpath(filepath, relpath)
             if not self.check_file(filepath):
                 continue
             blob_pairs.append((blobname, filepath))
-        logger.debug("%d files are effective finally." % len(blob_pairs))
+        return blob_pairs
 
-        splitter = self.split(blob_pairs, context)
-        return splitter
-
-    def split(self, blob_pairs, context):
+    def split(self, files, env):
         """
         Files are splited into different groups and returns in order.
         """
-        task_id = context['task_id']
+        task_id = env['task_id']
+        relpath = env['relpath']
+        blob_pairs = self.get_blob_pairs(files, relpath)
+        logger.debug("%d files are effective finally." % len(blob_pairs))
         yield task_id, blob_pairs
 
     def index(self, blob_pairs, context):
@@ -143,33 +144,34 @@ class BaseUpload(AbstractAction):
         """
         raise NotImplementedError
 
-    def to_sting(self, catalog):
+    def to_string(self, catalog):
         raise NotImplementedError
 
-    def run(self, **kwargs):
-        context = self.get_context(kwargs)
-        enumerater = self.enumerate(context)
-
+    def execute(self, context):
         output = []
-        for container_name, blob_pairs in enumerater:
-            if self.use_azure:
-                blobs = self.azure.upload(container_name, blob_pairs)
-                output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
+        blob_pairs = context['blobs']
+        container_name = context['task_id']
+        if self.upload_files:
+            self.stats.set_value("upload/total", len(blob_pairs))
+            blobs = self.azure.upload(container_name, blob_pairs)
+            self.stats.set_value("upload/upload", len(blobs))
+            output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
 
-            if self.gen_index:
-                index_file = os.path.join(self.app.data_dirname, container_name+'.json')
-                catalog = self.index(blob_pairs, context)
-                with open(index_file, 'w') as f:
-                    f.write(self.to_string(catalog))
-                output.append("Index was written to '%s'." % index_file)
-
-        return '\n'.join(output)
+        if self.generate_index:
+            index_file = safe_join(self.app.data_dirname, container_name+'.json')
+            catalog = self.index(blob_pairs, context)
+            with open(index_file, 'w') as f:
+                f.write(self.to_string(catalog))
+            output.append("Index was written to '%s'." % index_file)
+        return output
 
 
 class SimpleUpload(BaseUpload):
     """
     The common way to upload files and generate a catalog.
     """
+    azure_setting = settings.AZURE
+
     def index(self, blob_pairs, context):
         catalog = []
         for blobname, filename in blob_pairs:
@@ -192,33 +194,23 @@ class ReferredUpload(SimpleUpload):
     """
     Do not do actual upload, but refers the old filelinks.
     """
-    use_azure = False
+    upload_files = False
 
-    def lookup_files(self, context):
-        referred_task = context['refer']
+    def lookup_files(self, env):
+        referred_task = env['refer']
         blob_names = self.azure.list_blobs(referred_task)
         return blob_names
 
-    def enumerate(self, context):
-        """
-        List files to upload and belonged container.
-        """
-        files = self.lookup_files(context)
-        passed, removed = self.partition(files, context)
-
-        relpath = context['relpath']
-        referred_task = context['refer']
-        for blobname in passed:
-            filepath = os.path.join(relpath, blobname)
-            if not self.check_file(filepath):
-                continue
-
-            url = settings.AZURE_FILELINK.format(task_id=referred_task, file_path=blobname)
+    def split(self, blob_names, env):
+        task_id    = context['task_id']
+        relpath    = context['relpath']
+        refer      = context['refer']
+        blob_pairs = []
+        for blobname in blob_names:
+            url = settings.AZURE_FILELINK.format(\
+                    task_id=refer, file_path=blobname)
             blob_pairs.append((url, blobname))
-        logger.debug("%d files are effective finally." % len(blob_pairs))
-
-        splitter = self.split(blob_pairs, context)
-        return splitter
+        yield task_id, blob_pairs
 
     def index(self, blob_pairs, context):
         catalog = []
@@ -234,21 +226,22 @@ class MultipleUpload(SimpleUpload):
     """
     Upload multiple tasks in an action.
     """
-    def parse(self, config, kwargs):
-        return {
-            # optional fields
-            'nshare' : config.upload.get('nshare', 1),
-            'pattern': config.upload.get('pattern', None),
-        }
+    def set_environment(self, env, config, kwargs):
+        # optional fields
+        env['nshare'] = config.upload.get('nshare', 1),
+        env['pattern'] = config.upload.get('pattern', None),
 
-    def split(self, blob_pairs, context):
-        nshare = int(context['nshare'])
+    def split(self, files, env):
+        nshare = int(env['nshare'])
+        relpath = env['relpath']
+        blob_pairs = self.get_blob_pairs(files, relpath)
+        logger.debug("%d files are effective finally." % len(blob_pairs))
+
         num_per_share = int(math.ceil(len(blob_pairs)*1.0/nshare))
         if nshare != 1:
             logger.debug("%d files are to upload on average for each time." % num_per_share)
 
-        task_id = context['task_id']
-        container_names = task_id if isinstance(task_id, list) else [task_id, ]
+        container_names = getseq(context['task_id'])
 
         if len(container_names) != nshare:
             logger.error("Number of containers is not equal to nshare.")
@@ -263,16 +256,18 @@ class MultipleUpload(SimpleUpload):
 class DirsUpload(SimpleUpload):
     remove_dirname = True
 
-    def parse(self, config, kwargs):
-        return {
-            'dirnames': [ smart_text(x) for x in config.upload.get('dirnames', [''])]
-        }
+    def set_environment(self, env, config, kwargs):
+        env['dirnames'] = [ smart_text(x) for x in config.upload.get('dirnames', [''])]
 
-    def split(self, all_blob_pairs, context):
-        task_ids = context['task_id']
-        dirnames = context['dirnames']
+    def split(self, files, env):
+        task_ids = env['task_id']
+        relpath = env['relpath']
+        blob_pairs = self.get_blob_pairs(files, relpath)
+        logger.debug("%d files are effective finally." % len(blob_pairs))
+
+        dirnames = env['dirnames']
         for dirname, task_id in zip(dirnames, task_ids):
-            sub_blob_pairs = filter(lambda x: dirname in x[1], all_blob_pairs)
+            sub_blob_pairs = filter(lambda x: dirname in x[1], blob_pairs)
             if self.remove_dirname:
                 sub_blob_pairs = [ (os.path.relpath(x[0], dirname), x[1]) for x in sub_blob_pairs]
             yield str(task_id), sub_blob_pairs
@@ -309,47 +304,3 @@ class VideosUpload(SimpleUpload):
         for dirname in groups.keys():
             groups[dirname].sort()
         return groups
-
-    def enumerate(self, context):
-        """
-        List files to upload and belonged container.
-        """
-        files = self.lookup_files(context['root'], context)
-        passed, removed = self.partition(files, context)
-
-        blob_pairs = []
-        relpath = context['relpath']
-        for filepath in passed:
-            blobname = os.path.relpath(filepath, relpath)
-            if not self.check_file(filepath):
-                continue
-            blob_pairs.append((blobname, filepath))
-        logger.debug("%d files are effective finally." % len(blob_pairs))
-
-        #from moose.utils.shortname import build_trie
-        #if self.use_short_name:
-            # self.name_mapper = {}
-            #tree = build_trie([x[0] for x in blob_pairs])
-            # TODO: build a trie to compress the name
-
-        splitter = self.split(blob_pairs, context)
-        return splitter
-
-    def run(self, **kwargs):
-        context = self.get_context(kwargs)
-        enumerater = self.enumerate(context)
-
-        output = []
-        for container_name, blob_pairs in enumerater:
-            if self.use_azure:
-                blobs = self.azure.upload(container_name, blob_pairs)
-                output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
-
-            if self.gen_index:
-                index_file = os.path.join(self.app.data_dirname, container_name+'.json')
-                catalog = self.index(blob_pairs, context)
-                with open(index_file, 'w') as f:
-                    f.write(self.to_string(catalog))
-                output.append("Index was written to '%s'." % index_file)
-
-        return '\n'.join(output)
