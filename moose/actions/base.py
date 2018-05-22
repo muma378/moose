@@ -60,7 +60,7 @@ class BaseAction(AbstractAction):
 	stats_class = 'moose.actions.stats.StatsCollector'
 
 	def __init__(self, app_config, stdout=None, stderr=None, style=None):
-		super(BaseAction, self).__init__(app_config)
+		super(BaseAction, self).__init__()
 
 		# Sets app_config
 		self.app = app_config
@@ -137,5 +137,5 @@ class SimpleAction(BaseAction):
 		"""
 		pass
 
-    def get_stats_id(self, context):
-        return ''
+	def get_stats_id(self, context):
+		return ''

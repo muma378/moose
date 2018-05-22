@@ -5,17 +5,17 @@ import time
 import copy
 import pickle
 import hashlib
-import logging
 
-from moose.connection import query, fetch
-from moose.models import ModelDownloader
 from moose.toolbox.image import draw
+from moose.models import ModelDownloader
+from moose.connection import query, fetch
 from moose.utils._os import makedirs, makeparents, npath
 from moose.utils.module_loading import import_string
 from moose.conf import settings
 
 from .base import IllegalAction, InvalidConfig, SimpleAction
 
+import logging
 logger = logging.getLogger(__name__)
 
 def getseq(list_or_ele):
@@ -25,7 +25,6 @@ def getseq(list_or_ele):
 class BaseExport(SimpleAction):
     """
     Class to simulate the action of exporting,
-
     """
     # Object style for a data in records, like 'appname.models.AppnameModel'
     data_model      = ''

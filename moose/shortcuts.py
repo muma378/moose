@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import fnmatch
+from moose.utils import six
 
 
 def get_matchfn(pattern, ignorecase):
     # syntax sugar, converts string to a tuple with one element
-    if isinstance(pattern, str) or isinstance(pattern, unicode):
+    if isinstance(pattern, six.string_types):
         pattern = (pattern, )
     # defines the function anymatch
     if pattern:
