@@ -18,10 +18,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def getseq(list_or_ele):
-    return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
-
-
 class BaseUpload(SimpleAction):
     """
     Class to simulate the action of uploading files to Microsoft
@@ -31,8 +27,8 @@ class BaseUpload(SimpleAction):
     `
     while the following steps are implemented by subclasses.
 
-    `parse`
-        Get extra info to update context.
+    `set_environment`
+        Get extra info to update env.
 
     `partition`
         Valid files are distinguished from the invalid.
@@ -47,12 +43,12 @@ class BaseUpload(SimpleAction):
         Convert the list of index to string(json).
 
     """
-    upload_files = True
+    upload_files    = True
     # default to settings.AZURE
-    azure_setting = {}
-    generate_index = True
+    azure_setting   = settings.AZURE
+    generate_index  = True
     default_pattern = None
-
+    ignorecase      = True
 
     def parse(self, kwargs):
         # Gets config from the kwargs
@@ -63,28 +59,24 @@ class BaseUpload(SimpleAction):
             self.azure = AzureBlobService(self.azure_setting)
 
         environment = {
+            # base dirname for files to upload
             'root'   : config.common['root'],
-            # use root by default
+            # part to remove for blob name, use root by default
             'relpath': config.common.get('relpath', config.common['root']),
             'task_id': config.upload['task_id'],
+            # provided if multiple dirnames for multiple tasks
+            'dirs'   : config.upload.get('dirs'),
         }
 
         self.set_environment(environment, config, kwargs)
         return environment
 
-    def set_environment(self, env, config, kwargs):
-        """
-        Entry point for subclassed upload actions to update context.
-        """
-        pass
-
-    def lookup_files(self, env):
+    def lookup_files(self, root, context):
         """
         Finds all files located in root which matches the given pattern.
         """
-        root        = env['root']
-        pattern     = env.get('pattern', self.default_pattern)
-        ignorecase  = env.get('ignorecase', True)
+        pattern     = context.get('pattern', self.default_pattern)
+        ignorecase  = context.get('ignorecase', self.ignorecase)
         logger.debug("Visit '%s' with pattern: %s..." % (root, pattern))
 
         files   = []
@@ -93,33 +85,37 @@ class BaseUpload(SimpleAction):
         logger.debug("%d files found." % len(files))
         return files
 
-    def partition(self, files, env):
+    def partition(self, files, context):
         """
         Entry point for subclassed upload actions to remove unwanted files.
         """
         return files, []
 
-    def check_file(self, filepath):
-        """
-        Entry point for subclassed upload actions to remove unwanted files.
-        """
-        return True
-
     def schedule(self, env):
         """
         List files to upload and belonged container.
         """
-        files = self.lookup_files(env)
-        passed, removed = self.partition(files, env)
+        task_ids = self.getseq(env['task_id'])
+        if env.get('dirs'):
+            dirs = self.getseq(env['dirs'])
+        else:
+            dirs = ['', ]
+        self.assert_equal_size(task_ids, dirs)
+        root = env['root']
 
-        for i, (task_id, blob_pairs) in enumerate(self.split(passed, env)):
+        for i, (task_id, dirname) in enumerate(zip(task_ids, dirs)):
             context = copy.deepcopy(env)
+            context['root']     = os.path.join(root, dirname)
             context['task_id']  = task_id
-            context['blobs']    = blob_pairs
             self.set_context(context, i)
             yield context
 
+
     def get_blob_pairs(self, files, relpath):
+        """
+        Converts filepath to (blobname, filepath) while blobname is the
+        relative path to `relpath`.
+        """
         blob_pairs = []
         for filepath in files:
             blobname = os.path.relpath(filepath, relpath)
@@ -128,15 +124,11 @@ class BaseUpload(SimpleAction):
             blob_pairs.append((blobname, filepath))
         return blob_pairs
 
-    def split(self, files, env):
+    def check_file(self, filepath):
         """
-        Files are splited into different groups and returns in order.
+        Entry point for subclassed upload actions to remove unwanted files.
         """
-        task_id = env['task_id']
-        relpath = env['relpath']
-        blob_pairs = self.get_blob_pairs(files, relpath)
-        logger.debug("%d files are effective finally." % len(blob_pairs))
-        yield task_id, blob_pairs
+        return True
 
     def index(self, blob_pairs, context):
         """
@@ -148,22 +140,31 @@ class BaseUpload(SimpleAction):
         raise NotImplementedError
 
     def execute(self, context):
-        output = []
-        blob_pairs = context['blobs']
+        root = context['root']
         container_name = context['task_id']
+        files = self.lookup_files(root, context)
+        self.stats.set_value("files/all", len(files))
+
+        passed, removed = self.partition(files, context)
+        self.stats.set_value("files/passed", len(passed))
+        self.stats.set_value("files/removed", len(removed))
+        blob_pairs = self.get_blob_pairs(passed, context['relpath'])
+
         if self.upload_files:
             self.stats.set_value("upload/total", len(blob_pairs))
             blobs = self.azure.upload(container_name, blob_pairs)
             self.stats.set_value("upload/upload", len(blobs))
-            output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
+            self.output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
 
         if self.generate_index:
             index_file = safe_join(self.app.data_dirname, container_name+'.json')
             catalog = self.index(blob_pairs, context)
             with open(index_file, 'w') as f:
                 f.write(self.to_string(catalog))
-            output.append("Index was written to '%s'." % index_file)
-        return output
+            self.output.append("Index was written to '%s'." % index_file)
+
+        self.terminate(context)
+        return self.get_stats_id(context)
 
 
 class SimpleUpload(BaseUpload):
