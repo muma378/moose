@@ -77,13 +77,13 @@ class BaseAction(AbstractAction):
 		self.output = []
 
 	def parse(self, kwargs):
-		raise NotImplementedError('subclasses of BaseAction must provide a parse()')
+		raise NotImplementedError('subclasses of BaseAction must provide a `parse()`')
 
 	def schedule(self, environment):
-		raise NotImplementedError('subclasses of BaseAction must provide a schedule()')
+		raise NotImplementedError('subclasses of BaseAction must provide a `schedule()`')
 
 	def execute(self, context):
-		raise NotImplementedError('subclasses of BaseAction must provide a handle()')
+		raise NotImplementedError('subclasses of BaseAction must provide a `handle()`')
 
 	def teardown(self, env):
 		pass
@@ -139,3 +139,19 @@ class SimpleAction(BaseAction):
 
 	def get_stats_id(self, context):
 		return ''
+
+
+	def getseq(self, list_or_ele):
+		"""
+		Returns a list always, converts to a list with an element if it was not.
+		"""
+		return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
+
+	def assert_equal_size(self, *lists):
+		"""
+		Raises an error if any one of the list does not has the equal size.
+		"""
+		lsize = len(lists[0])
+		for l in lists:
+			if len(l) != lsize:
+				raise InvalidConfig("List wiht unequal length found in config.")

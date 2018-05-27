@@ -18,9 +18,6 @@ from .base import IllegalAction, InvalidConfig, SimpleAction
 import logging
 logger = logging.getLogger(__name__)
 
-def getseq(list_or_ele):
-    return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
-
 
 class BaseExport(SimpleAction):
     """
@@ -72,11 +69,9 @@ class BaseExport(SimpleAction):
         """
         Generates the context to execute in the following steps.
         """
-        task_ids = getseq(env['task_id'])
-        titles = getseq(env['title'])
-        if len(task_ids) != len(titles):
-            raise InvalidConfig(
-                "The number of values in options `task_id` and `title` is not equal.")
+        task_ids = self.getseq(env['task_id'])
+        titles   = self.getseq(env['title'])
+        self.assert_equal_size(task_ids, titles)
 
         # copys the whole environment by default
         for i, (task_id, title) in enumerate(zip(task_ids, titles)):
