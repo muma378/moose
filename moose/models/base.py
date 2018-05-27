@@ -59,13 +59,6 @@ class BaseModel(object):
         """
         pass
 
-    @property
-    def dest_root(self):
-        return safe_join(self.app.data_dirname, self.title)
-
-    @property
-    def dest_filepath(self):
-        return safe_join(self.dest_root, self.filepath)
 
     @property
     def filepath(self):
@@ -83,6 +76,14 @@ class BaseModel(object):
     def name(self):
         name, _ = os.path.splitext(self.filename)
         return name
+
+    @property
+    def dest_root(self):
+        return safe_join(self.app.data_dirname, self.title)
+
+    @property
+    def dest_filepath(self):
+        return safe_join(self.dest_root, self.filepath)
 
     @property
     def guid(self):
@@ -139,12 +140,21 @@ class BaseModel(object):
     def overview(self):
         return [self.filepath, self.datalink, ] + list(self.user_info)
 
-    def normalize(self):
-        pass
-
 
 class BaseTaskInfo(object):
-    def __init__(self, task_name):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def create_from_task_id(cls, task_id):
+        pass
+
+    @classmethod
+    def create_from_title(cls, title):
+        pass
+
+    @property
+    def users_table(self):
         pass
 
 
