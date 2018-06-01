@@ -155,12 +155,24 @@ class UsersInProjectQuery(BaseUsersQuery):
     the same with the key '_personInProjectId' in the table `result` in mongodb.
     """
     statement_template = (
+        "select DISTINCT pip.id, pip.PersonName, ps.Account from "
+        "{table_person_in_project} pip, {table_person} ps "
+        "where pip.ProjectId = {project_id} and pip.PersonId=ps.id"
+    )
+
+class TeamUsersInProjectQuery(BaseUsersQuery):
+    """
+    Get information of users took part in a project. Note the 'id' returned is
+    the same with the key '_personInProjectId' in the table `result` in mongodb.
+    """
+    statement_template = (
         "select DISTINCT pip.id, pip.PersonName, ps.Account, t.Name from "
         "{table_person_in_project} pip, {table_person} ps, "
         "{table_person_in_team} pit, {table_team} as t where "
         "pip.ProjectId = {project_id} and pip.PersonId=ps.id and "
         "pit.ProviderUserKey = pip.ProviderUserGuid and t.Id=pit.TeamId "
     )
+
 
 class ProjectInfoQuery(BaseQuery):
 
