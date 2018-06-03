@@ -110,7 +110,6 @@ class BaseUpload(SimpleAction):
             self.set_context(context, i)
             yield context
 
-
     def get_blob_pairs(self, files, relpath):
         """
         Converts filepath to (blobname, filepath) while blobname is the
@@ -139,10 +138,11 @@ class BaseUpload(SimpleAction):
     def to_string(self, catalog):
         raise NotImplementedError
 
+    def get_all_files(self, context):
+        return self.lookup_files(context['root'], context)
+
     def execute(self, context):
-        root = context['root']
-        container_name = context['task_id']
-        files = self.lookup_files(root, context)
+        files = get_all_files(context)
         self.stats.set_value("files/all", len(files))
 
         passed, removed = self.partition(files, context)
@@ -150,6 +150,7 @@ class BaseUpload(SimpleAction):
         self.stats.set_value("files/removed", len(removed))
         blob_pairs = self.get_blob_pairs(passed, context['relpath'])
 
+        container_name = context['task_id']
         if self.upload_files:
             self.stats.set_value("upload/total", len(blob_pairs))
             blobs = self.azure.upload(container_name, blob_pairs)
@@ -194,30 +195,33 @@ class SimpleUpload(BaseUpload):
 class ReferredUpload(SimpleUpload):
     """
     Do not do actual upload, but refers the old filelinks.
+    Pass `refer` as an option in environment
     """
     upload_files = False
 
-    def lookup_files(self, env):
-        referred_task = env['refer']
+    def get_all_files(self, context):
+        referred_task = context['refer']
         blob_names = self.azure.list_blobs(referred_task)
         return blob_names
 
-    def split(self, blob_names, env):
-        task_id    = context['task_id']
-        relpath    = context['relpath']
+    def get_blob_url(self, task_id, blobname):
+        return settings.AZURE_FILELINK.format(task_id=task_id, file_path=blobname)
+
+    def get_blob_pairs(self, files, relpath):
+        """
+        Converts filepath to (blobname, blob_url)
+        """
         refer      = context['refer']
-        blob_pairs = []
-        for blobname in blob_names:
-            url = settings.AZURE_FILELINK.format(\
-                    task_id=refer, file_path=blobname)
-            blob_pairs.append((url, blobname))
-        yield task_id, blob_pairs
+        relpath    = context['relpath']
+
+        blob_pairs = [(f, self.get_blob_url(refer, f)) for f in files]
+        return blob_pairs
 
     def index(self, blob_pairs, context):
         catalog = []
-        for url, blobname in blob_pairs:
+        for blobname, blob_url in blob_pairs:
             catalog.append({
-                'url': url ,
+                'url': blob_url,
                 'dataTitle': blobname,
             })
         return catalog
@@ -229,49 +233,40 @@ class MultipleUpload(SimpleUpload):
     """
     def set_environment(self, env, config, kwargs):
         # optional fields
-        env['nshare'] = config.upload.get('nshare', 1),
-        env['pattern'] = config.upload.get('pattern', None),
+        env['nshare'] = config.upload.get('nshare', 1)
 
-    def split(self, files, env):
-        nshare = int(env['nshare'])
-        relpath = env['relpath']
-        blob_pairs = self.get_blob_pairs(files, relpath)
-        logger.debug("%d files are effective finally." % len(blob_pairs))
+    def get_roots(self, env):
+        """
+        Defines which root to use to look up files.
+        """
+        return self.getseq(env['root'])
 
-        num_per_share = int(math.ceil(len(blob_pairs)*1.0/nshare))
-        if nshare != 1:
-            logger.debug("%d files are to upload on average for each time." % num_per_share)
+    def schedule(self, env):
+        """
+        List files to upload and belonged container.
+        """
+        task_ids = self.getseq(env['task_id'])
+        self.assert_equal_size(task_ids, range(env['nshare']))
 
-        container_names = getseq(context['task_id'])
+        files = []
+        for root in self.get_roots(env):
+            files.extend(self.lookup_files(root, env))
+        logger.debug("%d files are effective finally." % len(files))
 
-        if len(container_names) != nshare:
-            logger.error("Number of containers is not equal to nshare.")
-            raise IllegalAction("Number of containers is not equal to nshare.")
+        num_per_share = int(math.ceil(len(files)*1.0/nshare))
 
-        for i, container_name in enumerate(container_names):
+        for i, task_id in enumerate(task_ids):
+            context = copy.deepcopy(env)
+            context['task_id']  = task_id
+            # get a slice of files for one time
             start = i * num_per_share
-            end = min(start+num_per_share, len(blob_pairs))
-            yield container_name, blob_pairs[start:end]
+            end   = min(start+num_per_share, len(blob_pairs))
+            context['files'] = files[start:end]
+            self.set_context(context, i)
+            yield context
 
-
-class DirsUpload(SimpleUpload):
-    remove_dirname = True
-
-    def set_environment(self, env, config, kwargs):
-        env['dirnames'] = [ smart_text(x) for x in config.upload.get('dirnames', [''])]
-
-    def split(self, files, env):
-        task_ids = env['task_id']
-        relpath = env['relpath']
-        blob_pairs = self.get_blob_pairs(files, relpath)
-        logger.debug("%d files are effective finally." % len(blob_pairs))
-
-        dirnames = env['dirnames']
-        for dirname, task_id in zip(dirnames, task_ids):
-            sub_blob_pairs = filter(lambda x: dirname in x[1], blob_pairs)
-            if self.remove_dirname:
-                sub_blob_pairs = [ (os.path.relpath(x[0], dirname), x[1]) for x in sub_blob_pairs]
-            yield str(task_id), sub_blob_pairs
+    def get_all_files(self, context):
+        return context['files']
 
 
 class VideosUpload(SimpleUpload):
@@ -294,14 +289,20 @@ class VideosUpload(SimpleUpload):
                 })
         return catalog
 
-    def group(self, blob_pairs):
+    def group(self, blob_pairs, key=None):
         """
         Groups files by dirnames.
         """
+        if not key:
+            # groups by dirname by default
+            key = lambda x: os.path.dirname(x)
+
+        # clustering groups by keys
         groups = defaultdict(list)
         for blobname, filename in blob_pairs:
-            dirname = os.path.dirname(filename)
-            groups[dirname].append(blobname)
-        for dirname in groups.keys():
-            groups[dirname].sort()
+            groups[key(filename)].append(blobname)
+
+        # then sorts each groups
+        for k in groups.keys():
+            groups[k].sort()
         return groups
