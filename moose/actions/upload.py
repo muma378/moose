@@ -123,7 +123,7 @@ class BaseUpload(SimpleAction):
         return self.lookup_files(context['root'], context)
 
     def execute(self, context):
-        files = get_all_files(context)
+        files = self.get_all_files(context)
         self.stats.set_value("files/all", len(files))
 
         passed, removed = self.partition(files, context)
@@ -153,8 +153,6 @@ class SimpleUpload(BaseUpload):
     """
     The common way to upload files and generate a catalog.
     """
-    azure_setting = settings.AZURE
-
     def schedule(self, env):
         task_ids = self.getseq(env['task_id'])
         if env.get('dirs'):
