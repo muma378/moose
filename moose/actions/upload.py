@@ -91,25 +91,6 @@ class BaseUpload(SimpleAction):
         """
         return files, []
 
-    def schedule(self, env):
-        """
-        List files to upload and belonged container.
-        """
-        task_ids = self.getseq(env['task_id'])
-        if env.get('dirs'):
-            dirs = self.getseq(env['dirs'])
-        else:
-            dirs = ['', ]
-        self.assert_equal_size(task_ids, dirs)
-        root = env['root']
-
-        for i, (task_id, dirname) in enumerate(zip(task_ids, dirs)):
-            context = copy.deepcopy(env)
-            context['root']     = os.path.join(root, dirname)
-            context['task_id']  = task_id
-            self.set_context(context, i)
-            yield context
-
     def get_blob_pairs(self, files, relpath):
         """
         Converts filepath to (blobname, filepath) while blobname is the
@@ -174,6 +155,22 @@ class SimpleUpload(BaseUpload):
     """
     azure_setting = settings.AZURE
 
+    def schedule(self, env):
+        task_ids = self.getseq(env['task_id'])
+        if env.get('dirs'):
+            dirs = self.getseq(env['dirs'])
+        else:
+            dirs = ['', ]
+        self.assert_equal_size(task_ids, dirs)
+        root = env['root']
+
+        for i, (task_id, dirname) in enumerate(zip(task_ids, dirs)):
+            context = copy.deepcopy(env)
+            context['root']     = os.path.join(root, dirname)
+            context['task_id']  = task_id
+            self.set_context(context, i)
+            yield context
+
     def index(self, blob_pairs, context):
         catalog = []
         for blobname, filename in blob_pairs:
@@ -212,8 +209,6 @@ class ReferredUpload(SimpleUpload):
         Converts filepath to (blobname, blob_url)
         """
         refer      = context['refer']
-        relpath    = context['relpath']
-
         blob_pairs = [(f, self.get_blob_url(refer, f)) for f in files]
         return blob_pairs
 
@@ -225,48 +220,6 @@ class ReferredUpload(SimpleUpload):
                 'dataTitle': blobname,
             })
         return catalog
-
-
-class MultipleUpload(SimpleUpload):
-    """
-    Upload multiple tasks in an action.
-    """
-    def set_environment(self, env, config, kwargs):
-        # optional fields
-        env['nshare'] = config.upload.get('nshare', 1)
-
-    def get_roots(self, env):
-        """
-        Defines which root to use to look up files.
-        """
-        return self.getseq(env['root'])
-
-    def schedule(self, env):
-        """
-        List files to upload and belonged container.
-        """
-        task_ids = self.getseq(env['task_id'])
-        self.assert_equal_size(task_ids, range(env['nshare']))
-
-        files = []
-        for root in self.get_roots(env):
-            files.extend(self.lookup_files(root, env))
-        logger.debug("%d files are effective finally." % len(files))
-
-        num_per_share = int(math.ceil(len(files)*1.0/nshare))
-
-        for i, task_id in enumerate(task_ids):
-            context = copy.deepcopy(env)
-            context['task_id']  = task_id
-            # get a slice of files for one time
-            start = i * num_per_share
-            end   = min(start+num_per_share, len(blob_pairs))
-            context['files'] = files[start:end]
-            self.set_context(context, i)
-            yield context
-
-    def get_all_files(self, context):
-        return context['files']
 
 
 class VideosUpload(SimpleUpload):
@@ -306,3 +259,45 @@ class VideosUpload(SimpleUpload):
         for k in groups.keys():
             groups[k].sort()
         return groups
+
+
+class AverageUpload(BaseUpload):
+    """
+    Upload multiple tasks in an action.
+    """
+    def set_environment(self, env, config, kwargs):
+        # optional fields
+        env['nshare'] = config.upload.get('nshare', 1)
+
+    def get_roots(self, env):
+        """
+        Defines which root to use to look up files.
+        """
+        return self.getseq(env['root'])
+
+    def schedule(self, env):
+        """
+        List files to upload and belonged container.
+        """
+        task_ids = self.getseq(env['task_id'])
+        self.assert_equal_size(task_ids, range(env['nshare']))
+
+        files = []
+        for root in self.get_roots(env):
+            files.extend(self.lookup_files(root, env))
+        logger.debug("%d files are effective finally." % len(files))
+
+        num_per_share = int(math.ceil(len(files)*1.0/nshare))
+
+        for i, task_id in enumerate(task_ids):
+            context = copy.deepcopy(env)
+            context['task_id']  = task_id
+            # get a slice of files for one time
+            start = i * num_per_share
+            end   = min(start+num_per_share, len(blob_pairs))
+            context['files'] = files[start:end]
+            self.set_context(context, i)
+            yield context
+
+    def get_all_files(self, context):
+        return context['files']
