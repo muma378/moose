@@ -40,10 +40,10 @@ class BaseSQLHandler(object):
         conn_cnt = 0
         while conn_cnt < RETRY_TIME:
             try:
-                conn = self.get_connection(self.settings_dict)	# implemented by subclasses
+                conn = self.get_connection(self.settings_dict)    # implemented by subclasses
                 logger.debug("Connection established.")
                 return conn
-            except ConnectionTimeout as e:	# TODO:add a specified exception
+            except ConnectionTimeout as e:    # TODO:add a specified exception
                 conn_cnt += 1
                 logger.warn(
                     "Connection failed for '%s',\n times to reconnect: %d." %\
@@ -126,7 +126,9 @@ class BaseSQLHandler(object):
         pass
 
 class SQLServerHandler(BaseSQLHandler):
-    """an instance to query and modify data in the sqlserver"""
+    """
+    Database instance to query and modify data in the sqlserver
+    """
     database_name = 'SQLServer'
 
     def get_connection(self, settings_dict):
@@ -155,7 +157,9 @@ class SQLServerHandler(BaseSQLHandler):
 
 
 class MySQLHandler(BaseSQLHandler):
-    """an alternative database for independent environment"""
+    """
+    An alternative database for independent environment
+    """
     database_name = 'MySQL'
 
     def get_connection(self, settings_dict):
@@ -182,8 +186,62 @@ class MySQLHandler(BaseSQLHandler):
             raise ImproperlyConfigured("Fields missing: %s" % e.message)
         return conn
 
+class PrimitiveMssqlHandler(BaseSQLHandler):
+    """
+    Uses the primitive mssql instead of BaseSQLHandler when inserting
+    """
+    database_name = '_mssql'
+
+
+    def get_connection(self, settings_dict):
+        import _mssql
+
+        logger.debug(
+                "Trying to connect to SQLServer servered on '%s:%s'..." % (settings_dict['HOST'], settings_dict['PORT']))
+        conn = None
+        try:
+            conn = _mssql.connect(
+                server=settings_dict['HOST'],
+                port=settings_dict['PORT'],
+                user=settings_dict['USER'],
+                password=settings_dict['PASSWORD'],
+                database=settings_dict['DATABASE'],
+                charset=settings_dict['CHARSET']
+            )
+        except (pymssql.InterfaceError, pymssql.OperationalError) as e:
+            logger.error(e.message)
+            raise ImproperlyConfigured("Failed to connect to SQL database '%s'." % settings_dict['HOST'])
+        except KeyError as e:
+            logger.error(
+                "Fields missing, please check %s was in settings." % e.message)
+            raise ImproperlyConfigured("Fields missing: %s" % e.message)
+        return conn
+
+
+    def exec_commit(self, sql_commit):
+        if not sql_commit:
+            logger.error("Invalid SQL statement for no content, aborted.")
+            return False
+
+        if not self.conn:
+            self.conn = self.connect()
+
+        try:
+            logger.info("Executing the statement:\n\t'%s'." % sql_commit)
+            self.conn.execute_non_query(sql_commit)
+        except Exception as e:
+            logger.error(e)
+            return False
+
+        logger.info('Commitment executed successfully.')
+        return True
+
 
 class MongoDBHandler(object):
+
+    coll_source = 'Source'
+    coll_result = 'Result'
+
     def __init__(self, settings_dict):
         self.settings_dict = settings_dict
         self.host = settings_dict['HOST']
@@ -246,12 +304,28 @@ class MongoDBHandler(object):
                     logger.warn("Retry to fetch data from '%s' for %d time(s)." % (self.db_name, count))
 
     def fetch_source(self, cond={}):
-        for item in self.fetch('Source', cond):
+        for item in self.fetch(self.coll_source, cond):
             yield item
 
     def fetch_result(self, cond={}):
-        for item in self.fetch('Result', cond):
+        for item in self.fetch(self.coll_result, cond):
             yield item
+
+    def insert(self, table, document):
+        getattr(self.db, table).insert(document)
+
+    def update_result(self, cond, document):
+        self.update(self.coll_result, cond, document)
+
+    def update(self, table, cond, document):
+        getattr(self.db, table).update(
+                                    cond,
+                                    {'$set': document},
+                                    upsert=False
+                                    )
+
+    def delete(self, table, cond):
+        getattr(self.db, table).delete_one(cond)
 
     def close(self):
         try:

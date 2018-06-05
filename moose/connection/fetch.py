@@ -86,8 +86,39 @@ class SourceFetcher(BaseFetcher):
 
     def fetch(self, **context):
         project_id = str(context['project_id'])
-
+        # get sql queryset
+        queryset = self.querier.query(**context)
         # get mongo result
         source_records = self._indexing(self._fetch_source(project_id))
 
-        return source_records
+        records = []
+        for source_guid, _ in queryset:
+            if source_records.get(str(source_guid)):
+                records.append({
+                    'source': source_records[str(source_guid)],
+                    'result': {},
+                    })
+            else:
+                logger.error("Unable to find match source record for guid: '%s'" % str(result_guid))
+        return records
+
+
+class ResultFetcher(BaseFetcher):
+
+    def fetch(self, **context):
+        project_id = str(context['project_id'])
+        # get sql queryset
+        queryset = self.querier.query(**context)
+        # get mongo result
+        result_records = self._indexing(self._fetch_result(project_id))
+
+        records = []
+        for _, result_guid in queryset:
+            if result_records.get(str(result_guid)):
+                records.append({
+                    'source': {},
+                    'result': result_records[str(result_guid)],
+                    })
+            else:
+                logger.error("Unable to find match source record for guid: '%s'" % str(result_guid))
+        return records

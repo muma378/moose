@@ -8,7 +8,7 @@ from . import database
 
 logger = logging.getLogger(__name__)
 
-class BaseQuery(object):
+class SqlOperate(object):
     """
     Class to do the query operation.
 
@@ -44,6 +44,9 @@ class BaseQuery(object):
 
         table_alias = handler_settings['TABLE_ALIAS']
         return cls(handler, table_alias)
+
+
+class BaseQuery(SqlOperate):
 
     def query(self, **context):
         try:
@@ -174,8 +177,54 @@ class TeamUsersInProjectQuery(BaseUsersQuery):
     )
 
 
+class BaseInfoQuery(BaseQuery):
+    pass
+
+class DataResultQuery(BaseQuery):
+
+    statement_template = (
+        "select * from {table_result} dr where dr.ProjectId={project_id}"
+    )
+
+class DataSourceQuery(BaseQuery):
+
+    statement_template = (
+        "select * from {table_source} ds where ds.ProjectId={project_id}"
+    )
+
+class DataInfoQuery(BaseQuery):
+
+    statement_template = (
+        "select ds.Title, ds.FileName, dr.Status, dr.IsValid, dr.UserGuid, "
+        "dr.SourceGuid, dr.DataGuid from {table_source} ds, {table_result} "
+        "dr where ds.DataGuid=dr.SourceGuid and dr.ProjectId={project_id} "
+        "and ds.ProjectId={project_id}"
+    )
+
 class ProjectInfoQuery(BaseQuery):
 
     statement_template = (
         "select * from {table_project} where id={project_id}"
+    )
+
+class BaseInsert(SqlOperate):
+
+    def execute(self, **context):
+        try:
+            context.update(self.table_alias)
+            sql_statement = self.statement_template.format(**context)
+        except KeyError as e:
+            raise ImproperlyConfigured("Keys missing: %s" % e.message)
+        # execute the query with context provided
+        import pdb; pdb.set_trace()
+        return self.handler.exec_commit(sql_statement)
+
+class AcquisitionToMarkInsert(BaseInsert):
+
+    statement_template = (
+        "insert into {table_source} (ProjectID,Title,DataGuid,"
+        "DataVersion,UserGuid,Duration,FileName,CreateTime) "
+        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
+        "Duration,FileName,{create_time} from {table_acquisition} "
+        "WHERE ProjectId in {acquisition_ids} and substring(Title, 6, 5) in ({groups})"
     )
