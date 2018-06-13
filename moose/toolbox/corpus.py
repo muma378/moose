@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import random
 import pickle
+import hashlib
 
 from moose.shortcuts import ivisit
 from moose.utils._os import makedirs, makeparents
@@ -60,7 +61,7 @@ class Corpus(object):
         self.tags    = tags
 
     def get_md5(self):
-        return hashlib.md5(self.content).hexdigest()
+        return hashlib.md5(self.content.encode('utf-8')).hexdigest()
 
     def add_tag(self, tag):
         if isinstance(self.tags, list):
@@ -75,16 +76,16 @@ class CorpusPool(object):
         self.topic = topic
         self.max_repeat = max_repeat
         self.cache_path = os.path.join(cache_path, topic)
-        self.pool  = self.load(self.cache_path)
+        self.pool_table  = self.load(self.cache_path)
 
     def dump(self):
         makeparents(self.cache_path)
         with open(self.cache_path, 'w') as f:
-            pickle.dump(self.pool, f)
+            pickle.dump(self.pool_table, f)
 
     def load(self, cache_path):
-        pool = []
-        if os.path.exists(cache_path):
+        pool = {}
+        if self.topic != 'composition' and os.path.exists(cache_path):
             with open(cache_path) as f:
                 pool = pickle.load(f)
         return pool
@@ -94,16 +95,21 @@ class CorpusPool(object):
 
     def add(self, corpus):
         if isinstance(corpus, Corpus):
-            self.pool.append(corpus)
+            signature = corpus.get_md5()
+            if not self.pool_table.has_key(signature):
+                self.pool_table[signature] = corpus
+            else:
+                logger.warning("Replicated corpus found: '{}'".format(corpus.content))
         else:
             raise ValueError("Target to add is an instance of 'Corpus'.")
 
     def get_available_pool(self, least_amount):
+        self.pool = self.pool_table.values()
         if self.max_repeat == -1:
             return self.pool
 
         # removes corpus exceeds the max used times
-        # self.pool = filter(lambda x: x.nref<self.max_repeat, self.pool)
+        self.pool = filter(lambda x: x.nref<self.max_repeat, self.pool)
         repeat_times = 0
         available_pool = []
         # prefer to use the corpus with least-used-times
