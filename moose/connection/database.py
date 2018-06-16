@@ -117,13 +117,9 @@ class BaseSQLHandler(object):
 
         logger.info('Commitment executed successfully.')
 
-    #TODO: execute many at one time
-    #self.cursor.executemany()
     def exec_many(self, sql, arg):
-        raise NotImplementedError
+        raise NotImplementedError("Database you use not provided method 'exec_many()' yet.")
 
-    def retrieve(self, *args, **kwargs):
-        pass
 
 class SQLServerHandler(BaseSQLHandler):
     """
@@ -154,6 +150,27 @@ class SQLServerHandler(BaseSQLHandler):
                 "Fields missing, please check %s was in settings." % e.message)
             raise ImproperlyConfigured("Fields missing: %s" % e.message)
         return conn
+
+    def exec_many(self, sql_commit, rows):
+        if not sql_commit:
+            logger.error("Invalid SQL statement for no content, aborted.")
+            return
+
+        if not self.conn:
+            self.conn = self.connect()
+
+        self.cursor = self.conn.cursor()
+
+        # see ref: http://pymssql.org/en/scoll/pymssql_examples.html
+        try:
+            logger.info("Executing the statement:\n\t'%s'." % sql_commit)
+            self.cursor.executemany(sql_commit, rows)
+            self.conn.commit()
+        except Exception as e:
+            logger.error(e)
+            return
+
+        logger.info('Commitment executed successfully.')
 
 
 class MySQLHandler(BaseSQLHandler):
@@ -188,10 +205,10 @@ class MySQLHandler(BaseSQLHandler):
 
 class PrimitiveMssqlHandler(BaseSQLHandler):
     """
-    Uses the primitive mssql instead of BaseSQLHandler when inserting
+    Uses the primitive mssql instead of BaseSQLHandler when doing insert
+    see ref: http://pymssql.org/en/stable/_mssql_examples.html
     """
     database_name = '_mssql'
-
 
     def get_connection(self, settings_dict):
         import _mssql
@@ -208,7 +225,7 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
                 database=settings_dict['DATABASE'],
                 charset=settings_dict['CHARSET']
             )
-        except (pymssql.InterfaceError, pymssql.OperationalError) as e:
+        except _mssql.MssqlDatabaseException as e:
             logger.error(e.message)
             raise ImproperlyConfigured("Failed to connect to SQL database '%s'." % settings_dict['HOST'])
         except KeyError as e:
@@ -219,6 +236,7 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
 
 
     def exec_commit(self, sql_commit):
+        import _mssql
         if not sql_commit:
             logger.error("Invalid SQL statement for no content, aborted.")
             return False
@@ -229,15 +247,22 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
         try:
             logger.info("Executing the statement:\n\t'%s'." % sql_commit)
             self.conn.execute_non_query(sql_commit)
-        except Exception as e:
-            logger.error(e)
-            return False
+        except _mssql.MssqlDatabaseException as e:
+            if e.number == 2714 and e.severity == 16:
+                # table already existed, so quieten the error
+                pass
+            else:
+                raise # re-raise real error
 
         logger.info('Commitment executed successfully.')
         return True
 
 
 class MongoDBHandler(object):
+    """
+    Wrapper for library pymongo, see ref:
+    https://api.mongodb.com/python/current/tutorial.html
+    """
 
     coll_source = 'Source'
     coll_result = 'Result'
@@ -283,20 +308,20 @@ class MongoDBHandler(object):
         self.db_name = db_name
         self.db = self.client[db_name]
 
-    def fetch(self, table, cond={}):
+    def fetch(self, coll, cond={}):
         try:
-            logger.debug("Fetch data from table [%s] of '%s'." % (table, self.db_name))
-            for item in getattr(self.db, table).find(cond):
+            logger.debug("Fetch data from collection [%s] of '%s'." % (coll, self.db_name))
+            for item in self.db[coll].find(cond):
                 yield item
         except errors.ServerSelectionTimeoutError as e:
-            logger.warn("Timeout to fetch data from [%s]." % table)
+            logger.warn("Timeout to fetch data from [%s]." % coll)
             raise ConnectionTimeout
         except errors.AutoReconnect as e:
             count = 1
             while count <= RETRY_TIME:
                 try:
                     time.sleep(5)
-                    for item in getattr(self.db, table).find(cond):
+                    for item in self.db[coll].find(cond):
                         yield item
                     break
                 except errors.AutoReconnect as e:
@@ -311,21 +336,21 @@ class MongoDBHandler(object):
         for item in self.fetch(self.coll_result, cond):
             yield item
 
-    def insert(self, table, document):
-        getattr(self.db, table).insert(document)
+    def insert(self, coll, document):
+        self.db[coll].insert(document)
 
     def update_result(self, cond, document):
         self.update(self.coll_result, cond, document)
 
-    def update(self, table, cond, document):
-        getattr(self.db, table).update(
-                                    cond,
-                                    {'$set': document},
-                                    upsert=False
-                                    )
+    def update(self, coll, cond, document):
+        self.db[coll].update(
+                            cond,
+                            {'$set': document},
+                            upsert=False
+                            )
 
-    def delete(self, table, cond):
-        getattr(self.db, table).delete_one(cond)
+    def delete(self, coll, cond):
+        self.db[coll].delete_one(cond)
 
     def close(self):
         try:
