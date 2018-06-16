@@ -29,6 +29,7 @@ class BaseModel(object):
     output_suffix = '.json'
     effective_values = ('1', 1, 'true')
 
+
     def __init__(self, annotation, app, stats, **context):
         self.annotation = annotation
         self.source = annotation['source']
@@ -36,8 +37,8 @@ class BaseModel(object):
         self.app    = app
         self.stats  = stats
         self.context = context
-        self.set_base_context(context)
         self._active()
+        self.set_base_context(context)
 
     def _active(self):
         # get method resolution orders

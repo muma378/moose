@@ -145,7 +145,7 @@ class SimpleAction(BaseAction):
 		"""
 		Returns a list always, converts to a list with an element if it was not.
 		"""
-		return list_or_ele if isinstance(list_or_ele, list) else [list_or_ele, ]
+		return list_or_ele if isinstance(list_or_ele, list) or isinstance(list_or_ele, tuple) else [list_or_ele, ]
 
 	def assert_equal_size(self, *lists):
 		"""
