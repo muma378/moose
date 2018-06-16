@@ -47,7 +47,8 @@ class CorpusFacotory(object):
             group_id = self.group_prefix + str(start+i).zfill(self.group_ndigit)
             group_text = os.path.join(dst, group_id+'.txt')
             with open(group_text, 'w') as f:
-                f.write('\n'.join([c.content for c in group]).encode('utf-8'))
+                for i, corpus in enumerate(group, start=1):
+                    f.write(u"{}\t{}\n".format('S'+str(i).zfill(4), corpus.content).encode('utf-8'))
 
 
 class CorpusGroup(object):
