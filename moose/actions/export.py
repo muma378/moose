@@ -56,7 +56,7 @@ class BaseExport(SimpleAction):
         # Sets base environment
         environment = {
             'root'   : config.common['root'],
-            'relpath': config.common['relpath'],
+            'relpath': config.common.get('relpath', config.common['root']),
             'task_id': config.upload['task_id'],
             'title'  : config.export['title']
         }
