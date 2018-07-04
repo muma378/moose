@@ -217,7 +217,7 @@ class TaskExport(SimpleExport):
         self.task_querier = self.task_query_class.create_from_context(self.query_context)
 
         # copys the whole environment by default
-        for i, title in enumerate(task_ids):
+        for i, task_id in enumerate(task_ids):
             task_info = self.task_querier.query(project_id=task_id)[0]
             context = copy.deepcopy(env)
             context.update({
