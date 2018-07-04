@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import os
 import logging
 
@@ -12,6 +14,14 @@ class IllegalFileObject(Exception):
         return self.msg
 
 
+class FilesAlliance(object):
+    """
+    Alliance of file objects, it represents a group of files, which
+    consists of different parts.
+    """
+    pass
+
+
 class FileObject(object):
     """
     Class represents a file object, it contains several properties,
@@ -23,10 +33,10 @@ class FileObject(object):
 
     def __init__(self, filepath):
         self.filepath = filepath
-        dirname, self.filename = os.path.split(self.filepath)
+        dirname, self.filename = os.path.split(filepath)
 
-        self._get_context(dirname)
         self._get_meta()
+        self._get_context(dirname)
 
     def __str__(self):
         return npath(self.filepath)

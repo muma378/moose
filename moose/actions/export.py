@@ -142,10 +142,13 @@ class BaseExport(SimpleAction):
         """
         for item in queryset:
             data_model = self.data_model_cls(item, self.app, self.stats, **context)
-            if self.effective_only and not data_model.is_effective():
+            if data_model.is_effective():
+                self.stats.inc_value("query/effective")
+            else:
                 self.stats.inc_value("query/ineffective")
-                continue
-            self.stats.inc_value("query/effective")
+                if self.effective_only:
+                    # skips it if export the effective only
+                    continue
             yield data_model
 
     def handle_model(self, data_model):
@@ -198,6 +201,34 @@ class SimpleExport(BaseExport):
         filename, _ = os.path.splitext(data_model.dest_filepath)
         with open(filename+data_model.output_suffix, 'w') as f:
             f.write(data_model.to_string())
+
+class TaskExport(SimpleExport):
+    """
+    Only task id is necessary, title and batch are queried by it self.
+    """
+
+    task_query_class = query.ProjectInfoQuery
+
+    def schedule(self, env):
+        """
+        Generates the context to execute in the following steps.
+        """
+        task_ids = self.getseq(env['task_id'])
+        self.task_querier = self.task_query_class.create_from_context(self.query_context)
+
+        # copys the whole environment by default
+        for i, title in enumerate(task_ids):
+            task_info = self.task_querier.query(project_id=task_id)[0]
+            context = copy.deepcopy(env)
+            context.update({
+                'task_id': task_id,
+                'title': task_info[2],
+                'batch': task_info[4],
+            })
+            # set custom context if necessary
+            self.set_context(context, i)
+            yield context
+
 
 class ImagesExport(SimpleExport):
     """
