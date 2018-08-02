@@ -97,14 +97,15 @@ class Command(AppCommand):
 	def handle_action(self, app_config, action_alias, configs):
 		# get user-defined class for the action
 		action_klass = app_config.get_action_klass(action_alias)
-		if action_klass:
-			actor = action_klass(app_config, stdout=self.stdout, stderr=self.stderr, style=self.style)
-		else:
-			raise CommandError("Unknown action alias '%s'." % self.action_alias)
+		if not action_klass:
+			raise CommandError("Unknown action alias '%s'." % action_alias)
 
 		# run with configs and get the output
 		output = []
 		for conf_desc in configs:
+			# Initialize the class each time to make it reentrancy
+			actor = action_klass(app_config, stdout=self.stdout, stderr=self.stderr, style=self.style)
+
 			config_loader = find_matched_conf(app_config, conf_desc)
 			if not config_loader:
 				# Instead of raising an exception, makes a report after all done

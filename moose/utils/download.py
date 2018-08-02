@@ -22,7 +22,7 @@ class PipelineDownloader(threading.Thread):
     """
     def __init__(self, src_queue=None, dst_queue=None,
         set_up=None, tear_down=None, timeout=settings.DEFAULT_TIMEOUT):
-        super(BaseDownloader, self).__init__()
+        super(PipelineDownloader, self).__init__()
         if set_up:
             self.src_queue = set_up()
         else:

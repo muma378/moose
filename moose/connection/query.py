@@ -168,14 +168,35 @@ class TeamUsersInProjectQuery(BaseUsersQuery):
     Get information of users took part in a project. Note the 'id' returned is
     the same with the key '_personInProjectId' in the table `result` in mongodb.
     """
-    statement_template = (
-        "select DISTINCT pip.id, pip.PersonName, ps.Account, t.Name from "
-        "{table_person_in_project} pip, {table_person} ps, "
-        "{table_person_in_team} pit, {table_team} as t where "
-        "pip.ProjectId = {project_id} and pip.PersonId=ps.id and "
-        "pit.ProviderUserKey = pip.ProviderUserGuid and t.Id=pit.TeamId "
-    )
+    # statement_template = (
+    #     "select DISTINCT pip.id, pip.PersonName, ps.Account, t.Name from "
+    #     "{table_person_in_project} pip, {table_person} ps, "
+    #     "{table_person_in_team} pit, {table_team} as t where "
+    #     "pip.ProjectId = {project_id} and pip.PersonId=ps.id and "
+    #     "pit.ProviderUserKey = pip.ProviderUserGuid and t.Id=pit.TeamId "
+    # )
 
+    statement_template = """
+SELECT
+    pat.id, pat.PersonName, pat.Account, t.Name
+FROM
+    (
+        SELECT
+            person.*, pit.TeamId
+        FROM
+            (
+                SELECT DISTINCT
+                    pip.id, pip.PersonName, pip.ProviderUserGuid, ps.Account
+                FROM
+                    {table_person_in_project} pip, {table_person} ps
+                WHERE
+                    pip.ProjectId = {project_id}
+                AND pip.PersonId = ps.id
+            ) AS person
+        LEFT JOIN {table_person_in_team} pit ON pit.ProviderUserKey = Person.ProviderUserGuid
+    ) AS pat
+LEFT JOIN {table_team} AS t ON pat.TeamId = t.Id
+"""
 
 class BaseInfoQuery(BaseQuery):
     pass

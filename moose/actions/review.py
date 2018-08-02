@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import os
 import math
 import time
@@ -33,8 +34,14 @@ class BaseReview(BaseExport):
 
 class SimpleReview(BaseReview):
 
-    person_query_class = query.UsersInProjectQuery
+    person_query_class = query.TeamUsersInProjectQuery
     name_suffix = '_info'
+
+    # Sets custom environment
+    def set_environment(self, env, config, kwargs):
+        self.workbook = []
+        self.dest_filepath = os.path.join(self.app.data_dirname, env['name']+'.xlsx')
+
 
     def query_person_info(self, context):
         querier = self.person_query_class.create_from_context(self.query_context)
@@ -44,22 +51,20 @@ class SimpleReview(BaseReview):
     def get_info_table(self, person_info):
         return {x[0]: x[1:] for x in person_info}
 
-    def handle_model(self, data_model, workbook):
-        workbook.append(data_model.to_row())
+    def handle_model(self, data_model):
+        self.workbook.append(data_model.overview())
         return ''
 
     def execute(self, context):
-        """
-
-        """
         queryset = self.fetch(context)
         person_info = self.query_person_info(context)
         context['users_table'] = self.get_info_table(person_info)
         output = []
-        workbook = []
-        print(person_info)
+        # print(person_info)
         for data_model in self.enumerate_model(queryset, context):
-            output.append(self.handle_model(data_model, workbook))
-        dest_info_file = os.path.join(self.app.data_dirname, context['title']+self.name_suffix+'.xlsx')
-        dump_xlsx(workbook, dest_info_file)
+            output.append(self.handle_model(data_model))
+        self.terminate(context)
         return '\n'.join(output)
+
+    def teardown(self, env):
+        dump_xlsx(self.workbook, self.dest_filepath)

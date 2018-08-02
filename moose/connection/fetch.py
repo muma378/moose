@@ -6,6 +6,9 @@ from moose.utils.module_loading import import_string
 from moose.utils import six
 from . import query, database
 
+import logging
+logger = logging.getLogger(__name__)
+
 class BaseFetcher(object):
     """
     Class to fetch result from mongodb according to information given
