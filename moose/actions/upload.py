@@ -20,27 +20,6 @@ logger = logging.getLogger(__name__)
 
 class BaseUpload(SimpleAction):
     """
-    Class to simulate the action of uploading files to Microsoft
-    Azure Storage, 5 procedures are accomplished in sequence:
-    `
-    Get-Context -> Enumerate-Files -> Upload -> Write-Index
-    `
-    while the following steps are implemented by subclasses.
-
-    `set_environment`
-        Get extra info to update env.
-
-    `partition`
-        Valid files are distinguished from the invalid.
-
-    `split`
-        Controls how data were distributed into groups.
-
-    `index`
-        Returns a catalog list uoloaded files.
-
-    `to_string`
-        Convert the list of index to string(json).
 
     """
     upload_files    = True

@@ -205,14 +205,16 @@ class SimpleExport(BaseExport):
 
 class TaskExport(SimpleExport):
     """
-    Only task id is necessary, title and batch are queried by it self.
+    Only `task id` is required, field `title` and `batch` were to be queried
+    automatically.
     """
 
     task_query_class = query.ProjectInfoQuery
 
     def schedule(self, env):
         """
-        Generates the context to execute in the following steps.
+        Except for passing field from `env` to `context`, but also get `title`
+        and `batch` from the database.
         """
         task_ids = self.getseq(env['task_id'])
         self.task_querier = self.task_query_class.create_from_context(self.query_context)
@@ -231,7 +233,7 @@ class TaskExport(SimpleExport):
             yield context
 
 
-class ImagesExport(SimpleExport):
+class ImagesExport(TaskExport):
     """
     Downloads source files meanwhile draws mask and blended pictures
     """
