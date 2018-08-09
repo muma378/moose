@@ -175,6 +175,7 @@ class SimpleExport(BaseExport):
         downloader.start()
 
         for data_model in self.enumerate_model(queryset, context):
+            data_model.set_up()
             downloader.add_task(data_model)
 
         downloader.join()

@@ -2,6 +2,7 @@
 import os
 import copy
 import json
+import socket
 import Queue
 import inspect
 import urllib2
@@ -11,6 +12,9 @@ from moose.utils._os import makedirs, makeparents, safe_join
 from moose.utils.encoding import force_bytes
 from moose.conf import settings
 from . import fields
+
+import logging
+logger = logging.getLogger(__name__)
 
 class FieldMissing(Exception):
     """Required field is not provided"""
@@ -60,6 +64,11 @@ class BaseModel(object):
         """
         pass
 
+    def set_up(self):
+        """
+        Entry point for subclassed models to prepare before downloading
+        """
+        pass
 
     @property
     def filepath(self):
@@ -182,16 +191,20 @@ class DownloadWorker(threading.Thread):
                 break
 
     def fetch(self, url):
+        data = ''
         try:
             response = urllib2.urlopen(url, timeout=self.timeout)
             data = response.read()
-            return data
         except urllib2.HTTPError, e:
             self.stats.inc_value("download/http_error")
             logger.error('falied to connect to %s, may for %s' % (url, e.reason))
         except urllib2.URLError, e:
             self.stats.inc_value("download/url_error")
             logger.error('unable to open url %s for %s' % (url, e.reason))
+        except socket.error, e:
+            self.stats.inc_value("download/socket_error")
+            logger.error('socket error: %s' % url)
+        return data
 
     def write(self, data, filepath):
         if os.path.exists(filepath):

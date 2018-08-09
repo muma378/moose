@@ -165,7 +165,7 @@ class SimpleUpload(BaseUpload):
         for i, (task_id, dirname) in enumerate(zip(task_ids, dirs)):
             context = copy.deepcopy(env)
             context['root']     = os.path.join(root, dirname)
-            context['task_id']  = task_id
+            context['task_id']  = str(task_id)
             self.set_context(context, i)
             yield context
 
