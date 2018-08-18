@@ -113,9 +113,10 @@ class BaseSQLHandler(object):
             self.conn.commit()
         except Exception as e:
             logger.error(e)
-            return
-
-        logger.info('Commitment executed successfully.')
+            return None
+        naffected =  self.cursor.rowcount
+        logger.info("Commitment executed successfully with '{}' rows affected.".format(naffected))
+        return naffected
 
     def exec_many(self, sql, arg):
         raise NotImplementedError("Database you use not provided method 'exec_many()' yet.")
@@ -161,7 +162,7 @@ class SQLServerHandler(BaseSQLHandler):
 
         self.cursor = self.conn.cursor()
 
-        # see ref: http://pymssql.org/en/scoll/pymssql_examples.html
+        # see ref: http://pymssql.org/en/stable/pymssql_examples.html
         try:
             logger.info("Executing the statement:\n\t'%s'." % sql_commit)
             self.cursor.executemany(sql_commit, rows)
@@ -254,8 +255,8 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
             else:
                 raise # re-raise real error
 
-        logger.info('Commitment executed successfully.')
-        return True
+        logger.info("Commitment executed successfully.")
+        return 
 
 
 class MongoDBHandler(object):

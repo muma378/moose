@@ -17,6 +17,10 @@ class InvalidConfig(Exception):
 	"""Configs are not set as the requirement"""
 	pass
 
+class QueryError(Exception):
+	"""Failed to query data with given arguments"""
+	pass
+
 class AbstractAction:
 	"""
 	A base class of action.

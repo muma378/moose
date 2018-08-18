@@ -8,7 +8,7 @@ from . import database
 
 logger = logging.getLogger(__name__)
 
-class SqlOperate(object):
+class SQLOperation(object):
     """
     Class to do the query operation.
 
@@ -46,7 +46,7 @@ class SqlOperate(object):
         return cls(handler, table_alias)
 
 
-class BaseQuery(SqlOperate):
+class BaseQuery(SQLOperation):
 
     def query(self, **context):
         try:
@@ -152,6 +152,15 @@ class BaseUsersQuery(BaseQuery):
     #         conditions = self.conditions,
     #     )
 
+class UserGuidInProjectQuery(BaseUsersQuery):
+    """
+    Get user guid in project from name and project_id provided
+    """
+    statement_template = (
+        "select ProviderUserGuid from {table_person_in_project} "
+        "where PersonName = '{user_name}' and ProjectId = {project_id}"
+    )
+
 class UsersInProjectQuery(BaseUsersQuery):
     """
     Get information of users took part in a project. Note the 'id' returned is
@@ -168,14 +177,6 @@ class TeamUsersInProjectQuery(BaseUsersQuery):
     Get information of users took part in a project. Note the 'id' returned is
     the same with the key '_personInProjectId' in the table `result` in mongodb.
     """
-    # statement_template = (
-    #     "select DISTINCT pip.id, pip.PersonName, ps.Account, t.Name from "
-    #     "{table_person_in_project} pip, {table_person} ps, "
-    #     "{table_person_in_team} pit, {table_team} as t where "
-    #     "pip.ProjectId = {project_id} and pip.PersonId=ps.id and "
-    #     "pit.ProviderUserKey = pip.ProviderUserGuid and t.Id=pit.TeamId "
-    # )
-
     statement_template = """
 SELECT
     pat.id, pat.PersonName, pat.Account, t.Name
@@ -228,7 +229,22 @@ class ProjectInfoQuery(BaseQuery):
         "select * from {table_project} where id={project_id}"
     )
 
-class BaseInsert(SqlOperate):
+class ProjectInfoByBatchQuery(BaseQuery):
+
+    statement_template = (
+        "select * from {table_project} where batch= '{batch_name}'"
+    )
+
+class AcqToMarkByUserguidQuery(BaseQuery):
+
+    statement_template = (
+        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
+        "Duration,FileName,'{create_time}' from {table_acquisition} "
+        "WHERE ProjectId = {acquisition_id} and UserGuid = '{user_guid}' "
+        "and isValid = 1"
+    )
+
+class BaseInsert(SQLOperation):
 
     def execute(self, **context):
         try:
@@ -237,10 +253,22 @@ class BaseInsert(SqlOperate):
         except KeyError as e:
             raise ImproperlyConfigured("Keys missing: %s" % e.message)
         # execute the query with context provided
-        import pdb; pdb.set_trace()
-        return self.handler.exec_commit(sql_statement)
+        naffected = self.handler.exec_commit(sql_statement)
+        return naffected
 
-class AcquisitionToMarkInsert(BaseInsert):
+class BulkInsert(SQLOperation):
+
+    def execute(self, rows, **context):
+        try:
+            context.update(self.table_alias)
+            sql_statement = self.statement_template.format(**context)
+        except KeyError as e:
+            raise ImproperlyConfigured("Keys missing: %s" % e.message)
+        # execute the query with context provided
+        return self.handler.exec_many(sql_statement, rows)
+
+
+class AcqToMarkByTitle(BaseInsert):
 
     statement_template = (
         "insert into {table_source} (ProjectID,Title,DataGuid,"
@@ -248,4 +276,20 @@ class AcquisitionToMarkInsert(BaseInsert):
         "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
         "Duration,FileName,{create_time} from {table_acquisition} "
         "WHERE ProjectId in {acquisition_ids} and substring(Title, 6, 5) in ({groups})"
+    )
+
+class AcqToMarkByUserguid(BaseInsert):
+
+    statement_template = (
+        "insert into {table_source} (ProjectID,Title,DataGuid,"
+        "DataVersion,UserGuid,Duration,FileName,CreateTime) "
+        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
+        "Duration,FileName,'{create_time}' from {table_acquisition} "
+        "WHERE ProjectId = {acquisition_id} and UserGuid = '{user_guid}' "
+        "and isValid = 1"
+    )
+
+class AcqToMarkByDataguid(BulkInsert):
+    statement_template = (
+        "insert into {table_source} ({project_id},%s,%s,%s,%s,%f,%s,{create_time}) "
     )
