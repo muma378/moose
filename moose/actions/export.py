@@ -211,6 +211,32 @@ class TaskExport(SimpleExport):
 
     task_query_class = query.ProjectInfoQuery
 
+
+    def parse(self, kwargs):
+        # Gets config from the kwargs
+        config = self.get_config(kwargs)
+
+        # Initialize the fetcher
+        if self.fetcher_class:
+            self.fetcher = self.fetcher_class(self.query_class, self.query_context)
+
+        # If data_model was defined as a string with dot,
+        # for example 'appname.models.AppnameModel'
+        if self.data_model:
+            self.data_model_cls = import_string(self.data_model)
+
+        # Sets base environment
+        environment = {
+            'root'   : config.common['root'],
+            'relpath': config.common.get('relpath', config.common['root']),
+            'task_id': config.upload['task_id'],
+        }
+
+        # Sets custom environment
+        self.set_environment(environment, config, kwargs)
+        return environment
+
+
     def schedule(self, env):
         """
         Except for passing field from `env` to `context`, but also get `title`
@@ -251,9 +277,12 @@ class ImagesExport(TaskExport):
         image_path = data_model.dest_filepath
         image_prefix, _ = os.path.splitext(image_path)
         try:
-            mask_path = image_prefix + self.mask_label + self.image_suffix
-            draw.draw_polygons(image_path, mask_path, data_model.datalist, self.pallet)
-            blend_path = image_prefix + self.blend_label + self.image_suffix
-            draw.blend(image_path, blend_path, data_model.datalist, self.pallet)
+            # no mask or blend images if setting labels None
+            if self.mask_label:
+                mask_path = image_prefix + self.mask_label + self.image_suffix
+                draw.draw_polygons(image_path, mask_path, data_model.datalist, self.pallet)
+            if self.blend_label:
+                blend_path = image_prefix + self.blend_label + self.image_suffix
+                draw.blend(image_path, blend_path, data_model.datalist, self.pallet)
         except AttributeError as e:
             logger.error("Unable to read {}.".format(npath(image_path)))
