@@ -1,3 +1,3 @@
-from . import base, export, upload, review, operate
+from . import base, export, upload, review, operate, migrate
 
-__all__ = ['base', 'export', 'upload', 'review', 'operate']
+__all__ = ['base', 'export', 'upload', 'review', 'operate', 'migrate']
