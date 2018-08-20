@@ -140,6 +140,14 @@ QUERY_CONTEXT = {
     'mongo_context': DATABASES['mongo'],
 }
 
+INSERT_CONTEXT = {
+    'sql_handler': 'moose.connection.database.PrimitiveMssqlHandler',
+    'sql_context': DATABASES['sqlserver'],
+    'mongo_handler': 'moose.connection.database.MongoDBHandler',
+    'mongo_context': DATABASES['mongo'],
+}
+
+
 # Database cache
 DATACACHE_DIRNAME = '.database'
 DATACACHE_LIFETIME = 1
