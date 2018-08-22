@@ -213,7 +213,7 @@ class DownloadWorker(threading.Thread):
                 return
 
         makeparents(filepath)
-        with open(filepath, 'w') as f:
+        with open(filepath, 'wb') as f:
             f.write(data)
         return
 
