@@ -106,7 +106,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     from moose.connection.cloud import AzureBlobService
     from tutorial import settings
 
-    class Upload(actions.AbstractAction):
+    class Upload(actions.base.BaseAction):
 
         def run(self, **kwargs):
             """
@@ -131,10 +131,10 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
                         'dataTitle': os.path.basename(blob_file)
                     }
                     f.write(json.dumps(item))
+            return '{} files uploaded.' % len(blobs)
 
 
-
-为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.AbstractAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
+为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.base.BaseAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
 
 为了使得这个 *Action* 可以在命令行里被调用，我们还需要做一件事情——在 *AppConfig* 中注册该动作。在 *cityscape/apps.py* 中添加以下内容：
 
@@ -225,7 +225,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: order-actions-py-1
 
-    class Upload(actions.AbstractAction):
+    class Upload(actions.base.BaseAction):
 
         def run(self, **kwargs):
             config = kwargs['config']
