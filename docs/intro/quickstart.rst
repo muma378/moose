@@ -56,7 +56,12 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
         tests.py
 
 
-这其中尤其需要注意的是 *cityscape/apps.py* 。它是整个app的控制中心，负责连接各个单元和模块，使正确的配置文件（**configs**）被加载、动作（**actions**）能通过命令行被触发、数据被存储到正确的位置（**data**）。我们之后会了解到它是如何控制的，现在，你唯一需要做的是提供一些项目相关的信息： ::
+这其中尤其需要注意的是 *cityscape/apps.py* 。它是整个app的控制中心，负责连接各个单元和模块，使正确的配置文件（**configs**）被加载、动作（**actions**）能通过命令行被触发、数据被存储到正确的位置（**data**）。我们之后会了解到它是如何控制的，现在，你唯一需要做的是提供一些项目相关的信息：
+
+
+.. code-block:: python
+   :caption: cityscape/app.py
+   :name: init-app-py
 
     # -*- coding: utf-8 -*-
     from moose.apps import AppConfig
@@ -74,6 +79,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 - 数据来源：*/data/cityscape/vol1* 目录下的所有图片
 - 模板名称：*街景图片多边形标注 v1.1*
 - 索引格式：
+
 ::
 
     {
@@ -87,8 +93,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 - 任务名称：*2017第2000期图片标注任务*
 - 任务批次：*cityscape - vol1*
 
-接下来要做的就是上传原始图片并且建立索引关系。这些动作被抽象成一个叫 **AbstractAction** 的类，我们在 *cityscape/actions.py* 定义它的实现： ::
+接下来要做的就是上传原始图片并且建立索引关系。这些动作被抽象成一个叫 **AbstractAction** 的类，我们在 *cityscape/actions.py* 定义它的实现：
 
+.. code-block:: python
+   :caption: cityscape/actions.py
+   :name: upload-actions-py
 
     # -*- coding: utf-8 -*-
     import os
@@ -127,7 +136,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
 为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.AbstractAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
 
-为了使得这个 *Action* 可以在命令行里被调用，我们还需要做一件事情——在 *AppConfig* 中注册该动作。在 *cityscape/apps.py* 中添加以下内容： ::
+为了使得这个 *Action* 可以在命令行里被调用，我们还需要做一件事情——在 *AppConfig* 中注册该动作。在 *cityscape/apps.py* 中添加以下内容：
+
+.. code-block:: python
+   :caption: cityscape/app.py
+   :name: upload-app-py
 
     class CityscapeConfig(AppConfig):
         name = 'cityscape'
@@ -197,9 +210,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     [export]
     title = 2017第2000期图片标注任务
 
-::
 
-    # cityscape/actions.py
+.. code-block:: python
+   :caption: cityscape/actions.py
+   :name: order-actions-py-1
+
     class Upload(actions.AbstractAction):
 
         def run(self, **kwargs):
@@ -214,9 +229,13 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
     $ python manage.py run cityscape -a upload -c trail.cfg
 
-将 **action** 的接口独立出来之后我们发现，如之前期望的，很多动作可以被复用。我们也确实在 *moose.actions* 模块中定义了一些常见的动作，比如 *upload.SimpleUpload*, *upload.ReferredUpload*, *upload.MultipleUpload* 等等。通过查阅相应的[API文档]()发现之前编写的 action: upload 已经被 *SimpleUpload* 实现了，只需要继承它并做些细微的调整即可。因此，我们的最终版本是这样的： ::
+将 **action** 的接口独立出来之后我们发现，如之前期望的，很多动作可以被复用。我们也确实在 *moose.actions* 模块中定义了一些常见的动作，比如 *upload.SimpleUpload*, *upload.ReferredUpload*, *upload.MultipleUpload* 等等。通过查阅相应的[API文档]()发现之前编写的 action: upload 已经被 *SimpleUpload* 实现了，只需要继承它并做些细微的调整即可。因此，我们的最终版本是这样的：
 
-    # cityscape/actions.py
+.. code-block:: python
+   :caption: cityscape/actions.py
+   :name: order-actions-py-2
+   :emphasize-lines: 2
+
     class Upload(actions.upload.SimpleUpload):
         default_pattern = "*.jpg"
 
@@ -230,15 +249,19 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
 由于标注结果的格式通常不统一，并且项目内可能会因为需求或效率的变化而使用不同的模板，这导致产生的数据差异较大，功能难以被复用。因此，我们需要抽象出一层“适配器”的角色，通过定义并向其他对象暴露一系列统一的接口，其他对象只需要调用该接口，不用了解具体实现。同时，这些接口在子类中被继承和实现（或映射），不需要去关心这个接口将被用于做什么。
 
-我们在 **moose.models.BaseModel** 中定义了一些常见的接口，诸如：*filepath*、 *data*、*filelink(task_id)*、*is_effective()* 等等，有些提供了默认实现，另外一些则要求子类必须实现。他们具体的作用可以参考[API文档 model]()。现在，我们输入以下内容： ::
+我们在 **moose.models.BaseModel** 中定义了一些常见的接口，诸如：*filepath*、 *data*、*filelink(task_id)*、*is_effective()* 等等，有些提供了默认实现，另外一些则要求子类必须实现。他们具体的作用可以参考[API文档 model]()。现在，我们输入以下内容：
 
-    # cityscape/actions.py
+.. code-block:: python
+   :caption: cityscape/actions.py
+   :name: model-actions-py
+
     class Export(actions.export.SimpleExport):
         data_model = 'cityscape.models.CityscapeModel'
 
-::
+.. code-block:: python
+   :caption: cityscape/models.py
+   :name: model-model-py
 
-    # cityscape/models.py
     # -*- coding: utf-8 -*-
     from __future__ import unicode_literals
     from moose import models
@@ -272,7 +295,25 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 - 为了方便接下来对标注结果中 *annotation['result']['markResult']* 的调用，*CityscapeModel* 通过声明 *mark_result = fields.ResultMappingField(prop='markResult')* 完成了 **字典的键值到类的属性的映射**；
 - *cityscape.models.CityscapeModel* 继承 *models.BaseModel* 并实现了接口 *data* 以提供一个 **可读性更好的数据格式**，这个接口随后会被 *SimpleExport* 的 *dump()* 调用以将其写至文本文件中，完成我们所谓的导出功能。
 
-基于原始数据和处理数据分离的原则设计，即使中途更换了模板，我们也只需新建一个 *NewCityscapeModel* 提供同样的标准化接口（如 *data* ），并修改 *data_model = 'cityscape.models.NewCityscapeModel'* 即可。此时，我们在命令行中输入： ::
+基于原始数据和处理数据分离的原则设计，即使中途更换了模板，我们也只需新建一个 *NewCityscapeModel* 提供同样的标准化接口（如 *data* ），并修改 *data_model = 'cityscape.models.NewCityscapeModel'* 即可。
+
+之后，同 **Upload** 一样，当我们在 `app` 中对该Action进行注册：
+
+.. code-block:: python
+   :caption: cityscape/app.py
+   :name: model-app-py
+   :emphasize-lines: 7
+
+    class CityscapeConfig(AppConfig):
+        name = 'cityscape'
+        verbose_name = u"街景道路标注"
+
+        def ready(self):
+            self.register('Upload', 'upload')
+            self.register('Export', 'export')   # Same as upload, now we can type `-a export`
+
+
+此时，我们在命令行中输入： ::
 
     $ python manage.py run cityscape -a export -c trail.cfg
 
