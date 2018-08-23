@@ -147,10 +147,17 @@ INSERT_CONTEXT = {
     'mongo_context': DATABASES['mongo'],
 }
 
-
 # Database cache
 DATACACHE_DIRNAME = '.database'
 DATACACHE_LIFETIME = 1
+
+
+
+########
+# DRAW #
+########
+DRAWER_RADIUS = 3
+
 
 # Config for Server Message Block protocol
 SMB = {
