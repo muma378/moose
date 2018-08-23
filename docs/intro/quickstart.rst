@@ -235,9 +235,9 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
             images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
             ···
 
-完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trail.cfg* 完成与上一节相同的功能： ::
+完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trial.cfg* 完成与上一节相同的功能： ::
 
-    $ python manage.py run cityscape -a upload -c trail.cfg
+    $ python manage.py run cityscape -a upload -c trial.cfg
 
 将 **action** 的接口独立出来之后我们发现，如之前期望的，很多动作可以被复用。我们也确实在 *moose.actions* 模块中定义了一些常见的动作，比如 *upload.SimpleUpload*, *upload.ReferredUpload*, *upload.MultipleUpload* 等等。通过查阅相应的[API文档]()发现之前编写的 action: upload 已经被 *SimpleUpload* 实现了，只需要继承它并做些细微的调整即可。因此，我们的最终版本是这样的：
 
@@ -324,7 +324,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
 此时，我们在命令行中输入： ::
 
-    $ python manage.py run cityscape -a export -c trail.cfg
+    $ python manage.py run cityscape -a export -c trial.cfg
 
 即可完成导出标注结果。
 
