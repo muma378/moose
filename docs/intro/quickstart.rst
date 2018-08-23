@@ -150,7 +150,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
             self.register('Upload', 'upload')   # now we can type `-a upload` to refer the action 'cityscape.actions.Upload'
 
 
-注册完成之后，我们就可以在命令行中通过指定 *-a upload* 选项来运行我们之前在 *cityscape.actions.Upload* 中编写的代码了。在'cityscape/configs/'下创建一个文件叫"placeholder.cfg", 我们在其中输入以下内容： ::
+注册完成之后，我们就可以在命令行中通过指定 *-a upload* 选项来运行我们之前在 *cityscape.actions.Upload* 中编写的代码了。在'cityscape/configs/'下创建一个文件叫"placeholder.cfg", 我们在其中输入以下内容：
+
+.. code-block:: guess
+   :caption: cityscape/configs/placeholder.cfg
+   :name: placeholder-cfg-1
 
     [meta]
     keys = upload
@@ -168,9 +172,12 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
 如果你是一位有经验的开发者，那么你一定已经意识到我们之前的代码中存在一点问题——包含过多的“魔法常量”（*magic constant*），不仅如此，在实际的工作中我们还会发现，那些业务逻辑相关的代码通常是固定的，反而是这些“魔法常量”会经常性地改变。
 
-为了避免频繁地修改我们的代码，我们提出订单（*order*）这一术语（terminology）。通过将每次处理所需的参数按照.CONFIG的格式定义好——我们称之为 *订单模板*，后续的订单会自动按照该模板生成。通过填写相应的内容来“告诉”application诸如任务ID、数据位置等必要的信息。一个常见的订单模板格式如下： ::
+为了避免频繁地修改我们的代码，我们提出订单（*order*）这一术语（terminology）。通过将每次处理所需的参数按照.CONFIG的格式定义好——我们称之为 *订单模板*，后续的订单会自动按照该模板生成。通过填写相应的内容来“告诉”application诸如任务ID、数据位置等必要的信息。一个常见的订单模板格式如下：
 
-    ?cityscape/template.cfg
+.. code-block:: guess
+   :caption: cityscape/template.cfg
+   :name: template-cfg
+
     [meta]
     keys = common,upload,export
 
@@ -197,9 +204,12 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     你可以通过在 tutorial/tutorial/settings.py 中设置EDITOR的值来使用你喜欢的文本编辑器——只要保证它能通过在命令行里指定文件名的方式打开。
     此外，你还可以通过 editconf 命令快速打开一个订单文件，以对其进行修改。
 
-我们在里面填上需要的值，并且对刚才编写的action *Upload* 进行修改： ::
+我们在里面填上需要的值，并且对刚才编写的action *Upload* 进行修改：
 
-    ?cityscape/configs/trial.cfg
+.. code-block:: guess
+   :caption: cityscape/configs/trial.cfg
+   :name: trial-cfg
+
     [common]
     root = /data/cityscape/vol1
     relpath = /data/cityscape
@@ -234,7 +244,6 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 .. code-block:: python
    :caption: cityscape/actions.py
    :name: order-actions-py-2
-   :emphasize-lines: 2
 
     class Upload(actions.upload.SimpleUpload):
         default_pattern = "*.jpg"
