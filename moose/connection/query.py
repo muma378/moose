@@ -235,6 +235,12 @@ class ProjectInfoByBatchQuery(BaseQuery):
         "select * from {table_project} where batch= '{batch_name}'"
     )
 
+class AcqInfoByGuid(BaseQuery):
+
+    statement_template = (
+        "select * from {table_acquisition} where DataGuid= '{data_guid}'"
+    )
+
 class AcqToMarkByUserguidQuery(BaseQuery):
 
     statement_template = (
@@ -289,7 +295,17 @@ class AcqToMarkByUserguid(BaseInsert):
         "and isValid = 1"
     )
 
-class AcqToMarkByDataguid(BulkInsert):
+class AcqToMarkByDataguid(BaseInsert):
+
     statement_template = (
-        "insert into {table_source} ({project_id},%s,%s,%s,%s,%f,%s,{create_time}) "
+        "insert into {table_source} (ProjectID,Title,DataGuid,"
+        "DataVersion,UserGuid,Duration,FileName,CreateTime) "
+        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
+        "Duration,FileName,'{create_time}' from {table_acquisition} "
+        "WHERE DataGuid = '{data_guid}' and isValid = 1"
     )
+
+# class AcqToMarkByDataguid(BulkInsert):
+#     statement_template = (
+#         "insert into {table_source} ({project_id},%s,%s,%s,%s,%f,%s,{create_time}) "
+#     )

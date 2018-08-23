@@ -37,6 +37,7 @@ class BaseMigrate(SimpleAction):
     use_cache       = True
     cache_dirname   = settings.DATACACHE_DIRNAME
     cache_lifetime  = settings.DATACACHE_LIFETIME
+    create_time_format = '%Y-%m-%d %H:%M:%S'
 
 
     def parse(self, kwargs):
@@ -83,6 +84,9 @@ class BaseMigrate(SimpleAction):
         """
         raise NotImplementedError("subclasses of BaseMigrate must provide a `get_querypairs()`")
 
+    def _get_create_time(self):
+        return datetime.now().strftime(self.create_time_format)
+
     def query(self, **kwargs):
         return {}
 
@@ -98,11 +102,10 @@ class SimpleMigrate(BaseMigrate):
     userguid_query_class = query.UserGuidInProjectQuery
     query_context   = settings.QUERY_CONTEXT
     insert_context  = settings.INSERT_CONTEXT
-    create_time_format = '%Y-%m-%d %H:%M:%S'
 
     sheet_title = u'Sheet1'
     start = 1
-    end = -1
+    end = None
 
 
     def set_environment(self, env, config, kwargs):
@@ -117,11 +120,6 @@ class SimpleMigrate(BaseMigrate):
             'batch_name_column': config.migrate['batch_name_column']
         })
 
-        self.groups_info = {}
-
-
-    def _get_create_time(self):
-        return datetime.now().strftime(self.create_time_format)
 
     def _get_key(self, context):
         return context['group_id']+'@'+context['acq_task_id']
@@ -138,10 +136,6 @@ class SimpleMigrate(BaseMigrate):
                     'row': row,
                 }
 
-                # _key = self._get_key(context):
-                # if self.group_info.get(_key):
-                #     raise InvalidConfig("Duplicate keys found: '{}'".format(_key))
-                # self.groups_info[_key] = row
                 counter += 1
                 yield counter, context
 
