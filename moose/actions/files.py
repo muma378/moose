@@ -31,8 +31,9 @@ class FileObject(object):
     """
     LABEL_CHOICES = []
 
-    def __init__(self, filepath):
+    def __init__(self, filepath, actor):
         self.filepath = filepath
+        self.actor    = actor
         dirname, self.filename = os.path.split(filepath)
 
         self._get_meta()
