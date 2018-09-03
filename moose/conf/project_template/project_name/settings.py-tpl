@@ -153,10 +153,12 @@ DATACACHE_LIFETIME = 1
 
 
 
-########
-# DRAW #
-########
+##########
+# DRAWER #
+##########
 DRAWER_RADIUS = 3
+DEFAULT_THICKNESS = 3
+DEFAULT_COLOR = (255, 0, 0)
 
 
 # Config for Server Message Block protocol
