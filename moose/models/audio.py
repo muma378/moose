@@ -12,6 +12,10 @@ class AudioModel(BaseModel):
     mark_result = fields.ResultMappingField(prop_name='markResult')
 
     @property
+    def filepath(self):
+        return self.url
+
+    @property
     def segments(self):
         for segment in self.mark_result:
             yield segment['start'], segment['end'], segment['extend']

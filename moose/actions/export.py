@@ -158,7 +158,6 @@ class BaseExport(SimpleAction):
         raise NotImplementedError(\
             'subclasses of BaseExport must provide a handle_model()')
 
-
 class SimpleExport(BaseExport):
     """
     A simple implementation of the action `export`. Defines the default
