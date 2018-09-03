@@ -83,33 +83,16 @@ class BaseShape(object):
 	def _fill(self, im):
 		"""
 		Fills the shape with colors on the image, it is allowed to raise an error
-		if the shape was not a closure.
+		if the shape was not closed.
 		"""
 		raise NotImplementedError("%s does not provide method `fill()`" % self.__class__.__name__)
 
 	def _outline(self, im):
 		"""
-		Draws an outline of the shape, -·
+		Draws the outline of the shape, would be the default drawing behavior when
+		shape was not closed.
 		"""
 		raise NotImplementedError("%s does not provide method `outline()`" % self.__class__.__name__)
-
-
-class LineString(BaseShape):
-	"""
-	`coordinates`:
-		[[x0, y0], [x1, y1]]
-	"""
-	type = "LineString"
-
-	def is_valid_coordinates(self, coordinates):
-		if len(coordinates) == 2:
-			if self._is_list_of_pairs(coordinates):
-				return True
-		else:
-			return False
-
-	def draw_on(self, im):
-		cv2.line(im, self._coordinates[0], self._coordinates[1], self._color, self.thickness)
 
 
 class Point(BaseShape):
@@ -127,10 +110,27 @@ class Point(BaseShape):
 			return False
 
 	def normalize(self, coord):
-		return [int(coord[0]), int(coord[1])]
+		return (int(coord[0]), int(coord[1]))
 
 	def draw_on(self, im):
-		cv2.circle(im, self._coordinates, self._color, self.radius)
+		cv2.circle(im, self._coordinates, self.radius, self._color)
+
+class LineString(BaseShape):
+	"""
+	`coordinates`:
+		[[x0, y0], [x1, y1]]
+	"""
+	type = "LineString"
+
+	def is_valid_coordinates(self, coordinates):
+		if len(coordinates) == 2:
+			if self._is_list_of_pairs(coordinates):
+				return True
+		else:
+			return False
+
+	def draw_on(self, im):
+		cv2.line(im, self._coordinates[0], self._coordinates[1], self._color, self.thickness)
 
 
 class Polygon(BaseShape):
@@ -199,9 +199,7 @@ class Rectangle(BaseShape):
 
 	@classmethod
 	def from_points(cls, points, label, **options):
-		if len(points) == 4:
-			coordinates = [points[0], points[2]]
-		elif len(points) == 5 and cls._equal_point(points[0], points[-1]):
+		if len(points) == 4 or (len(points) == 5 and cls._equal_point(points[0], points[-1])):
 			coordinates = [points[0], points[2]]
 		else:
 			raise InvalidCoordinates()
