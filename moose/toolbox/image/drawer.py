@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import copy
+from collections import Container
 
 import cv2
 import numpy as np
@@ -50,11 +51,29 @@ class BaseShape(object):
 		"""
 		Each point contains a pair of value, which is `x` and `y`
 		"""
-		# TODO: check if elements in point are digital
 		for point in points:
-			if len(point) != 2 :
+			if not (self.is_valid_format(point) and self.is_valid_value(point)):
 				return False
 		return True
+
+	def is_valid_format(self, point):
+		# type of list or tuple, and the length is 2
+		return (isinstance(point, list) or isinstance(point, tuple)) \
+			and len(point) == 2
+
+	def is_valid_value(self, point):
+		# assume the format is correct
+		x, y = point
+
+		# type conversion is allowed
+		try:
+			x, y = int(x), int(y)
+		except ValueError as e:
+			return False
+
+		# must be a postive value
+		return x >= 0 and y >= 0
+
 
 	def normalize(self, coordinates):
 		norm_coordinates = []
@@ -103,7 +122,7 @@ class Point(BaseShape):
 	type = "Point"
 	radius = settings.DRAWER_RADIUS
 
-	def is_valid_coordinates(self, coordinates):
+	def _is_valid_coordinates(self, coordinates):
 		if self._is_list_of_pairs([coordinates]):
 			return True
 		else:
@@ -113,7 +132,8 @@ class Point(BaseShape):
 		return (int(coord[0]), int(coord[1]))
 
 	def draw_on(self, im):
-		cv2.circle(im, self._coordinates, self.radius, self._color)
+		# let thickness be a negative value to fill the circle
+		cv2.circle(im, self._coordinates, self.radius, self._color, -1)
 
 class LineString(BaseShape):
 	"""
@@ -122,10 +142,11 @@ class LineString(BaseShape):
 	"""
 	type = "LineString"
 
-	def is_valid_coordinates(self, coordinates):
-		if len(coordinates) == 2:
-			if self._is_list_of_pairs(coordinates):
-				return True
+	def _is_valid_coordinates(self, coordinates):
+		if not isinstance(coordinates, Container):
+			return False
+		if self._is_list_of_pairs(coordinates) and len(coordinates) == 2:
+			return True
 		else:
 			return False
 
@@ -141,7 +162,7 @@ class Polygon(BaseShape):
 	type = "Polygon"
 	is_closed = False
 
-	def is_valid_coordinates(self, coordinates):
+	def _is_valid_coordinates(self, coordinates):
 		if len(coordinates) > 2 and self._is_list_of_pairs(coordinates) and \
 			self._equal_points(self, coordinates[0], coordinates[1]):
 			return True
