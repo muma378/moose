@@ -41,6 +41,7 @@ class BaseShapeTestCase(unittest.TestCase):
 
         for point, value in self.test_dataset:
             x, y = point
+            # notice it is im[y, x] not (x, y)
             self.assertEqual(im[y, x].tolist(), list(value), "Point(%s, %s) was not drawn." % (x, y))
 
 class PointTestCase(BaseShapeTestCase):
@@ -58,6 +59,7 @@ class PointTestCase(BaseShapeTestCase):
                         ((10, 10), settings.DEFAULT_COLOR),
                         ((11, 10), settings.DEFAULT_COLOR),
                         ((25, 24), settings.DEFAULT_COLOR),
+                        ((100, 100), BACKGROUND),
                         ]
     shape_class     = drawer.Point
 
@@ -79,3 +81,41 @@ class LineStringTestCase(BaseShapeTestCase):
                         ((100, 1), BACKGROUND),
                         ]
     shape_class       = drawer.LineString
+
+class PolygonTestCase(BaseShapeTestCase):
+    valid_dataset     = [
+                        ([[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]], 'a'),
+                        # add support for ring shape
+                        ([[20, 20], [30, 30], [20, 20]], 'a')
+                        ]
+    invalid_dataset   = [
+                        (1, 'a'),
+                        ([[0, 0]], 'a'),
+                        ([[-1, 0], [0, 10]], 'a'),
+                        ([[0, 0], [0, 10], [10, 10]], 'a'),
+                        ]
+    test_dataset      = [
+                        ((5, 5), settings.DEFAULT_COLOR),
+                        ((10, 10), settings.DEFAULT_COLOR),
+                        ((9, 9), settings.DEFAULT_COLOR),
+                        ((100, 1), BACKGROUND),
+                        ]
+    outline_dataset   = [
+                        ((0, 10), settings.DEFAULT_COLOR),
+                        ((10, 10), settings.DEFAULT_COLOR),
+                        ((25, 25), settings.DEFAULT_COLOR),
+                        ((7, 7), BACKGROUND),
+                        ((100, 1), BACKGROUND),
+                        ]
+    shape_class       = drawer.Polygon
+
+    def test_outline(self):
+        im = np.zeros(self.image_shape, np.uint8)
+        for coordinates, label in self.valid_dataset:
+            shape = self.shape_class(coordinates, label, filled=False)
+            shape.draw_on(im)
+
+        for point, value in self.outline_dataset:
+            x, y = point
+            # notice it is im[y, x] not (x, y)
+            self.assertEqual(im[y, x].tolist(), list(value), "Point(%s, %s) was not drawn." % (x, y))

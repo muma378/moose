@@ -30,18 +30,22 @@ class BaseShape(object):
 
 		`filled` (default None)
 			Whether to use `_outline` or `_fill` to draw shapes on images.
+
+		`color` ()
 	"""
 	type = None
 	default_color = settings.DEFAULT_COLOR
 	thickness     = settings.DEFAULT_THICKNESS
+	drawn_filled  = None
 
 	def __init__(self, coordinates, label, **options):
 		if self._is_valid_coordinates(coordinates):
 			self._coordinates = self.normalize(coordinates)
 		else:
 			raise InvalidCoordinates("Invalid coordinates for '{}': {}".format(self.type, coordinates))
-		self._label = label
-		self._color = options.get('color', self.default_color)
+		self._label  = label
+		self._color  = options.get('color', self.default_color)
+		self._filled = options.get('filled', self.drawn_filled)
 		self._options = options
 
 	def _is_valid_coordinates(self, coordinates):
@@ -51,6 +55,8 @@ class BaseShape(object):
 		"""
 		Each point contains a pair of value, which is `x` and `y`
 		"""
+		if not isinstance(points, Container):
+			return False
 		for point in points:
 			if not (self.is_valid_format(point) and self.is_valid_value(point)):
 				return False
@@ -83,7 +89,7 @@ class BaseShape(object):
 		return norm_coordinates
 
 	@classmethod
-	def _equal_point(cls, p1, p2):
+	def _equal_points(cls, p1, p2):
 		return p1[0] == p2[0] and p1[1] == p2[1]
 
 	def set_color(self, color):
@@ -94,7 +100,7 @@ class BaseShape(object):
 		"""
 		Defines the default behavior when shapes were to draw on an image.
 		"""
-		if self._options.get('filled'):
+		if self._filled:
 			self._fill(im)
 		else:
 			self._outline(im)
@@ -143,8 +149,6 @@ class LineString(BaseShape):
 	type = "LineString"
 
 	def _is_valid_coordinates(self, coordinates):
-		if not isinstance(coordinates, Container):
-			return False
 		if self._is_list_of_pairs(coordinates) and len(coordinates) == 2:
 			return True
 		else:
@@ -160,20 +164,24 @@ class Polygon(BaseShape):
 		[[x1, y1], [x2, y2] ... [xn, yn], [x1, y1]]
 	"""
 	type = "Polygon"
-	is_closed = False
+	is_closed    = False
+	drawn_filled = True
 
 	def _is_valid_coordinates(self, coordinates):
-		if len(coordinates) > 2 and self._is_list_of_pairs(coordinates) and \
-			self._equal_points(self, coordinates[0], coordinates[1]):
+		if self._is_list_of_pairs(coordinates) and len(coordinates) > 2 and \
+			self._equal_points(coordinates[0], coordinates[-1]):
 			return True
 		else:
 			return False
 
+	def to_nparray(self):
+		return np.array(self._coordinates, np.int32)
+
 	def _fill(self, im):
-		cv2.fillPoly(im, [self._coordinates], self._color)
+		cv2.fillPoly(im, [self.to_nparray()], self._color, )
 
 	def _outline(self, im):
-		cv2.polylines(im, [self._coordinates], self.is_closed, self._color, self.thickness)
+		cv2.polylines(im, [self.to_nparray()], self.is_closed, self._color, self.thickness)
 
 
 
@@ -185,6 +193,7 @@ class Rectangle(BaseShape):
 		Points: [[x1, y1], [x1, y2], [x2, y2,], [x2, y1], [x1, y1]]
 	"""
 	type = "Rectangle"
+	drawn_filled = True
 
 	# TODO: a straight forward logic
 	def _normalize_coordinates(self, coordinates):
