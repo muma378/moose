@@ -1,9 +1,7 @@
-stages:
-  - test
-
 test py27:
-  stage: test
   only:
     - tags
     - /^issue-.*$/
-  script: tox -e py27
+    - web
+  script: 
+    - tox -e py27
