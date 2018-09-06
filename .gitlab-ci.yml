@@ -1,0 +1,8 @@
+stages:
+  - test
+
+test py27:
+  only:
+    - tags
+    - /^issue-.*$/
+  script: tox -e py27
