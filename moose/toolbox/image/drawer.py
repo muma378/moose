@@ -35,7 +35,7 @@ class BaseShape(object):
 	"""
 	type = None
 	default_color = settings.DEFAULT_COLOR
-	thickness     = settings.DEFAULT_THICKNESS
+	default_thickness = settings.DEFAULT_THICKNESS
 	drawn_filled  = None
 
 	def __init__(self, coordinates, label, **options):
@@ -46,6 +46,7 @@ class BaseShape(object):
 		self._label  = label
 		self._color  = options.get('color', self.default_color)
 		self._filled = options.get('filled', self.drawn_filled)
+		self._thickness = options.get('thickness', self.default_thickness)
 		self._options = options
 
 	def _is_valid_coordinates(self, coordinates):
@@ -155,7 +156,7 @@ class LineString(BaseShape):
 			return False
 
 	def draw_on(self, im):
-		cv2.line(im, self._coordinates[0], self._coordinates[1], self._color, self.thickness)
+		cv2.line(im, self._coordinates[0], self._coordinates[1], self._color, self._thickness)
 
 
 class Polygon(BaseShape):
@@ -181,7 +182,7 @@ class Polygon(BaseShape):
 		cv2.fillPoly(im, [self.to_nparray()], self._color, )
 
 	def _outline(self, im):
-		cv2.polylines(im, [self.to_nparray()], self.is_closed, self._color, self.thickness)
+		cv2.polylines(im, [self.to_nparray()], self.is_closed, self._color, self._thickness)
 
 
 
@@ -241,7 +242,7 @@ class Rectangle(BaseShape):
 		return [[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]]
 
 	def _outline(self, im):
-		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self._color, self.thickness)
+		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self._color, self._thickness)
 
 	def _fill(self, im):
 		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self._color, -1)
@@ -290,6 +291,7 @@ class GeneralPainter(object):
 
 	def render(self, canvas):
 		for shape in self._shapes:
+			shape.set_color(self._pallet[shape._label])
 			shape.draw_on(canvas)
 		return canvas
 
