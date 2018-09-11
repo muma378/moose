@@ -49,15 +49,30 @@ class PipelineDownloader(threading.Thread):
 
     def process(self, task):
         url, name = task
-        try:
-            response = urllib2.urlopen(url, timeout=self.timeout)
-            data = response.read()
-            return (data, name)
-        except urllib2.HTTPError, e:
-            logger.error('falied to connect to %s, may for %s' % (url, e.reason))
-        except urllib2.URLError, e:
-            logger.error('unable to open url %s for %s' % (url, e.reason))
+        data = None
+        retry = 3
+        while retry > 0:
+            try:
+                response = urllib2.urlopen(url, timeout=self.timeout)
+                data = response.read()
+                return (data, name)
+            except urllib2.HTTPError, e:
+                self.stats.inc_value("download/http_error")
+                retry -= 1
+                if retry == 0:
+                    logger.error('falied to connect to %s, may for %s' % (url, e.reason))
+            except urllib2.URLError, e:
+                self.stats.inc_value("download/url_error")
+                retry -= 1
+                if retry == 0:
+                    logger.error('unable to open url %s for %s' % (url, e.reason))
+            except socket.error, e:
+                self.stats.inc_value("download/socket_error")
+                retry -= 1
+                if retry == 0:
+                    logger.error('socket error: %s' % url)
 
+        return None
 
 class DownloadStat:
     def __init__(self):
@@ -90,6 +105,7 @@ def download(urls, dirpath, workers=10, overwrite=False):
     """
     stat = DownloadStat()
     src_queue = Queue.Queue()
+    lock = threading.Lock()
 
     def write(response):
         if not response:
@@ -97,7 +113,11 @@ def download(urls, dirpath, workers=10, overwrite=False):
         else:
             data, name = response
             dst_file = os.path.join(dirpath, name)
+
+            lock.acquire()
             makeparents(dst_file)
+            lock.release()
+            
             with open(dst_file, 'w') as f:
                 f.write(data)
             stat.nok += 1

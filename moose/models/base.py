@@ -167,6 +167,7 @@ class BaseTaskInfo(object):
     def users_table(self):
         pass
 
+lock = threading.Lock()
 
 class DownloadWorker(threading.Thread):
     def __init__(self, queue, callback, stats, timeout, overwrite=False):
@@ -183,27 +184,40 @@ class DownloadWorker(threading.Thread):
             try:
                 data_model = self.queue.get(timeout=self.timeout)
                 data = self.fetch(data_model.filelink)
-                self.write(data, data_model.dest_filepath)
-                self.callback(data_model)
+
+                if data != None:
+                    self.write(data, data_model.dest_filepath)
+                    self.callback(data_model)
+                    self.stats.inc_value("download/ok")
+                else:
+                    if data_model.retry > 0:
+                        data_model.retry -= 1
+                        self.queue.put(data_model)
+                        self.stats.inc_value("download/retry")
+                    else:
+                        self.stats.inc_value("download/failed")
+
                 self.queue.task_done()
-                self.stats.inc_value("download/ok")
+
             except Queue.Empty as e:
                 break
 
     def fetch(self, url):
-        data = ''
+        data = None
+        warn = logger.error if data_model.retry == 0 else logger.info
+
         try:
             response = urllib2.urlopen(url, timeout=self.timeout)
             data = response.read()
         except urllib2.HTTPError, e:
             self.stats.inc_value("download/http_error")
-            logger.error('falied to connect to %s, may for %s' % (url, e.reason))
+            warn('falied to connect to %s, may for %s' % (url, e.reason))
         except urllib2.URLError, e:
             self.stats.inc_value("download/url_error")
-            logger.error('unable to open url %s for %s' % (url, e.reason))
+            warn('unable to open url %s for %s' % (url, e.reason))
         except socket.error, e:
             self.stats.inc_value("download/socket_error")
-            logger.error('socket error: %s' % url)
+            warn('socket error: %s' % url)
         return data
 
     def write(self, data, filepath):
@@ -212,7 +226,10 @@ class DownloadWorker(threading.Thread):
             if not self.overwrite:
                 return
 
+        lock.acquire()
         makeparents(filepath)
+        lock.release()
+
         with open(filepath, 'wb') as f:
             f.write(data)
         return
@@ -236,6 +253,7 @@ class ModelDownloader(object):
 
     def add_task(self, data_model):
         try:
+            data_model.retry = 3
             self.queue.put(data_model)
         except Queue.Full as e:
             logger.error('Try to put an element in a full queue.')
