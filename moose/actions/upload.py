@@ -23,6 +23,7 @@ class BaseUpload(SimpleAction):
 
     """
     upload_files    = True
+    overwrite       = False
     # default to settings.AZURE
     azure_setting   = settings.AZURE
     generate_index  = True
@@ -113,7 +114,7 @@ class BaseUpload(SimpleAction):
         container_name = context['task_id']
         if self.upload_files:
             self.stats.set_value("upload/total", len(blob_pairs))
-            blobs = self.azure.upload(container_name, blob_pairs)
+            blobs = self.azure.upload(container_name, blob_pairs, overwrite=self.overwrite)
             self.stats.set_value("upload/upload", len(blobs))
             self.output.append("%s files were uploaded to [%s]." % (len(blobs), container_name))
 
