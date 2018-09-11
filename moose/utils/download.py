@@ -57,17 +57,14 @@ class PipelineDownloader(threading.Thread):
                 data = response.read()
                 return (data, name)
             except urllib2.HTTPError, e:
-                self.stats.inc_value("download/http_error")
                 retry -= 1
                 if retry == 0:
                     logger.error('falied to connect to %s, may for %s' % (url, e.reason))
             except urllib2.URLError, e:
-                self.stats.inc_value("download/url_error")
                 retry -= 1
                 if retry == 0:
                     logger.error('unable to open url %s for %s' % (url, e.reason))
             except socket.error, e:
-                self.stats.inc_value("download/socket_error")
                 retry -= 1
                 if retry == 0:
                     logger.error('socket error: %s' % url)

@@ -183,7 +183,7 @@ class DownloadWorker(threading.Thread):
         while True:
             try:
                 data_model = self.queue.get(timeout=self.timeout)
-                data = self.fetch(data_model.filelink)
+                data = self.fetch(data_model.filelink, data_model.retry)
 
                 if data != None:
                     self.write(data, data_model.dest_filepath)
@@ -202,9 +202,9 @@ class DownloadWorker(threading.Thread):
             except Queue.Empty as e:
                 break
 
-    def fetch(self, url):
+    def fetch(self, url, retry):
         data = None
-        warn = logger.error if data_model.retry == 0 else logger.info
+        warn = logger.error if retry == 0 else logger.info
 
         try:
             response = urllib2.urlopen(url, timeout=self.timeout)
