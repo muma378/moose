@@ -114,7 +114,7 @@ def download(urls, dirpath, workers=10, overwrite=False):
             lock.acquire()
             makeparents(dst_file)
             lock.release()
-            
+
             with open(dst_file, 'w') as f:
                 f.write(data)
             stat.nok += 1
