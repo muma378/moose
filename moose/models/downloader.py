@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-
+import os
 import socket
 import Queue
 import urllib2
@@ -22,8 +22,11 @@ else:
     except ImportError:
         import dummy_threading as _threading
 
-
 lock = _threading.Lock()
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 class DownloadWorker(_threading.Thread):
     def __init__(self, queue, callback, stats, timeout, overwrite=False):
