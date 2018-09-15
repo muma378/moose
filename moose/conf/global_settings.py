@@ -1,4 +1,4 @@
-# Default Django settings. Override these with settings in the module
+# Default Moose settings. Override these with settings in the module
 # pointed-to by the DJANGO_SETTINGS_MODULE environment variable.
 
 # This is defined here as a do-nothing function because we can't import
@@ -32,7 +32,7 @@ ADMINS = []
 # interpreted as the default user time zone.
 TIME_ZONE = 'Asiz/Shanghai'
 
-# If you set this to True, Django will use timezone-aware datetimes.
+# If you set this to True, Moose will use timezone-aware datetimes.
 USE_TZ = False
 
 # Language code for this installation. All choices can be found here:
@@ -166,36 +166,6 @@ ALLOWED_INCLUDE_ROOTS = []
 #    ]
 IGNORABLE_404_URLS = []
 
-# A secret key for this particular Django installation. Used in secret-key
-# hashing algorithms. Set this in your settings, or Django will complain
-# loudly.
-SECRET_KEY = ''
-
-# Default file storage mechanism that holds media.
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-
-# Absolute filesystem path to the directory that will hold user-uploaded files.
-# Example: "/var/www/example.com/media/"
-MEDIA_ROOT = ''
-
-# URL that handles the media served from MEDIA_ROOT.
-# Examples: "http://example.com/media/", "http://media.example.com/"
-MEDIA_URL = ''
-
-# Absolute path to the directory static files should be collected to.
-# Example: "/var/www/example.com/static/"
-STATIC_ROOT = None
-
-# URL that handles the static files served from STATIC_ROOT.
-# Example: "http://example.com/static/", "http://static.example.com/"
-STATIC_URL = None
-
-# List of upload handler classes to be applied in order.
-FILE_UPLOAD_HANDLERS = [
-    'django.core.files.uploadhandler.MemoryFileUploadHandler',
-    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
-]
-
 
 # Default formatting for date objects. See all available format strings here:
 # http://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
@@ -291,94 +261,6 @@ THOUSAND_SEPARATOR = ','
 DEFAULT_TABLESPACE = ''
 DEFAULT_INDEX_TABLESPACE = ''
 
-# The Python dotted path to the WSGI application that Django's internal server
-# (runserver) will use. If `None`, the return value of
-# 'django.core.wsgi.get_wsgi_application' is used, thus preserving the same
-# behavior as previous versions of Django. Otherwise this should point to an
-# actual WSGI application object.
-WSGI_APPLICATION = None
-
-# If your Django app is behind a proxy that sets a header to specify secure
-# connections, AND that proxy ensures that user-submitted headers with the
-# same name are ignored (so that people can't spoof it), set this value to
-# a tuple of (header_name, header_value). For any requests that come in with
-# that header/value, request.is_secure() will return True.
-# WARNING! Only set this if you fully understand what you're doing. Otherwise,
-# you may be opening yourself up to a security risk.
-SECURE_PROXY_SSL_HEADER = None
-
-##############
-# MIDDLEWARE #
-##############
-
-# List of middleware classes to use.  Order is important; in the request phase,
-# this middleware classes will be applied in the order given, and in the
-# response phase the middleware will be applied in reverse order.
-MIDDLEWARE_CLASSES = [
-
-]
-
-############
-# SESSIONS #
-############
-
-# Cache to store session data if using the cache session backend.
-SESSION_CACHE_ALIAS = 'default'
-# Cookie name. This can be whatever you want.
-SESSION_COOKIE_NAME = 'sessionid'
-# Age of cookie, in seconds (default: 2 weeks).
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2
-# A string like ".example.com", or None for standard domain cookie.
-SESSION_COOKIE_DOMAIN = None
-# Whether the session cookie should be secure (https:// only).
-SESSION_COOKIE_SECURE = False
-# The path of the session cookie.
-SESSION_COOKIE_PATH = '/'
-# Whether to use the non-RFC standard httpOnly flag (IE, FF3+, others)
-SESSION_COOKIE_HTTPONLY = True
-# Whether to save the session data on every request.
-SESSION_SAVE_EVERY_REQUEST = False
-# Whether a user's session cookie expires when the Web browser is closed.
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-# The module to store session data
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-# Directory to store session files if using the file session module. If None,
-# the backend will use a sensible default.
-SESSION_FILE_PATH = None
-# class to serialize session data
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
-
-#########
-# CACHE #
-#########
-
-# The cache backends to use.
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
-}
-CACHE_MIDDLEWARE_KEY_PREFIX = ''
-CACHE_MIDDLEWARE_SECONDS = 600
-CACHE_MIDDLEWARE_ALIAS = 'default'
-
-
-###########
-# SIGNING #
-###########
-
-SIGNING_BACKEND = 'django.core.signing.TimestampSigner'
-
-
-############
-# MESSAGES #
-############
-
-# Class to use as messages backend
-MESSAGE_STORAGE = 'django.contrib.messages.storage.fallback.FallbackStorage'
-
-# Default values of MESSAGE_LEVEL and MESSAGE_TAGS are defined within
-# django.contrib.messages to avoid imports in this settings file.
 
 ###########
 # LOGGING #
@@ -389,18 +271,3 @@ LOGGING_CONFIG = 'logging.config.dictConfig'
 
 # Custom logging configuration.
 LOGGING = {}
-
-# Default exception reporter filter class used in case none has been
-# specifically assigned to the HttpRequest instance.
-DEFAULT_EXCEPTION_REPORTER_FILTER = 'django.views.debug.SafeExceptionReporterFilter'
-
-###########
-# TESTING #
-###########
-
-# The name of the class to use to run the test suite
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-
-# Apps that don't need to be serialized at test database creation time
-# (only apps with migrations are to start with)
-TEST_NON_SERIALIZED_APPS = []
