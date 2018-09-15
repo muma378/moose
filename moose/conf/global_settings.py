@@ -9,6 +9,7 @@ gettext_noop = lambda s: s
 ####################
 
 DEBUG = False
+OVERWRITE = False
 TEMPLATE_DEBUG = False
 
 

@@ -15,6 +15,10 @@ import platform
 IS_WINDOWS = True if platform.system()=="Windows" else False
 IS_POSIX = not IS_WINDOWS
 
+# Shows useful information and changes multithreading to single thread when turn on `DEBUG` mode
+DEBUG = False
+# How to solve conflicts when uploading files to azure, overwrite or ignore(default)?
+OVERWRITE = False
 
 INSTALLED_APPS = []
 
