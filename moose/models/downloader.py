@@ -101,7 +101,8 @@ class ModelDownloader(object):
         self.stats     = stats
         self.timeout   = timeout or settings.DEFAULT_TIMEOUT
         self.overwrite = overwrite
-        self.nworkers  = nworkers
+        # Run in one loop if setting DEBUG mode
+        self.nworkers  = nworkers if not settings.DEBUG else 1
 
     def start(self):
         for i in range(self.nworkers):
