@@ -52,23 +52,26 @@ class BaseShape(object):
 	def _is_valid_coordinates(self, coordinates):
 		return True
 
-	def _is_list_of_pairs(self, points):
+	@classmethod
+	def _is_list_of_pairs(cls, points):
 		"""
 		Each point contains a pair of value, which is `x` and `y`
 		"""
 		if not isinstance(points, Container):
 			return False
 		for point in points:
-			if not (self.is_valid_format(point) and self.is_valid_value(point)):
+			if not (cls.is_valid_format(point) and cls.is_valid_value(point)):
 				return False
 		return True
 
-	def is_valid_format(self, point):
+	@classmethod
+	def is_valid_format(cls, point):
 		# type of list or tuple, and the length is 2
 		return (isinstance(point, list) or isinstance(point, tuple)) \
 			and len(point) == 2
 
-	def is_valid_value(self, point):
+	@classmethod
+	def is_valid_value(cls, point):
 		# assume the format is correct
 		x, y = point
 
@@ -96,6 +99,13 @@ class BaseShape(object):
 	def set_color(self, color):
 		self._color = color
 		return self
+
+	@property
+	def color(self):
+		"""
+		Note (R, G, B) was reversed in OpenCV
+		"""
+		return self._color[::-1]
 
 	def draw_on(self, im):
 		"""
@@ -140,7 +150,7 @@ class Point(BaseShape):
 
 	def draw_on(self, im):
 		# let thickness be a negative value to fill the circle
-		cv2.circle(im, self._coordinates, self.radius, self._color, -1)
+		cv2.circle(im, self._coordinates, self.radius, self.color, -1)
 
 class LineString(BaseShape):
 	"""
@@ -156,7 +166,7 @@ class LineString(BaseShape):
 			return False
 
 	def draw_on(self, im):
-		cv2.line(im, self._coordinates[0], self._coordinates[1], self._color, self._thickness)
+		cv2.line(im, self._coordinates[0], self._coordinates[1], self.color, self._thickness)
 
 
 class Polygon(BaseShape):
@@ -179,50 +189,33 @@ class Polygon(BaseShape):
 		return np.array(self._coordinates, np.int32)
 
 	def _fill(self, im):
-		cv2.fillPoly(im, [self.to_nparray()], self._color, )
+		cv2.fillPoly(im, [self.to_nparray()], self.color)
 
 	def _outline(self, im):
-		cv2.polylines(im, [self.to_nparray()], self.is_closed, self._color, self._thickness)
+		cv2.polylines(im, [self.to_nparray()], self.is_closed, self.color, self._thickness)
 
 
 
 class Rectangle(BaseShape):
 	"""
 	`coordinates`:
-		Pair  : [[x1, y1], [x2, y2]]
-		Region: [x, y, w, h]
-		Points: [[x1, y1], [x1, y2], [x2, y2,], [x2, y1], [x1, y1]]
+		Default  : [[x1, y1], [x2, y2]]
+
+		from_region: [x, y, w, h]
+		from_points: [[x1, y1], [x1, y2], [x2, y2,], [x2, y1], [x1, y1]]
 	"""
 	type = "Rectangle"
-	drawn_filled = True
-
-	# TODO: a straight forward logic
-	def _normalize_coordinates(self, coordinates):
-		"""
-		Converts all kinds of formats to [[x1, y1], [x2, y2]]
-		"""
-		if len(coordinates) == 4:
-			if self._is_list_of_pairs(coordinates):
-				return self.from_points(coordinates)
-			else:
-				return self.from_region(coordinates)
-		elif len(coordinates) == 5:
-			return self.from_points(coordinates)
-		elif len(coordinates) == 2 and self._is_list_of_pairs(coordinates):
-			return coordinates
-		else:
-			raise InvalidCoordinates()
+	drawn_filled = False
 
 	def _is_valid_coordinates(self, coordinates):
-		if len(coordinates) == 2:
-			if self._is_list_of_pairs(coordinates):
-				return True
+		if self._is_list_of_pairs(coordinates) and len(coordinates) == 2:
+			return True
 		else:
 			return False
 
 	@classmethod
 	def from_region(cls, region, label, **options):
-		if len(region) == 4:
+		if isinstance(region, Container) and len(region) == 4:
 			x, y, w, h = region
 			return cls([(x, y), (x+w, y+h)], label, **options)
 		else:
@@ -230,7 +223,8 @@ class Rectangle(BaseShape):
 
 	@classmethod
 	def from_points(cls, points, label, **options):
-		if len(points) == 4 or (len(points) == 5 and cls._equal_point(points[0], points[-1])):
+		if cls._is_list_of_pairs(points) and len(points)==5 and \
+			cls._equal_points(points[0], points[-1]):
 			coordinates = [points[0], points[2]]
 		else:
 			raise InvalidCoordinates()
@@ -242,10 +236,10 @@ class Rectangle(BaseShape):
 		return [[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]]
 
 	def _outline(self, im):
-		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self._color, self._thickness)
+		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self.color, self._thickness)
 
 	def _fill(self, im):
-		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self._color, -1)
+		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self.color, -1)
 
 
 

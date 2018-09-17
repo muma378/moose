@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import unittest
 import numpy as np
 
@@ -6,6 +7,8 @@ from moose.toolbox.image import drawer
 from moose.conf import settings
 
 BACKGROUND      = (0, 0, 0)
+
+rev = lambda x: x[::-1]
 
 class BaseShapeTestCase(unittest.TestCase):
 
@@ -42,7 +45,7 @@ class BaseShapeTestCase(unittest.TestCase):
         for point, value in self.test_dataset:
             x, y = point
             # notice it is im[y, x] not (x, y)
-            self.assertEqual(im[y, x].tolist(), list(value), "Point(%s, %s) was not drawn." % (x, y))
+            self.assertEqual(im[y, x].tolist(), rev(list(value)), "Point(%s, %s) was not drawn." % (x, y))
 
 class PointTestCase(BaseShapeTestCase):
     valid_dataset     = [
@@ -118,4 +121,94 @@ class PolygonTestCase(BaseShapeTestCase):
         for point, value in self.outline_dataset:
             x, y = point
             # notice it is im[y, x] not (x, y)
-            self.assertEqual(im[y, x].tolist(), list(value), "Point(%s, %s) was not drawn." % (x, y))
+            self.assertEqual(im[y, x].tolist(), rev(list(value)), "Point(%s, %s) was not drawn." % (x, y))
+
+class RectangleTestCase(BaseShapeTestCase):
+    valid_dataset     = [
+                        ([[0, 0],[10, 10]], 'a'),
+                        ([[8, 8], [20, 15]], 'a')
+                        ]
+    invalid_dataset   = [
+                        (1, 'a'),
+                        ([[0, 0]], 'a'),
+                        ([[-1, 0], [0, 10]], 'a'),
+                        ([[0, 0], [0, 10], [10, 10]], 'a'),
+                        ]
+    # uses outline by default
+    test_dataset   = [
+                        ((0, 11), settings.DEFAULT_COLOR),  # thickness is 3
+                        ((10, 10), settings.DEFAULT_COLOR),
+                        ((20, 10), settings.DEFAULT_COLOR),
+                        ((4, 4), BACKGROUND),
+                        ((100, 1), BACKGROUND),
+                        ]
+    filled_dataset      = [
+                        ((5, 5), settings.DEFAULT_COLOR),
+                        ((10, 10), settings.DEFAULT_COLOR),
+                        ((9, 9), settings.DEFAULT_COLOR),
+                        ((20, 16), BACKGROUND),
+                        ((100, 1), BACKGROUND),
+                        ]
+    shape_class       = drawer.Rectangle
+
+    def test_filled(self):
+        im = np.zeros(self.image_shape, np.uint8)
+        for coordinates, label in self.valid_dataset:
+            shape = self.shape_class(coordinates, label, filled=True)
+            shape.draw_on(im)
+
+        for point, value in self.filled_dataset:
+            x, y = point
+            # notice it is im[y, x] not (x, y)
+            self.assertEqual(im[y, x].tolist(), rev(list(value)), "Point(%s, %s) was not drawn." % (x, y))
+
+class RegionRectangleTestCase(RectangleTestCase):
+    valid_dataset     = [
+                        ([0, 0, 10, 10], 'a'),
+                        ([8, 8, 12, 7], 'a')
+                        ]
+    shape_class       = drawer.Rectangle.from_region
+
+
+class PointsRectangleTestCase(RectangleTestCase):
+    valid_dataset     = [
+                        ([[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]], 'a'),
+                        ([[8, 8], [20, 8], [20, 15], [8, 15], [8, 8]], 'a')
+                        ]
+    shape_class       = drawer.Rectangle.from_points
+
+
+class GeneralPainterTestCase(unittest.TestCase):
+    def setUp(self):
+        image_path = u"tests/sample_data/toolbox/OuNYQbIuF4_00048951.png"
+        anno_path  = u"tests/sample_data/toolbox/OuNYQbIuF4_00048951.json"
+
+        with open(anno_path) as f:
+            self.anno_data = json.load(f)
+
+        self.painter = drawer.GeneralPainter(image_path)
+
+    def assert_pixel_value(self, im, x, y, value):
+        self.assertEqual(im[y, x].tolist(), rev(list(value)), "Point(%s, %s) was not drawn." % (x, y))
+
+
+    def test_render(self):
+        self.painter.set_pallet({
+                            "label1": (255, 0, 0),
+                            "label2": (0, 255, 0),
+                            })
+        canvas = np.zeros(self.painter.im.shape, np.uint8)
+        shape1 = drawer.Rectangle([[0,0], [10,10]], 'label1')
+        self.painter.add_shape(shape1)
+        self.painter.render(canvas)
+        self.assert_pixel_value(canvas, 10, 10, (255, 0, 0))
+        self.assert_pixel_value(canvas, 5, 9, (255, 0, 0))
+        self.assert_pixel_value(canvas, 5, 5, (0, 0, 0))
+
+        shape2 = drawer.Polygon([[5, 5], [20, 20], [5, 20], [5, 5]], 'label2')
+        self.painter.add_shape(shape2)
+        self.painter.render(canvas)
+        # test if the pixel was reset
+        self.assert_pixel_value(canvas, 6, 6, (0, 255, 0))
+        self.assert_pixel_value(canvas, 19, 20, (0, 255, 0))
+        self.assert_pixel_value(canvas, 4, 10, (255, 0, 0))
