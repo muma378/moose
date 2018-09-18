@@ -46,15 +46,16 @@ setup(
         'moose-admin = moose.core.management:execute_from_command_line',
     ]},
     install_requires=[
-        'opencv-python>=3.3.0.10',
-        'Pillow>=3.4.1',
-        'pymongo>=3.5.1',
+        "Cython ; python_version>'3.2'",
         'pymssql>=2.1.3',
+        'pymongo>=3.5.1',
         'azure-storage-blob>=1.1.0',
         'chardet>=3.0.4',
         'pytz>=2017.2',
         'python-utils>=2.3.0',
+        'opencv-python>=3.3.0.10',
         'openpyxl>=2.5.0'
+        'Pillow>=3.4.1',
     ],
     zip_safe=False,
     classifiers=[
