@@ -241,6 +241,13 @@ class AcqInfoByGuid(BaseQuery):
         "select * from {table_acquisition} where DataGuid= '{data_guid}'"
     )
 
+class AcqInfoByUserguidQuery(BaseQuery):
+
+    statement_template = (
+        "select * from {table_acquisition} WHERE ProjectId = {project_id} "
+        "and UserGuid = '{user_guid}' and isValid = 1"
+    )
+
 class AcqToMarkByUserguidQuery(BaseQuery):
 
     statement_template = (

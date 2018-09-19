@@ -6,11 +6,11 @@
 import sys
 import time
 import random
-import logging
 
 from pymongo import MongoClient, errors
 from moose.core.exceptions import ConnectionTimeout, ImproperlyConfigured
 
+import logging
 logger = logging.getLogger(__name__)
 
 MAX_INTERVAL = 500
@@ -256,7 +256,7 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
                 raise # re-raise real error
 
         logger.info("Commitment executed successfully.")
-        return 
+        return
 
 
 class MongoDBHandler(object):
@@ -319,6 +319,7 @@ class MongoDBHandler(object):
             raise ConnectionTimeout
         except errors.AutoReconnect as e:
             count = 1
+            logger.warn("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, counter))
             while count <= RETRY_TIME:
                 try:
                     time.sleep(5)

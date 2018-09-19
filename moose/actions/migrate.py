@@ -128,7 +128,7 @@ class SimpleMigrate(BaseMigrate):
         querypairs = []
         counter = 0
         for row in self.workbook:
-            if row:
+            if row and any(row):
                 context = {
                     'group_id': row[env['group_column']],
                     'acq_task_id': row[env['acq_task_column']],
