@@ -54,10 +54,10 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
     通过Moose的命令行工具来管理你的Moose项目。
 
 :doc:`topics/actions`
-    编写Action以实现你的业务逻辑。
+    编写Action实现你的业务逻辑。
 
 :doc:`topics/models`
-    编写Model以抽象你的数据。
+    通过Model抽象你的数据。
 
 :doc:`topics/order`
     定义接口，创建订单。

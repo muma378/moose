@@ -13,7 +13,7 @@ class CommandRunNotifier(BaseTemplateMail):
 	content in the email to send.
 	"""
 
-	subject_template = "[moose] {r.app_label} - {c.action_alias}"
+	subject_template = "[moose] {r.app_label} - {c.action_aliases}"
 	content_template = (
 		"Task '{r.id}' you started is finised, here is the information:\n"
 		"\t\"{r}\"\n\n"
@@ -95,17 +95,17 @@ class Command(AppCommand):
 
 
 	def handle_action(self, app_config, action_alias, configs):
-
 		# get user-defined class for the action
 		action_klass = app_config.get_action_klass(action_alias)
-		if action_klass:
-			actor = action_klass(app_config)
-		else:
-			raise CommandError("Unknown action alias '%s'." % self.action_alias)
+		if not action_klass:
+			raise CommandError("Unknown action alias '%s'." % action_alias)
 
 		# run with configs and get the output
 		output = []
 		for conf_desc in configs:
+			# Initialize the class each time to make it reentrancy
+			actor = action_klass(app_config, stdout=self.stdout, stderr=self.stderr, style=self.style)
+
 			config_loader = find_matched_conf(app_config, conf_desc)
 			if not config_loader:
 				# Instead of raising an exception, makes a report after all done
@@ -117,53 +117,3 @@ class Command(AppCommand):
 				output.append(actor.run(config=config))
 
 		return '\n'.join(output)
-
-
-	def __handle_app_config(self, app_config, **options):
-		self.action_alias = options['action']
-		self.configs 	  = options['configs']
-
-		keep_quite	= options['quite']
-		recipients	= options['recipients']
-		message		= options.get('message', self.comment())
-
-		# start to time
-		record = CommandRecord(app_config, self, message)
-
-		# get user-defined class for the action
-		action_klass = app_config.get_action_klass(self.action_alias)
-		if action_klass:
-			actor = action_klass(app_config)
-		else:
-			raise CommandError("Unknown action alias '%s'." % self.action_alias)
-
-		# run with configs and get the output
-		output = []
-		for conf_desc in self.configs:
-			config_loader = find_matched_conf(app_config, conf_desc)
-			if not config_loader:
-				# Instead of raising an exception, makes a report after all done
-				err_msg = "No matched config found for description '%s', aborted." % conf_desc
-				output.append(err_msg)
-				continue
-			else:
-				config = config_loader._parse()
-				output.append(actor.run(config=config))
-
-		# to close the timer
-		record.done()
-		output_str = '\n'.join(output)
-		record.output = output_str
-
-		if not keep_quite:
-			records.add(record)
-
-		if recipients:
-			mail_sender = CommandRunNotifier(recipients)
-			context = mail_sender.get_context(record, self, output_str)
-			mail_sender.send(context)
-
-		return output_str
-
-	def comment(self):
-		return "run '%s' with <%s>." % (' '.join(self.action_aliases), ','.join(self.configs))

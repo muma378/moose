@@ -1,5 +1,5 @@
 """
-Settings and configuration for Django.
+Settings and configuration for Moose.
 
 Values will be read from the module specified by the MOOSE_SETTINGS_MODULE environment
 variable, and then from moose.conf.global_settings; see the global settings file for

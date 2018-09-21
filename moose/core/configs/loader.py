@@ -66,31 +66,34 @@ class ConfigLoader(object):
 
 	def __update_codec(self):
 		# character encoding detect
-		with open(self.path, 'rb') as f:
+		with open(self.path, 'rb+') as f:
 			overwrite = False
 			content = f.read()
-			result = chardet.detect(content)
-			if not result:
-				raise ImproperlyConfigured(
-					"Unknown encoding for '%s'." % self.path)
 
 			# coding with utf-N-BOM, removes the BOM signs '\xff\xfe' or '\xfe\xff'
 			if content.startswith(codecs.BOM_LE) or content.startswith(codecs.BOM_BE):
 				content = content[2:]
 				overwrite = True	# flag to rewrite the config file
+			else:
+				result = chardet.detect(content)
+				if not result or result['confidence'] < 0.9:
+					raise ImproperlyConfigured(
+						"Unknown encoding for '%s', please use codecs "
+						"'UTF-8' to encode the file." % self.path)
 
-			file_encoding = result['encoding']
-			# coding with other codecs except for ascii or utf-8
-			if file_encoding!='ascii' and file_encoding!=settings.FILE_CHARSET:
-				try:
-					content = content.decode(file_encoding).encode(settings.FILE_CHARSET)
-					overwrite = True
-				except UnicodeDecodeError as e:
-					raise ImproperlyConfigured(
-						"Unknown encoding for '%s'." % self.path)
-				except UnicodeEncodeError as e:
-					raise ImproperlyConfigured(
-						"Unrecognized symbols in '%s'." % self.path)
+				file_encoding = result['encoding']
+
+				# coding with other codecs except for ascii or utf-8
+				if file_encoding!='ascii' and file_encoding!=settings.FILE_CHARSET:
+					try:
+						content = content.decode(file_encoding).encode(settings.FILE_CHARSET)
+						overwrite = True
+					except UnicodeDecodeError as e:
+						raise ImproperlyConfigured(
+							"Unknown encoding for '%s'." % self.path)
+					except UnicodeEncodeError as e:
+						raise ImproperlyConfigured(
+							"Unrecognized symbols in '%s'." % self.path)
 			# erases the content and rewrites with 'utf-8' encoding
 			if overwrite:
 				f.truncate(0)	# truncate the config size to 0
@@ -178,6 +181,7 @@ class SectionParser(object):
 
 
 class OptionBaseType(object):
+	default_charset = 'utf-8'
 	def __init__(self, val):
 		self.value = val
 
@@ -190,7 +194,6 @@ class OptionUnicode(OptionBaseType):
 	Type for unicode or option not specified. (decoded in __update_codec)
 	"""
 	opt_code = (None, 'unicode', 'Unicode')
-	default_charset = 'utf-8'
 
 	def get_value(self):
 		if six.PY2:
@@ -214,8 +217,14 @@ class OptionSequence(OptionBaseType):
 	opt_code = ('list', 'sequence', 'List', 'Sequence')
 
 	def get_value(self):
+		if six.PY2:
+			# type of str
+			value = self.value.decode(self.default_charset)
+		else:
+			# type of str (unicode in python3)
+			value = self.value
 		# splited by a sep such as ','
-		return tuple(stripl(self.value.split(settings.CONFIG_LIST_SEP)))
+		return tuple(stripl(value.split(settings.CONFIG_LIST_SEP)))
 
 class OptionInteger(OptionBaseType):
 	opt_code = ('int', 'Integer')

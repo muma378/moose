@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import fnmatch
+from moose.utils import six
 
 
 def get_matchfn(pattern, ignorecase):
     # syntax sugar, converts string to a tuple with one element
-    if isinstance(pattern, str) or isinstance(pattern, unicode):
+    if isinstance(pattern, six.string_types):
         pattern = (pattern, )
     # defines the function anymatch
     if pattern:
@@ -15,10 +16,10 @@ def get_matchfn(pattern, ignorecase):
         else:
             matchfn = fnmatch.fnmatch
         # test if there was any one matched a pattern in the list
-        anymatch = lambda s, ps: any([matchfn(s, p) for p in ps])
+        anymatch = lambda s: any([matchfn(s, p) for p in pattern])
     else:
         # returns True always
-        anymatch = lambda s, ps: True
+        anymatch = lambda s: True
     return anymatch
 
 def ivisit(src, dst=None, pattern=None, ignorecase=True):
@@ -42,7 +43,7 @@ def ivisit(src, dst=None, pattern=None, ignorecase=True):
     for dirpath, dirnames, filenames in os.walk(src):
         for filename in filenames:
             filepath = os.path.join(dirpath, filename)
-            if anymatch(filepath, pattern):
+            if anymatch(filepath):
                 # if `dst` was set, returns a pair
                 if dst:
                     relpath = os.path.relpath(filepath, src)

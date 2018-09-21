@@ -67,7 +67,7 @@ def no_style():
 
 def color_style():
     """
-    Returns a Style object from the Django color scheme.
+    Returns a Style object from the Moose color scheme.
     """
     if not supports_color():
         return no_style()

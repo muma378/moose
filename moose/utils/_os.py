@@ -9,6 +9,7 @@ import six
 
 from moose.core.exceptions import SuspiciousFileOperation
 from moose.utils.encoding import force_text
+from moose.conf import settings
 
 if six.PY2:
     fs_encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
@@ -105,9 +106,12 @@ def posixpath(path):
 
 def normpath(path):
     """
-    Converts path to the local filesystem case.
+    Converts to the local filesystem, but keeps letters case.
     """
-    return os.path.normpath(path)
+    if settings.IS_WINDOWS:
+        return wpath(path)
+    else:
+        return ppath(path)
 
 
 def makedirs(dirpath):

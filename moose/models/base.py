@@ -4,10 +4,21 @@ import copy
 import json
 import inspect
 
-from moose.utils._os import makedirs
+from moose.utils._os import makedirs, makeparents, safe_join
 from moose.utils.encoding import force_bytes
 from moose.conf import settings
-import fields
+from . import fields
+
+import logging
+logger = logging.getLogger(__name__)
+
+class FieldMissing(Exception):
+    """Required field is not provided"""
+    pass
+
+class FieldInvalid(Exception):
+    """Required field is somehow invalid"""
+    pass
 
 class BaseModel(object):
     """
@@ -16,14 +27,18 @@ class BaseModel(object):
     an unified interface, the diversity of implementation can be ignored.
     """
     output_suffix = '.json'
-    effective_values = ('1', 1)
+    effective_values = ('1', 1, 'true')
 
-    def __init__(self, annotation, **context):
+
+    def __init__(self, annotation, app, stats, **context):
         self.annotation = annotation
         self.source = annotation['source']
         self.result = annotation['result']
+        self.app    = app
+        self.stats  = stats
         self.context = context
         self._active()
+        self.set_base_context(context)
 
     def _active(self):
         # get method resolution orders
@@ -33,6 +48,23 @@ class BaseModel(object):
                 if isinstance(obj, fields.AbstractMappingField):
                     # replace the field-object with real value
                     self.__setattr__(field, obj.get_val(self.annotation))
+
+    def set_base_context(self, context):
+        self.title   = context['title']
+        self.task_id = str(context['task_id'])
+        self.set_context(context)
+
+    def set_context(self, context):
+        """
+        Entry point for subclassed models to set custom context
+        """
+        pass
+
+    def set_up(self):
+        """
+        Entry point for subclassed models to prepare before downloading
+        """
+        pass
 
     @property
     def filepath(self):
@@ -52,6 +84,14 @@ class BaseModel(object):
         return name
 
     @property
+    def dest_root(self):
+        return safe_join(self.app.data_dirname, self.title)
+
+    @property
+    def dest_filepath(self):
+        return safe_join(self.dest_root, self.filepath)
+
+    @property
     def guid(self):
         return self.result['_guid']
 
@@ -59,11 +99,13 @@ class BaseModel(object):
     def user_id(self):
         return self.result['_personInProjectId']
 
-    def datalink(self, task_id):
-        return settings.DATALINK_TEMPLATE.format(data_guid=self.guid, task_id=str(task_id))
+    @property
+    def datalink(self):
+        return settings.DATALINK_TEMPLATE.format(task_id=self.task_id, data_guid=self.guid)
 
-    def filelink(self, task_id):
-        return settings.AZURE_FILELINK.format(task_id=str(task_id), file_path=force_bytes(self.filepath))
+    @property
+    def filelink(self):
+        return settings.AZURE_FILELINK.format(task_id=self.task_id, file_path=force_bytes(self.filepath))
 
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
@@ -89,7 +131,34 @@ class BaseModel(object):
     def to_string(self):
         return force_bytes(json.dumps(self.data, ensure_ascii=False))
 
+    @property
+    def user_info(self):
+        if self.context.has_key('users_table'):
+            try:
+                return self.context['users_table'][self.user_id]
+            except KeyError as e:
+                return (None, None)
+                raise FieldInvalid(\
+                    "Unable to find id:'{}' in `users_table`.".format(self.user_id))
+        else:
+            raise FieldMissing("Field `users_table` is missing in the context.")
+
+    def overview(self):
+        return [self.filepath, self.datalink, ] + list(self.user_info)
+
 
 class BaseTaskInfo(object):
-    def __init__(self, task_name):
+    def __init__(self):
+        pass
+
+    @classmethod
+    def create_from_task_id(cls, task_id):
+        pass
+
+    @classmethod
+    def create_from_title(cls, title):
+        pass
+
+    @property
+    def users_table(self):
         pass
