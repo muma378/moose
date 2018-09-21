@@ -5,7 +5,7 @@ import json
 import inspect
 
 from moose.utils._os import makedirs, makeparents, safe_join
-from moose.utils.encoding import force_bytes
+from moose.utils.encoding import force_bytes, iri_to_uri
 from moose.conf import settings
 from . import fields
 
@@ -105,7 +105,8 @@ class BaseModel(object):
 
     @property
     def filelink(self):
-        return settings.AZURE_FILELINK.format(task_id=self.task_id, file_path=force_bytes(self.filepath))
+        iri = settings.AZURE_FILELINK.format(task_id=self.task_id, file_path=self.filepath)
+        return iri_to_uri(iri)
 
     # when the property `effective` or `Effective` was existed,
     # return true if the value was '1'
