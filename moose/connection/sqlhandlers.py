@@ -18,7 +18,13 @@ logger = logging.getLogger(__name__)
 
 class BaseSQLHandler(object):
     """
-    Interface class for all SQL database opreations.
+    Interface for all SQL database drivers. PEP-249(https://www.python.org/dev
+    /peps/pep-0249/) defines API to encourage similarity between the Python
+    modules that are used to access databases.
+    Unfortunately, many database drivers were writen before the sepcification,
+    to provide a uniform interface, different drivers were wrapped. Therefore,
+    if the python module was writen as `PEP-249`, the `BaseSQLHandler` has
+    already implemented almost all features need.
     """
     db_name = None
 
@@ -28,6 +34,10 @@ class BaseSQLHandler(object):
         self._cursor = None
 
     def get_connection(self, settings_dict):
+        stdout.debug(
+            "Trying to connect to {} servered on '{}:{}'...".format(
+            self.db_name, settings_dict['HOST'], settings_dict['PORT'])
+            )
         conn_cnt = 0
         while conn_cnt < settings.DB_CONN_MAX_TIMES:
             try:
@@ -40,6 +50,11 @@ class BaseSQLHandler(object):
                     "Connection timeout to {}: {}\nWill retry to connect in {} \
                     seconds.".format(self.db_name, str(e), interval))
                 time.sleep(interval)
+            except KeyError as e:
+                # May raise when resolving the settings dict
+                stdout.error(
+                    "Fields missing, check '{}' was set.".format(e.message))
+                raise ImproperlyConfigured("Fields missing: {}".format(e.message))
 
         stdout.error("Unable to establish connection to '{}'".format(self.db_name))
         raise ImproperlyConfigured()
@@ -74,42 +89,56 @@ class BaseSQLHandler(object):
         """
         return self._conn.cursor()
 
-    def exec_query(self, operation):
+    def execute(self, operation, operator, *args):
         if not operation:
             stdout.error("No operation specified.")
             raise SuspiciousOperation
 
         try:
-            self._cursor = self._get_cursor()
+            cursor = self._get_cursor()
             stdout.info("Executing the operation:\n\t'{}'.".format(operation))
-            self._cursor.execute(operation)
-            result = self._cursor.fetchall()
-        except Exception as e:
-            stdout.error("Query failed: '{}'.".format(str(e)))
-            return None
-
-        stdout.info("Query successed.")
-        return result
-
-    def exec_commit(self, operation):
-        if not operation:
-            stdout.error("No operation specified.")
-            raise SuspiciousOperation
-
-        try:
-            self._cursor = self._get_cursor()
-            stdout.warn("Executing the operation:\n\t'{}'.".format(operation))
-            self._cursor.execute(operation)
-            self._conn.commit()
-            naffected =  self._cursor.rowcount
+            result = operator(cursor, operation, *args)
+        # TODO: defines more detailed errors
         except Exception as e:
             stdout.error("Operation failed: '{}'.".format(str(e)))
             return None
 
-        stdout.info("Operation successed with '{}' rows affected.".format(naffected))
-        return naffected
+        stdout.info("Operation succeed.")
+        return result
+
+
+    def exec_query(self, operation):
+        """
+        Shortcuts to execute query operations. These operations are
+        always executed with `fetch*()` methods
+        """
+        def _operator(cursor, operation, *args):
+            cursor.execute(operation)
+            result = cursor.fetchall()
+            return result
+
+        return self.execute(operation, _operator)
+
+
+    def exec_commit(self, operation):
+        """
+        Shortcuts to execute non-query operations, such as: INSERT
+        UPDATE and DELETE. These operations are always executed with
+        `commit()` methods
+        """
+        def _operator(cursor, operation, *args):
+            cursor.execute(operation)
+            self._conn.commit()
+            naffected = cursor.rowcount
+            stdout.info("Operation completed with '{}' rows affected.".format(naffected))
+            return naffected
+
+        return self.execute(operation, _operator)
 
     def exec_many(self, operation, params_seq):
+        """
+        Entry for subclass to execute many operations in a request.
+        """
         raise NotImplementedError("Database you use didn't provid method 'exec_many()' yet.")
 
 
@@ -118,16 +147,11 @@ class SQLServerHandler(BaseSQLHandler):
     SQL database handler for sql server.
     """
 
-    db_name = 'SQL Server'
+    db_name = 'SQLServer'
 
     def _connect(self, settings_dict):
         import pymssql
 
-        stdout.debug(
-            "Trying to connect to SQLServer servered on '%s:%s'...".format(
-            settings_dict['HOST'], settings_dict['PORT']))
-
-        conn = None
         try:
             conn = pymssql.connect(
                 host=settings_dict['HOST'],
@@ -138,30 +162,102 @@ class SQLServerHandler(BaseSQLHandler):
                 charset=settings_dict['CHARSET'],
                 timeout=settings.DB_CONN_TIMEOUT,
             )
-        except (pymssql.InterfaceError, pymssql.OperationalError) as e:
-            stdout.error(e.message)
-            raise ImproperlyConfigured("Failed to connect to SQL database '%s'." % settings_dict['HOST'])
-        except KeyError as e:
-            stdout.error(
-                "Fields missing, please check %s was in settings." % e.message)
-            raise ImproperlyConfigured("Fields missing: %s" % e.message)
+        # More details on error of python database api, see ref:
+        # https://www.python.org/dev/peps/pep-0249/
+        except (pymssql.InternalError, pymssql.OperationalError) as e:
+            stdout.warn(e.message)
+            raise ConnectionTimeout
         return conn
 
-    def exec_many(self, sql_commit, rows):
-        if not operation:
-            stdout.error("No operation specified.")
-            raise SuspiciousOperation
+    def exec_many(self, operation, params_seq):
 
-        try:
-            self._cursor = self._get_cursor()
-            stdout.warn("Executing the operation:\n\t'{}'.".format(operation))
+        def _operator(cursor, operation, *args):
+            if len(args) == 1:
+                params_seq = args[0]
+            else:
+                raise SuspiciousOperation
             # see ref: http://pymssql.org/en/stable/pymssql_examples.html
-            self._cursor.executemany(operation, params_seq)
+            cursor.executemany(operation, params_seq)
             self._conn.commit()
-            naffected =  self._cursor.rowcount
-        except Exception as e:
-            stdout.error("Operation failed: '{}'.".format(str(e)))
-            return None
+            naffected = cursor.rowcount
+            stdout.info("Operation completed with '{}' rows affected.".format(naffected))
+            return naffected
 
-        stdout.info("Operation successed with '{}' rows affected.".format(naffected))
-        return naffected
+        return self.execute(operation, _operator, params_seq)
+
+class MySQLHandler(BaseSQLHandler):
+    """
+    SQL database handler for mysql.
+    """
+    db_name = 'MySQL'
+
+    def _connect(self, settings_dict):
+        import MySQLdb as mysqldb
+        try:
+            conn = mysqldb.connect(
+                host=settings_dict['HOST'],
+                port=settings_dict['PORT'],
+                user=settings_dict['USER'],
+                passwd=settings_dict['PASSWORD'],
+                db=settings_dict['DATABASE'],
+                charset=settings_dict['CHARSET'],
+                connect_timeout=settings.DB_CONN_TIMEOUT
+                )
+        except (mysqldb.InternalError, mysqldb.OperationalError) as e:
+            stdout.warn(e.message)
+            raise ConnectionTimeout
+        return conn
+
+class PrimitiveMssqlHandler(BaseSQLHandler):
+    """
+    Uses the primitive mssql instead of `SQLServerHandler` when doing
+    INSERT, UPDATE or DELETE operation.
+    see ref: http://pymssql.org/en/stable/_mssql_examples.html
+    """
+    db_name = '_mssql'
+
+    def _connect(self, settings_dict):
+        import _mssql
+        try:
+            conn = _mssql.connect(
+                server=settings_dict['HOST'],
+                port=settings_dict['PORT'],
+                user=settings_dict['USER'],
+                password=settings_dict['PASSWORD'],
+                database=settings_dict['DATABASE'],
+                charset=settings_dict['CHARSET']
+            )
+            conn.query_timeout=settings.DB_CONN_TIMEOUT,
+        # _mssql is not written based on the PEP-249, `exceptions` on _mssql see:
+        # http://pymssql.org/en/stable/ref/_mssql.html#module-level-exceptions
+        except _mssql.MssqlDatabaseException as e:
+            stdout.warn(e.message)
+            raise ConnectionTimeout
+        return conn
+
+    def _get_cursor(self):
+        """
+        Differs from other database driver, `_mssql` executes operations
+        without cursor.
+        """
+        return None
+
+    def exec_query(self, operation):
+        # About more details on `execute_query`, see:
+        # http://pymssql.org/en/stable/ref/_mssql.html#_mssql.MSSQLConnection.execute_query
+        def _operator(cursor, operation, *args):
+            result = self._conn.execute_query(operation)
+            return result
+
+        return self.execute(operation, _operator)
+
+    def exec_commit(self, operation):
+        # About more details on `execute_non_query`, see:
+        # http://pymssql.org/en/stable/ref/_mssql.html#_mssql.MSSQLConnection.execute_non_query
+        def _operator(cursor, operation, *args):
+            self._conn.execute_non_query(operation)
+            naffected = self.conn.rows_affected
+            stdout.info("Operation completed with '{}' rows affected.".format(naffected))
+            return naffected
+
+        return self.execute(operation, _operator)
