@@ -20,6 +20,11 @@ DEBUG = False
 # How to solve conflicts when uploading files to azure, overwrite or ignore(default)?
 OVERWRITE = False
 
+
+DB_CONN_MAX_TIMES = 3
+DB_CONN_MAX_INTERVAL = 300
+DB_CONN_TIMEOUT = 300
+
 INSTALLED_APPS = []
 
 # List of strings representing apps to output logs to self-defined files.
