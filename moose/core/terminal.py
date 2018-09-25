@@ -8,6 +8,8 @@ from moose.utils.encoding import force_str
 from moose.core.management.color import color_style
 from moose.core.exceptions import ImproperlyConfigured
 
+style  = color_style()
+
 
 class OutputWrapper(object):
     @property
@@ -58,21 +60,20 @@ class OutputWrapper(object):
             self._out.write(force_str(style_func(msg)))
 
     def debug(self, msg):
-        self.write(msg, verbose=3, style_func=self.style.NORMAL)
+        self.write(msg, verbose=3, style_func=style.NORMAL)
 
     def info(self, msg):
-        self.write(msg, verbose=2, style_func=self.style.NORMAL)
+        self.write(msg, verbose=2, style_func=style.NORMAL)
 
     def warn(self, msg):
-        self.write(msg, verbose=1, style_func=self.style.WARNING)
+        self.write(msg, verbose=1, style_func=style.WARNING)
 
     def success(self, msg):
-        self.write(msg, verbose=1, style_func=self.style.SUCCESS)
+        self.write(msg, verbose=1, style_func=style.SUCCESS)
 
     def error(self, msg):
-        self.write(msg, verbose=0, style_func=self.style.ERROR)
+        self.write(msg, verbose=0, style_func=style.ERROR)
 
 
-style  = color_style()
 stdout = OutputWrapper(sys.stdout)
 stderr = OutputWrapper(sys.stderr, style_func=style.ERROR)
