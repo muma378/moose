@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-import copy
 import unittest
-import mock
 
 import MySQLdb as mysqldb
 
 from moose.connection import mysql
-from moose.core.exceptions import \
-    ConnectionTimeout, SuspiciousOperation, ImproperlyConfigured
+from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
 
 from ._sqlhandler import SQLHandlerBaseTest

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-import copy
 import unittest
-import mock
 
 import pymssql
 import _mssql
 
 from moose.connection import mssql
-from moose.core.exceptions import \
-    ConnectionTimeout, SuspiciousOperation, ImproperlyConfigured
+from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
 
 from ._sqlhandler import SQLHandlerBaseTest
