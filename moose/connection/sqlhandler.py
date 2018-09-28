@@ -30,6 +30,11 @@ class BaseSQLHandler(object):
     db_name = None
 
     def __init__(self, settings_dict):
+        if not isinstance(settings_dict, dict):
+            raise ImproperlyConfigured(
+                "Argument `settings_dict` is the configure for sql drivers, "
+                "which must be an instance of `dict`.")
+
         self.settings_dict = settings_dict
         self._conn = self.get_connection(settings_dict)
         self._cursor = None
