@@ -109,7 +109,7 @@ DATABASES = {
             'table_person_in_project': '[10.0.0.201].CrowdDB.dbo.PersonInProject',
             'table_person_in_team': '[10.0.0.201].CrowdDB.dbo.PersonInTeam',
         	'table_team': '[10.0.0.201].CrowdDB.dbo.Team',
-            'table_acquire': '[10.0.0.201].CrowdDB.dbo.DataAcquisition',
+            'table_acquisition': '[10.0.0.201].CrowdDB.dbo.DataAcquisition',
         },
     },
     'mongo': {
