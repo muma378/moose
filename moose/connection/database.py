@@ -49,8 +49,8 @@ class BaseSQLHandler(object):
                     "Connection failed for '%s',\n times to reconnect: %d." %\
                     (str(e), conn_cnt))
 
-            logger.error("Unable to establish the connection, waiting for the next time.")
-            return None
+        logger.error("Unable to establish the connection, waiting for the next time.")
+        return None
 
     def get_connection(self):
         raise NotImplementedError(
