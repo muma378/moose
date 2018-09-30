@@ -36,3 +36,10 @@ mysql_settings = {
         'table_person_in_project': 'person_in_task',
     },
 }
+
+mongo_settings = {
+    'HOST': '<host>',
+    'PORT': '<port>',
+    'USER': '<user>',
+    'PASSWORD': '<password>',
+}

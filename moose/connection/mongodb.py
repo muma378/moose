@@ -2,7 +2,9 @@
 import time
 
 from pymongo import MongoClient, errors
-from moose.core.exceptions import ConnectionTimeout, SuspiciousOperation, ImproperlyConfigured
+from moose.core.exceptions import \
+    ConnectionTimeout, SuspiciousOperation, ImproperlyConfigured
+from moose.core.terminal import stdout
 from moose.conf import settings
 
 import logging
@@ -18,26 +20,41 @@ class MongoDBHandler(object):
     coll_result = 'Result'
 
     def __init__(self, settings_dict):
+        if not isinstance(settings_dict, dict):
+            raise ImproperlyConfigured(
+                "Argument `settings_dict` is the configure for mongodb drivers, "
+                "which must be an instance of `dict`.")
+
         self.settings_dict = settings_dict
-        self.host = settings_dict['HOST']
-        self.displayed_mongo_url = self.__get_display_mongo_url(settings_dict)
-        self.client = self.__connect()
+        self.displayed_mongo_url = self.__get_displayed_url(settings_dict)
+        self._client = self.__connect()
+        self._db_name = None
+        self._db = None
 
     def __del__(self):
         self.close()
 
     def __connect(self):
         mongo_url = self.__get_mongo_url(self.settings_dict)
-        logger.debug("Connectting to '%s'..." % self.displayed_mongo_url)
-        client = MongoClient(mongo_url)
+        logger.debug("Connecting to '%s'..." % self.displayed_mongo_url)
+        while
         try:
+            # More details about `MongoClient` API, see:
+            # https://api.mongodb.com/python/2.8/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient
+            client = MongoClient(mongo_url)
             # the constructor returns immediately and launches the
             # connection process on background threads.
             # Checks if the server is available like this:
             client.admin.command('ismaster')
         except errors.ConnectionFailure as e:
-            logger.error("Time out to connect '%s'." % self.displayed_mongo_url)
-            raise ConnectionTimeout
+            logger.error("Timeout to connect to '%s'." % self.displayed_mongo_url)
+            raise ImproperlyConfigured()
+        # If auto-reconnection will be performed, AutoReconnect will be raised.
+        # Application code should handle this exception (recognizing that the
+        # operation failed) and then continue to execute.
+        except errors.AutoReconnect as e:
+            pass
+
         else:
             logger.debug("Connection established for MongoDB.")
             return client
@@ -46,41 +63,78 @@ class MongoDBHandler(object):
         try:
             return "mongodb://{USER}:{PASSWORD}@{HOST}:{PORT}".format(**settings_dict)
         except KeyError as e:
-            logger.error(
-                "Please check if field '%s' was provided." % e)
-            raise ImproperlyConfigured
+            logger.error("Key missing, check '{}' was set.".format(e.message))
+            raise ImproperlyConfigured("Key missing, check '{}' was set.".format(e.message))
 
-    def __get_display_mongo_url(self, settings_dict):
+    def __get_displayed_url(self, settings_dict):
         try:
             return "mongodb://{USER}:****@{HOST}:{PORT}".format(**settings_dict)
         except KeyError as e:
-            logger.error("Please check if field '%s' was provided." % e)
-            raise ImproperlyConfigured
+            logger.error("Key missing, check '{}' was set.".format(e.message))
+            raise ImproperlyConfigured("Key missing, check '{}' was set.".format(e.message))
+
+    @property
+    def db(self):
+        if self._db != None:
+            return self._db
+        else:
+            logger.error("Database is not specified, call `set_database()` first.")
+            raise ImproperlyConfigured("Database is not specified, call `set_database()` first.")
 
     def set_database(self, db_name):
-        self.db_name = db_name
-        self.db = self.client[db_name]
+        logger.debug("Set database to '{}'".format(db_name))
+        try:
+            self._db = self._client[db_name]
+            self._db_name = db_name
+        except errors.InvalidName as e:
+            logger.warn("Unknown database specified: '{}'".format(db_name))
+            raise ImproperlyConfigured("Unknown database specified: '{}'".format(db_name))
+
+    @property
+    def coll(self):
+        if self._coll != None:
+            return self._coll
+        else:
+            logger.error("Collection is not specified, call `set_collection()` first.")
+            raise ImproperlyConfigured("Collection is not specified, call `set_collection()` first.")
+
+    def set_collection(self, coll_name):
+        logger.debug("Set collection to '{}'".format(coll_name))
+        if self._coll_name == coll_name:
+            return self._coll
+        else:
+            try:
+                self._coll = self.db[coll_name]
+                self._coll_name = coll_name
+            except errors.InvalidName as e:
+                logger.warn("Unknown collection specified: '{}'".format(coll_name))
+                raise ImproperlyConfigured("Unknown collection specified: '{}'".format(coll_name))
+
+    def execute(self, coll, operator, filter, *args):
+
+        self.set_collection(coll)
+        operator(filter)
+
 
     def fetch(self, coll, cond={}):
         try:
+            self.set_collection(coll)
             logger.debug("Fetch data from collection [%s] of '%s'." % (coll, self.db_name))
-            for item in self.db[coll].find(cond):
+            for item in self.coll.find(cond):
                 yield item
-        except errors.ServerSelectionTimeoutError as e:
-            logger.warn("Timeout to fetch data from [%s]." % coll)
-            raise ConnectionTimeout
-        except errors.AutoReconnect as e:
-            count = 1
+        except errors.ExecutionTimeout as e:
+            conn_cnt = 1
             logger.warn("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, counter))
-            while count <= settings.DB_CONN_MAX_TIMES:
+            while conn_cnt <= settings.DB_CONN_MAX_TIMES:
                 try:
                     time.sleep(5)
-                    for item in self.db[coll].find(cond):
+                    for item in self.coll.find(cond):
                         yield item
                     break
-                except errors.AutoReconnect as e:
-                    count += 1
+                except errors.ExecutionTimeout as e:
+                    conn_cnt += 1
                     logger.warn("Retry to fetch data from '%s' for %d time(s)." % (self.db_name, count))
+
 
     def fetch_source(self, cond={}):
         for item in self.fetch(self.coll_source, cond):
@@ -97,6 +151,7 @@ class MongoDBHandler(object):
         self.update(self.coll_result, cond, document)
 
     def update(self, coll, cond, document):
+        logger.warn("Updating collection '{}' with '{}'".format(coll, cond))
         self.db[coll].update(
                             cond,
                             {'$set': document},
@@ -108,7 +163,7 @@ class MongoDBHandler(object):
 
     def close(self):
         try:
-            self.client.close()
+            self._client.close()
         except AttributeError,e:
             logger.warn("No connections found.")
         else:
