@@ -125,3 +125,19 @@ class ResultFetcher(BaseFetcher):
             else:
                 logger.error("Unable to find match source record for guid: '%s'" % str(result_guid))
         return records
+
+
+class AcquisitionFetcher(BaseFetcher):
+
+    def fetch(self, **context):
+        project_id = str(context['project_id'])
+        # get mongo result
+        result_records = self._indexing(self._fetch_result(project_id))
+
+        records = []
+        for _, result in result_records.items():
+            records.append({
+                'source': {},
+                'result': result,
+                })
+        return records
