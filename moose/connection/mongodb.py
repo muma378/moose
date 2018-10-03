@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
+import copy
 
 from pymongo import MongoClient, errors
 from moose.core.exceptions import \
@@ -30,6 +31,8 @@ class MongoDBHandler(object):
         self._client = self.__connect()
         self._db_name = None
         self._db = None
+        self._coll_name = None
+        self._coll = None
 
     def __del__(self):
         self.close()
@@ -37,27 +40,33 @@ class MongoDBHandler(object):
     def __connect(self):
         mongo_url = self.__get_mongo_url(self.settings_dict)
         logger.debug("Connecting to '%s'..." % self.displayed_mongo_url)
-        while
-        try:
-            # More details about `MongoClient` API, see:
-            # https://api.mongodb.com/python/2.8/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient
-            client = MongoClient(mongo_url)
-            # the constructor returns immediately and launches the
-            # connection process on background threads.
-            # Checks if the server is available like this:
-            client.admin.command('ismaster')
-        except errors.ConnectionFailure as e:
-            logger.error("Timeout to connect to '%s'." % self.displayed_mongo_url)
-            raise ImproperlyConfigured()
-        # If auto-reconnection will be performed, AutoReconnect will be raised.
-        # Application code should handle this exception (recognizing that the
-        # operation failed) and then continue to execute.
-        except errors.AutoReconnect as e:
-            pass
+        conn_cnt = 0
+        while conn_cnt < settings.DB_CONN_MAX_TIMES:
+            try:
+                # More details about `MongoClient` API, see:
+                # https://api.mongodb.com/python/2.8/api/pymongo/mongo_client.html#pymongo.mongo_client.MongoClient
+                client = MongoClient(mongo_url)
+                # the constructor returns immediately and launches the
+                # connection process on background threads.
+                # Checks if the server is available like this:
+                client.admin.command('ismaster')
+                logger.debug("Connection to MongoDB is established.")
+                return client
+            # If auto-reconnection will be performed, AutoReconnect will be raised.
+            # Application code should handle this exception (recognizing that the
+            # operation failed) and then continue to execute.
+            except errors.AutoReconnect as e:
+                conn_cnt += 1
+                msg = (
+                    "Connection to MongoDB is lost and an attempt to "
+                    "auto-connect will be made ..."
+                    )
+                stdout.warn(msg)
+                logger.warn(msg)
 
-        else:
-            logger.debug("Connection established for MongoDB.")
-            return client
+        logger.error("Unable to establish the connection to MongoDB.")
+        raise ImproperlyConfigured("Unable to establish the connection to MongoDB.")
+
 
     def __get_mongo_url(self, settings_dict):
         try:
@@ -67,11 +76,13 @@ class MongoDBHandler(object):
             raise ImproperlyConfigured("Key missing, check '{}' was set.".format(e.message))
 
     def __get_displayed_url(self, settings_dict):
-        try:
-            return "mongodb://{USER}:****@{HOST}:{PORT}".format(**settings_dict)
-        except KeyError as e:
-            logger.error("Key missing, check '{}' was set.".format(e.message))
-            raise ImproperlyConfigured("Key missing, check '{}' was set.".format(e.message))
+        if settings_dict.get('PASSWORD'):
+            shadow_settings = copy.deepcopy(settings_dict)
+            shadow_settings['PASSWORD'] ='***'
+            return self.__get_mongo_url(shadow_settings)
+        else:
+            # we don't handle key missing errors here
+            return '***'
 
     @property
     def db(self):
@@ -100,9 +111,7 @@ class MongoDBHandler(object):
 
     def set_collection(self, coll_name):
         logger.debug("Set collection to '{}'".format(coll_name))
-        if self._coll_name == coll_name:
-            return self._coll
-        else:
+        if self._coll_name != coll_name:
             try:
                 self._coll = self.db[coll_name]
                 self._coll_name = coll_name
@@ -110,56 +119,61 @@ class MongoDBHandler(object):
                 logger.warn("Unknown collection specified: '{}'".format(coll_name))
                 raise ImproperlyConfigured("Unknown collection specified: '{}'".format(coll_name))
 
-    def execute(self, coll, operator, filter, *args):
+    def execute(self, coll, operator):
+        conn_cnt = 0
+        while conn_cnt < settings.DB_CONN_MAX_TIMES:
+            try:
+                self.set_collection(coll)
+                result = operator()
+                return result
+            except (errors.AutoReconnect, errors.ExecutionTimeout):
+                conn_cnt += 1
+                logger.warn(
+                    "Failed to execute the operation, an attempt to "
+                    "re-connect will be made."
+                    )
 
-        self.set_collection(coll)
-        operator(filter)
-
-
-    def fetch(self, coll, cond={}):
-        try:
-            self.set_collection(coll)
-            logger.debug("Fetch data from collection [%s] of '%s'." % (coll, self.db_name))
-            for item in self.coll.find(cond):
-                yield item
-        except errors.ExecutionTimeout as e:
-            conn_cnt = 1
-            logger.warn("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, counter))
-            while conn_cnt <= settings.DB_CONN_MAX_TIMES:
-                try:
-                    time.sleep(5)
-                    for item in self.coll.find(cond):
-                        yield item
-                    break
-                except errors.ExecutionTimeout as e:
-                    conn_cnt += 1
-                    logger.warn("Retry to fetch data from '%s' for %d time(s)." % (self.db_name, count))
+        raise ImproperlyConfigured("MongoDB: Failed too many times to execute, aborted.")
 
 
-    def fetch_source(self, cond={}):
-        for item in self.fetch(self.coll_source, cond):
-            yield item
+    def fetch(self, coll, filter=None, *args, **kwargs):
+        logger.debug("Fetching from collection [%s] of '%s'." % (coll, self._db_name))
 
-    def fetch_result(self, cond={}):
-        for item in self.fetch(self.coll_result, cond):
-            yield item
+        def _operator():
+            result = []
+            for item in self.coll.find(filter, *args, **kwargs):
+                result.append(item)
+            return result
 
-    def insert(self, coll, document):
-        self.db[coll].insert(document)
+        return self.execute(coll, _operator)
 
-    def update_result(self, cond, document):
-        self.update(self.coll_result, cond, document)
+    def fetch_source(self, filter=None, *args, **kwargs):
+        return self.fetch(self.coll_source, filter, *args, **kwargs)
 
-    def update(self, coll, cond, document):
-        logger.warn("Updating collection '{}' with '{}'".format(coll, cond))
-        self.db[coll].update(
-                            cond,
-                            {'$set': document},
-                            upsert=False
-                            )
+    def fetch_result(self, filter=None, *args, **kwargs):
+        return self.fetch(self.coll_result, filter, *args, **kwargs)
 
-    def delete(self, coll, cond):
-        self.db[coll].delete_one(cond)
+    def insert(self, coll, documents, **kwargs):
+        if isinstance(documents, dict):
+            documents = [documents]
+
+        logger.warn(
+            "Insert {} documents to the collection '{}'".format(len(documents), coll))
+        def _operator():
+            return self.coll.insert_many(documents, **kwargs)
+
+        return self.execute(coll, _operator)
+
+    def update(self, coll, filter, document, **kwargs):
+        logger.warn("Update collection '{}' matching the filter: '{}'".format(coll, filter))
+        def _operator():
+            return self.coll.update_many(
+                filter,
+                {'$set': document},
+                **kwargs
+                )
+
+        return self.execute(coll, _operator)
 
     def close(self):
         try:
@@ -167,4 +181,4 @@ class MongoDBHandler(object):
         except AttributeError,e:
             logger.warn("No connections found.")
         else:
-            logger.debug("Connection to %s closed." % self.host)
+            logger.debug("Connection to '{}' closed.".format(self.displayed_mongo_url))
