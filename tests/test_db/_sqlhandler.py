@@ -68,6 +68,10 @@ class SQLHandlerBaseTest(object):
         self.mock_cursor.execute.assert_called_once_with("operation")
         self.mock_cursor.fetchall.assert_called_once_with()
 
+        self.mock_cursor.reset_mock()
+        sql_handler.exec_query("$table_source")
+        self.mock_cursor.execute.assert_called_once_with("[10.0.0.201].CrowdDB.dbo.DataSource")
+
     def test_commit(self):
         sql_handler = self.init_sqlhandler()
 

@@ -11,7 +11,18 @@ table_alias = {
     'table_acquisition': '[10.0.0.201].CrowdDB.dbo.DataAcquisition',
 }
 
-mssql_settings = {
+template_table_alias = {
+    'table_result': '$table_result',
+    'table_source': '$table_source',
+    'table_person': '$table_person',
+    'table_project': '$table_project',
+    'table_person_in_project': '$table_person_in_project',
+    'table_person_in_team': '$table_person_in_team',
+    'table_team': '$table_team',
+    'table_acquisition': '$table_acquisition',
+}
+
+sql_settings = {
     'HOST': '<host>',
     'PORT': '<port>',
     'USER': '<user>',
@@ -21,21 +32,6 @@ mssql_settings = {
     'TABLE_ALIAS': table_alias,
 }
 
-mysql_settings = {
-    'HOST': '<host>',
-    'PORT': '<port>',
-    'USER': '<user>',
-    'PASSWORD': '<password>',
-    'DATABASE': '<database>',
-    'CHARSET': 'utf8',
-    'TABLE_ALIAS': {
-        'table_result': 'dataresult',
-        'table_source': 'datasource',
-        'table_person': 'person',
-        'table_project': 'task',
-        'table_person_in_project': 'person_in_task',
-    },
-}
 
 mongo_settings = {
     'HOST': '<host>',

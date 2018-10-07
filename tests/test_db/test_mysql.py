@@ -8,7 +8,7 @@ from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
 
 from ._sqlhandler import SQLHandlerBaseTest
-from .config import mysql_settings
+from .config import sql_settings as mysql_settings
 
 
 class MySQLHandlerTestCase(SQLHandlerBaseTest, unittest.TestCase):
@@ -26,7 +26,7 @@ class MySQLHandlerTestCase(SQLHandlerBaseTest, unittest.TestCase):
         self.assertEqual(self.mock_connect.call_count, settings.DB_CONN_MAX_TIMES)
         self.mock_connect.assert_called_with(
             host='<host>', port='<port>', user='<user>',
-            passwd='<password>', db='<database>', charset='utf8',
+            passwd='<password>', db='<database>', charset='UTF-8',
             connect_timeout=settings.DB_CONN_TIMEOUT
             )
 

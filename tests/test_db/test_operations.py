@@ -8,12 +8,11 @@ from moose.connection import operations
 from moose.utils.module_loading import import_string
 from moose.core.exceptions import ImproperlyConfigured
 
-from .config import mssql_settings, table_alias
+from .config import mssql_settings,
+from .config import template_table_alias as table_alias
 
 
 class BaseOperationTestCase(unittest.TestCase):
-
-    TABLE_ALIAS_KEY = 'TABLE_ALIAS'
 
     def setUp(self):
         self.context = {
@@ -33,7 +32,6 @@ class BaseOperationTestCase(unittest.TestCase):
         mock_issubclass.assert_called_with(MockHandler, sqlhandler.BaseSQLHandler)
         MockHandler.assert_called_with(mssql_settings)
         self.assertEqual(sql_operation.handler, None)
-        self.assertEqual(sql_operation.table_alias, mssql_settings[self.TABLE_ALIAS_KEY])
 
     @mock.patch("moose.connection.operations.issubclass")
     @mock.patch("moose.connection.operations.import_string")
@@ -48,26 +46,6 @@ class BaseOperationTestCase(unittest.TestCase):
         with self.assertRaises(ImproperlyConfigured):
             operations.BaseOperation.create_from_context(self.context)
 
-    @mock.patch("moose.connection.operations.issubclass")
-    @mock.patch("moose.connection.operations.import_string")
-    def test_invalid_alias(self, mock_import, mock_issubclass):
-        MockHandler = mock.Mock(return_value=None)
-        mock_import.return_value = MockHandler
-        mock_issubclass.return_value = True
-
-        corrupted_context = copy.deepcopy(mssql_settings)
-
-        corrupted_context.pop(self.TABLE_ALIAS_KEY)
-        self.context["sql_context"] = corrupted_context
-        with self.assertRaises(ImproperlyConfigured):
-            operations.BaseOperation.create_from_context(self.context)
-        MockHandler.assert_called_with(corrupted_context)
-
-        corrupted_context[self.TABLE_ALIAS_KEY] = 0
-        self.context["sql_context"] = corrupted_context
-        with self.assertRaises(ImproperlyConfigured):
-            operations.BaseOperation.create_from_context(self.context)
-        MockHandler.assert_called_with(corrupted_context)
 
 class BaseQueryTestCase(unittest.TestCase):
 
@@ -75,27 +53,23 @@ class BaseQueryTestCase(unittest.TestCase):
         self.mock_exec_query = mock.Mock(return_value="test")
         handler = mock.Mock()
         handler.exec_query = self.mock_exec_query
-        self.querier = operations.BaseQuery(handler, table_alias)
+        self.querier = operations.BaseQuery(handler)
 
     def test_query(self):
         # test query without params
-        self.querier.operation_template = "select * from {table_result}"
+        self.querier.operation_template = "select * from $table_result"
         self.querier.query()
         self.mock_exec_query.assert_called_with(\
             "select * from {}".format(table_alias['table_result']))
 
         # test query with params
-        self.querier.operation_template = "select * from {table_result} where task_id={task_id}"
+        self.querier.operation_template = "select * from $table_result where task_id={task_id}"
         self.querier.query(task_id=1000)
         self.mock_exec_query.assert_called_with(\
             "select * from {} where task_id=1000".format(table_alias['table_result']))
 
         # test query with params missing
-        self.querier.operation_template = "select * from {table_not_defined} where task_id={task_id}"
-        with self.assertRaises(ImproperlyConfigured):
-            self.querier.query(task_id=1000)
-
-        self.querier.operation_template = "select * from {table_result} where task_id={task_id}"
+        self.querier.operation_template = "select * from $table_result where task_id={task_id}"
         with self.assertRaises(ImproperlyConfigured):
             self.querier.query()
 
@@ -111,7 +85,7 @@ class BaseQueryTest(object):
         handler = mock.Mock()
         handler.exec_query = self.mock_exec_query
         query_klass = import_string(self.query_cls_str)
-        self.querier = query_klass(handler, table_alias)
+        self.querier = query_klass(handler)
 
     def test_query(self):
         for context, operation in self.params_operation_map:
@@ -303,27 +277,23 @@ class BaseInsertTestCase(unittest.TestCase):
         self.mock_exec_commit = mock.Mock(return_value=100)
         handler = mock.Mock()
         handler.exec_commit = self.mock_exec_commit
-        self.operator = operations.BaseInsert(handler, table_alias)
+        self.operator = operations.BaseInsert(handler)
 
     def test_execute(self):
         # test query without params
-        self.operator.operation_template = "insert into {table_source} (a, b, c)"
+        self.operator.operation_template = "insert into $table_source (a, b, c)"
         self.operator.execute()
         self.mock_exec_commit.assert_called_with(\
             "insert into {} (a, b, c)".format(table_alias['table_source']))
 
         # test execute with params
-        self.operator.operation_template = "insert into {table_source} (a, b, c) select * from {table_source} where ProjectId={task_id}"
+        self.operator.operation_template = "insert into $table_source (a, b, c) select * from $table_source where ProjectId={task_id}"
         self.operator.execute(task_id=1000)
         self.mock_exec_commit.assert_called_with(\
             "insert into {} (a, b, c) select * from {} where ProjectId=1000".format(table_alias['table_source'], table_alias['table_source']))
 
         # test execute with params missing
-        self.operator.operation_template = "insert into {table_not_defined} (a, b, c) select * from {table_source} where ProjectId={task_id}"
-        with self.assertRaises(ImproperlyConfigured):
-            self.operator.execute(task_id=1000)
-
-        self.operator.operation_template = "insert into {table_source} (a, b, c) select * from {table_source} where ProjectId={task_id}"
+        self.operator.operation_template = "insert into $table_source (a, b, c) select * from $table_source where ProjectId={task_id}"
         with self.assertRaises(ImproperlyConfigured):
             self.operator.execute()
 
@@ -341,7 +311,7 @@ class BaseInsertTest(object):
         handler.exec_commit = self.mock_exec_commit
 
         operator_klass = import_string(self.operate_cls_str)
-        self.operator = operator_klass(handler, table_alias)
+        self.operator = operator_klass(handler)
 
     def test_execute(self):
         for context, operation in self.params_operation_map:
@@ -391,26 +361,22 @@ class BuckInsertTestCase(unittest.TestCase):
         self.mock_exec_many = mock.Mock(return_value=100)
         handler = mock.Mock()
         handler.exec_many = self.mock_exec_many
-        self.operator = operations.BulkInsert(handler, table_alias)
+        self.operator = operations.BulkInsert(handler)
 
     def test_execute(self):
         # test query without params
-        self.operator.operation_template = "insert into {table_source} (a, b, c)"
+        self.operator.operation_template = "insert into $table_source (a, b, c)"
         self.operator.execute((1, 2, 3))
         self.mock_exec_many.assert_called_with(\
             "insert into {} (a, b, c)".format(table_alias['table_source']), (1, 2, 3))
 
         # test execute with params
-        self.operator.operation_template = "insert into {table_source} (a, b, c) select * from {table_source} where ProjectId={task_id}"
+        self.operator.operation_template = "insert into $table_source (a, b, c) select * from $table_source where ProjectId={task_id}"
         self.operator.execute((1, 2, 3), task_id=1000)
         self.mock_exec_many.assert_called_with(\
             "insert into {} (a, b, c) select * from {} where ProjectId=1000".format(table_alias['table_source'], table_alias['table_source']), (1, 2, 3))
 
         # test execute with params missing
-        self.operator.operation_template = "insert into {table_not_defined} (a, b, c) select * from {table_source} where ProjectId={task_id}"
-        with self.assertRaises(ImproperlyConfigured):
-            self.operator.execute((1, 2, 3), task_id=1000)
-
-        self.operator.operation_template = "insert into {table_source} (a, b, c) select * from {table_source} where ProjectId={task_id}"
+        self.operator.operation_template = "insert into $table_source (a, b, c) select * from $table_source where ProjectId={task_id}"
         with self.assertRaises(ImproperlyConfigured):
             self.operator.execute((1, 2, 3))

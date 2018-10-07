@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import sys
 import time
 import random
+import string
 
 from moose.core.terminal import stdout
 from moose.core.exceptions import \
@@ -28,6 +29,7 @@ class BaseSQLHandler(object):
     already implemented almost all features need.
     """
     db_name = None
+    table_alias_name   = "TABLE_ALIAS"
 
     def __init__(self, settings_dict):
         if not isinstance(settings_dict, dict):
@@ -37,6 +39,14 @@ class BaseSQLHandler(object):
 
         self.settings_dict = settings_dict
         self._conn = self.get_connection(settings_dict)
+
+        if settings_dict.get(self.table_alias_name):
+            self._table_alias = settings_dict[self.table_alias_name]
+        else:
+            raise ImproperlyConfigured(\
+                "Key missing: `{}` is required to provide a map of "
+                "alias to table names in the database.".format(self.table_alias_name))
+
         self._cursor = None
 
     def get_connection(self, settings_dict):
@@ -105,6 +115,7 @@ class BaseSQLHandler(object):
 
         try:
             cursor = self._get_cursor()
+            operation = string.Template(operation).substitute(self._table_alias)
             stdout.info("Executing the operation:\n\t'{}'.".format(operation))
             result = operator(cursor, operation, *args)
         # TODO: defines more detailed errors

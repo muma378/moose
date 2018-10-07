@@ -9,7 +9,7 @@ from moose.core.exceptions import ImproperlyConfigured
 from moose.conf import settings
 
 from ._sqlhandler import SQLHandlerBaseTest
-from .config import mssql_settings
+from .config import sql_settings as mssql_settings
 
 
 class SQLServerHandlerTestCase(SQLHandlerBaseTest, unittest.TestCase):
