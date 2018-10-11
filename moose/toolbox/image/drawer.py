@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import os
 import copy
 from collections import Container
 
@@ -7,6 +8,12 @@ import cv2
 import numpy as np
 from moose.conf import settings
 from moose.utils._os import npath
+from moose.core.exceptions import ImproperlyConfigured
+
+from . import colors
+
+import logging
+logger = logging.getLogger(__name__)
 
 class InvalidCoordinates(Exception):
 	pass
@@ -97,15 +104,21 @@ class BaseShape(object):
 		return p1[0] == p2[0] and p1[1] == p2[1]
 
 	def set_color(self, color):
-		self._color = color
+		# do not change the default color when `color` set was None
+		if color != None:
+			self._color = color
 		return self
 
 	@property
 	def color(self):
 		"""
-		Note (R, G, B) was reversed in OpenCV
+		Note that (R, G, B) was reversed in OpenCV, meanwhile the color
+		was a integer when the canvas was a grayscale image.
 		"""
-		return self._color[::-1]
+		if isinstance(self._color, list) or isinstance(self._color, tuple):
+			return self._color[::-1]
+		else:
+			return self._color
 
 	def draw_on(self, im):
 		"""
@@ -156,17 +169,19 @@ class LineString(BaseShape):
 	"""
 	`coordinates`:
 		[[x0, y0], [x1, y1]]
+		[[x0, y0], [x1, y1], [x2, y2]]
 	"""
 	type = "LineString"
 
 	def _is_valid_coordinates(self, coordinates):
-		if self._is_list_of_pairs(coordinates) and len(coordinates) == 2:
+		if self._is_list_of_pairs(coordinates) and len(coordinates) >= 2:
 			return True
 		else:
 			return False
 
 	def draw_on(self, im):
-		cv2.line(im, self._coordinates[0], self._coordinates[1], self.color, self._thickness)
+		for start, end in zip(self._coordinates[:-1], self._coordinates[1:]):
+			cv2.line(im, start, end, self.color, self._thickness)
 
 
 class Polygon(BaseShape):
@@ -193,7 +208,6 @@ class Polygon(BaseShape):
 
 	def _outline(self, im):
 		cv2.polylines(im, [self.to_nparray()], self.is_closed, self.color, self._thickness)
-
 
 
 class Rectangle(BaseShape):
@@ -242,22 +256,54 @@ class Rectangle(BaseShape):
 		cv2.rectangle(im, tuple(self._coordinates[0]), tuple(self._coordinates[1]), self.color, -1)
 
 
-
 class GeneralPainter(object):
+	"""
+	在绘图的颜色选择上有三种可能:
+
+		1. 用户提供完整的pallet，包含每一个可能的label和color，如果缺失则报错；
+		2. 用户没有提供pallet，全部统一使用一种颜色来填充；
+		3. 用户没有提供pallet，每种shape使用一种颜色填充(可以与2归为一种情况)；
+		4. 用户提供不完整的或没有提供pallet，缺失的使用随机颜色来填充，但每个label必须是唯一的；
+	"""
+
 	shape_line_cls      = LineString
 	shape_point_cls     = Point
 	shape_polygon_cls   = Polygon
 	shape_rectangle_cls = Rectangle
 	ignore_errors       = True
 
-	def __init__(self, image_path):
+	def __init__(self, image_path, pallet=None, autofill=False, use_default=False):
+		if not os.path.exists(image_path):
+			logger.warning("Unable to find the image specified: {}".format(image_path))
+			raise IOError("Unable to find the image specified: {}".format(image_path))
 		self.image_path = image_path
 		self.im = cv2.imread(npath(image_path))
+		self._pallet = pallet if pallet else {}
+		# add colors automatically
+		self._autofill = autofill
+		self._use_default = use_default
 		self._shapes = []
-		self._pallet = None
 
-	def set_pallet(self, pallet):
-		self._pallet = pallet
+	def get_color(self, label):
+		if self._use_default:
+			return None
+		if self._pallet.get(label) == None:
+			if self._autofill:
+				color = colors.choice(exclude=self._pallet.values())
+				self.add_color(label, color)
+			else:
+				raise ImproperlyConfigured("Color for lable '{}' was not set.".format(label))
+
+		return self._pallet[label]
+
+	def add_color(self, label, color):
+		self._pallet[label] = color
+
+	def update_pallet(self, pallet):
+		if isinstance(pallet, dict):
+			self._pallet.update(pallet)
+		else:
+			raise ImproperlyConfigured("`Pallet` must be a type 'dict'")
 
 	def add_shape(self, shape):
 		# A shape object must provide attribute `label` and method `draw_on`
@@ -266,6 +312,9 @@ class GeneralPainter(object):
 	def from_shapes(self, shapes):
 		# `shapes` may be a generator
 		self._shapes.extend(list(shapes))
+
+	def clear(self):
+		self._shapes = []
 
 	def add_line(self, p1, p2, label, **options):
 		shape = self.shape_line_cls([p1, p2], label, **options)
@@ -285,7 +334,7 @@ class GeneralPainter(object):
 
 	def render(self, canvas):
 		for shape in self._shapes:
-			shape.set_color(self._pallet[shape._label])
+			shape.set_color(self.get_color(shape._label))
 			shape.draw_on(canvas)
 		return canvas
 
@@ -315,5 +364,5 @@ class GeneralPainter(object):
 
 class GeoJSONPainter(GeneralPainter):
 
-	def from_features(self, shapes):
+	def from_features(self, features):
 		return self

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import unittest
+import mock
 import numpy as np
 
 from moose.toolbox.image import drawer
 from moose.conf import settings
+from moose.core.exceptions import ImproperlyConfigured
 
 BACKGROUND      = (0, 0, 0)
 
@@ -69,13 +71,13 @@ class PointTestCase(BaseShapeTestCase):
 class LineStringTestCase(BaseShapeTestCase):
     valid_dataset     = [
                         ([[0, 0], [0, 10]], 'a'),
-                        ([[1, 1], [10, 10]], 'a')
+                        ([[1, 1], [10, 10]], 'a'),
+                        ([[0, 0], [0, 10], [10, 10]], 'a'),
                         ]
     invalid_dataset   = [
                         (1, 'a'),
                         ([[0, 0]], 'a'),
                         ([[-1, 0], [0, 10]], 'a'),
-                        ([[0, 0], [0, 10], [10, 10]], 'a'),
                         ]
     test_dataset      = [
                         ((0, 9), settings.DEFAULT_COLOR),
@@ -180,20 +182,43 @@ class PointsRectangleTestCase(RectangleTestCase):
 
 class GeneralPainterTestCase(unittest.TestCase):
     def setUp(self):
-        image_path = u"tests/sample_data/toolbox/OuNYQbIuF4_00048951.png"
-        anno_path  = u"tests/sample_data/toolbox/OuNYQbIuF4_00048951.json"
+        self.image_path = u"tests/sample_data/toolbox/OuNYQbIuF4_00048951.png"
+        self.anno_path  = u"tests/sample_data/toolbox/OuNYQbIuF4_00048951.json"
 
-        with open(anno_path) as f:
+        with open(self.anno_path) as f:
             self.anno_data = json.load(f)
 
-        self.painter = drawer.GeneralPainter(image_path)
+        self.painter = drawer.GeneralPainter(self.image_path)
 
     def assert_pixel_value(self, im, x, y, value):
         self.assertEqual(im[y, x].tolist(), rev(list(value)), "Point(%s, %s) was not drawn." % (x, y))
 
+    def test_imread(self):
+        with self.assertRaises(IOError):
+            drawer.GeneralPainter("path/not/existed.jpg")
+
+        p = drawer.GeneralPainter(self.image_path)
+        # height, width, depth
+        self.assertEqual(p.im.shape, (1080, 1920, 3))
+
+    @mock.patch("moose.toolbox.image.drawer.colors")
+    def test_get_color(self, mock_colors):
+        p = drawer.GeneralPainter(self.image_path)
+        with self.assertRaises(ImproperlyConfigured):
+            p.get_color('label1')
+
+        mock_colors.choice = mock.Mock(return_value=(255, 0, 0))
+        p = drawer.GeneralPainter(self.image_path, autofill=True)
+        self.assertEqual(p.get_color('label1'), (255, 0, 0))
+        mock_colors.choice.assert_called_with(exclude=[])
+        self.assertEqual(p._pallet, {'label1': (255, 0, 0)})
+
+        p = drawer.GeneralPainter(self.image_path, autofill=True, use_default=True)
+        self.assertEqual(p.get_color('label1'), None)
+
 
     def test_render(self):
-        self.painter.set_pallet({
+        self.painter.update_pallet({
                             "label1": (255, 0, 0),
                             "label2": (0, 255, 0),
                             })
