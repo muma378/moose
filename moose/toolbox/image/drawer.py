@@ -260,33 +260,39 @@ class GeneralPainter(object):
 	"""
 	在绘图的颜色选择上有三种可能:
 
-		1. 用户提供完整的pallet，包含每一个可能的label和color，如果缺失则报错；
-		2. 用户没有提供pallet，全部统一使用一种颜色来填充；
-		3. 用户没有提供pallet，每种shape使用一种颜色填充(可以与2归为一种情况)；
-		4. 用户提供不完整的或没有提供pallet，缺失的使用随机颜色来填充，但每个label必须是唯一的；
+		1. () 用户提供完整的pallet，包含每一个可能的label和color，如果缺失则报错；
+		2. (use_default=True) 用户没有提供pallet，全部统一使用一种颜色来填充；
+		3. (use_default=True), Shape(color=c) 用户没有提供pallet，每种shape使用一种颜色填充(可以与2归为一种情况)；
+		4. (autofill=True, use_default=False) 用户提供不完整的或没有提供pallet，缺失的使用随机颜色来填充，但每个label必须是唯一的；
 	"""
 
 	shape_line_cls      = LineString
 	shape_point_cls     = Point
 	shape_polygon_cls   = Polygon
 	shape_rectangle_cls = Rectangle
-	ignore_errors       = True
+	persistent_pallet   = {}
 
-	def __init__(self, image_path, pallet=None, autofill=False, use_default=False):
+	def __init__(self, image_path, pallet=None, autofill=False, use_default=False, persistent=True):
 		if not os.path.exists(image_path):
 			logger.warning("Unable to find the image specified: {}".format(image_path))
 			raise IOError("Unable to find the image specified: {}".format(image_path))
 		self.image_path = image_path
 		self.im = cv2.imread(npath(image_path))
-		self._pallet = pallet if pallet else {}
 		# add colors automatically
 		self._autofill = autofill
 		self._use_default = use_default
-		self._shapes = []
+		self._persistent  = persistent
+		# reset pallet if not set persistent True
+		self._pallet = self.persistent_pallet if persistent else {}
+		# update pallet if a new one was given
+		if pallet:
+			self.update_pallet(pallet)
+		self._shapes      = []
 
 	def get_color(self, label):
 		if self._use_default:
 			return None
+
 		if self._pallet.get(label) == None:
 			if self._autofill:
 				color = colors.choice(exclude=self._pallet.values())

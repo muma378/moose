@@ -201,6 +201,24 @@ class GeneralPainterTestCase(unittest.TestCase):
         # height, width, depth
         self.assertEqual(p.im.shape, (1080, 1920, 3))
 
+    def test_pallet(self):
+        pallet1 = {"label1": 1}
+        p1 = drawer.GeneralPainter(self.image_path, pallet=pallet1)
+        self.assertEqual(p1._pallet, pallet1)
+
+        pallet2 = {"label2": 2}
+        p2 = drawer.GeneralPainter(self.image_path, pallet=pallet2, persistent=True)
+        self.assertEqual(p2._pallet, {"label1": 1, "label2": 2})
+
+        pallet3 = {"label2": 3}
+        p3 = drawer.GeneralPainter(self.image_path, pallet=pallet3, persistent=True)
+        self.assertEqual(p3._pallet, {"label1": 1, "label2": 3})
+        self.assertEqual(p1._pallet, {"label1": 1, "label2": 3})
+
+        p4 = drawer.GeneralPainter(self.image_path, persistent=False)
+        self.assertEqual(p4._pallet, {})
+
+
     @mock.patch("moose.toolbox.image.drawer.colors")
     def test_get_color(self, mock_colors):
         p = drawer.GeneralPainter(self.image_path)
