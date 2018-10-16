@@ -119,11 +119,11 @@ class MongoDBHandler(object):
                 logger.warn("Unknown collection specified: '{}'".format(coll_name))
                 raise ImproperlyConfigured("Unknown collection specified: '{}'".format(coll_name))
 
-    def execute(self, coll, operator):
+    def execute(self, coll_name, operator):
         conn_cnt = 0
         while conn_cnt < settings.DB_CONN_MAX_TIMES:
             try:
-                self.set_collection(coll)
+                self.set_collection(coll_name)
                 result = operator()
                 return result
             except (errors.AutoReconnect, errors.ExecutionTimeout):
@@ -136,16 +136,16 @@ class MongoDBHandler(object):
         raise ImproperlyConfigured("MongoDB: Failed too many times to execute, aborted.")
 
 
-    def fetch(self, coll, filter=None, *args, **kwargs):
-        logger.debug("Fetching from collection [%s] of '%s'." % (coll, self._db_name))
+    def fetch(self, coll_name, filter=None, *args, **kwargs):
+        logger.debug("Fetching from collection [%s] of '%s'." % (coll_name, self._db_name))
 
         def _operator():
-            result = []
-            for item in self.coll.find(filter, *args, **kwargs):
-                result.append(item)
-            return result
+            documents = []
+            for doc in self.coll.find(filter, *args, **kwargs):
+                documents.append(doc)
+            return documents
 
-        return self.execute(coll, _operator)
+        return self.execute(coll_name, _operator)
 
     def fetch_source(self, filter=None, *args, **kwargs):
         return self.fetch(self.coll_source, filter, *args, **kwargs)
@@ -153,19 +153,19 @@ class MongoDBHandler(object):
     def fetch_result(self, filter=None, *args, **kwargs):
         return self.fetch(self.coll_result, filter, *args, **kwargs)
 
-    def insert(self, coll, documents, **kwargs):
+    def insert(self, coll_name, documents, **kwargs):
         if isinstance(documents, dict):
             documents = [documents]
 
         logger.warn(
-            "Insert {} documents to the collection '{}'".format(len(documents), coll))
+            "Insert {} documents to the collection '{}'".format(len(documents), coll_name))
         def _operator():
             return self.coll.insert_many(documents, **kwargs)
 
-        return self.execute(coll, _operator)
+        return self.execute(coll_name, _operator)
 
-    def update(self, coll, filter, document, **kwargs):
-        logger.warn("Update collection '{}' matching the filter: '{}'".format(coll, filter))
+    def update(self, coll_name, filter, document, **kwargs):
+        logger.warn("Update collection '{}' matching the filter: '{}'".format(coll_name, filter))
         def _operator():
             return self.coll.update_many(
                 filter,
@@ -173,7 +173,7 @@ class MongoDBHandler(object):
                 **kwargs
                 )
 
-        return self.execute(coll, _operator)
+        return self.execute(coll_name, _operator)
 
     def close(self):
         try:
