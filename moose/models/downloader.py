@@ -4,6 +4,7 @@ import os
 import socket
 import Queue
 import urllib2
+import httplib
 
 from moose.utils._os import makedirs, makeparents, safe_join
 from moose.utils.encoding import force_bytes
@@ -77,6 +78,9 @@ class DownloadWorker(_threading.Thread):
         except socket.error, e:
             self.stats.inc_value("download/socket_error")
             warn('socket error: %s' % url)
+        except httplib.BadStatusLine, e:
+            self.stats.inc_value("download/bad_status_line")
+            warn('BadStatusLine: %s' % url)
         return data
 
     def write(self, data, filepath):

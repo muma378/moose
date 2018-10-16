@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import Queue
+import socket
 import urllib2
+import httplib
 import threading
 
 from moose.conf import settings
@@ -68,6 +70,10 @@ class PipelineDownloader(threading.Thread):
                 retry -= 1
                 if retry == 0:
                     logger.error('socket error: %s' % url)
+            except httplib.BadStatusLine, e:
+                retry -= 0.5
+                if retry == 0:
+                    logger.error('An unknown http status returned: %s' % url)
 
         return None
 
