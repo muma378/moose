@@ -39,7 +39,7 @@ class BaseOperation(object):
                 handler_cls = import_string(handler_cls)
             except ImportError as e:
                 raise ImproperlyConfigured(\
-                    "Error occured when importing `{}`".format(handler_cls))
+                    "SQL handler specified is not an importable module: {}.".format(handler_cls))
 
         if issubclass(handler_cls, cls.base_handler_cls):
             handler = handler_cls(handler_settings)
