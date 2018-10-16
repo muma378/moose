@@ -100,8 +100,9 @@ class OutputWrapper(object):
 
     def __init__(self, out, style_func=None, ending='\n'):
         self._out = out
-        self.style_func = None
+        self.style_func = style_func
         self.ending = ending
+        self.style = color_style()
 
     def __getattr__(self, name):
         return getattr(self._out, name)

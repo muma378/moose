@@ -17,12 +17,8 @@ import moose
 from moose.conf import settings
 from moose.core.management.base import BaseCommand, CommandError
 from moose.core.management.utils import handle_extensions
-
-# from moose.template import Context, Engine
-
 from moose.utils import archive, six
 from moose.utils.six.moves.urllib.request import urlretrieve
-# from moose.utils.version import get_docs_version
 
 _drive_re = re.compile('^([a-z]):', re.I)
 _url_drive_re = re.compile('^([a-z])[:|]', re.I)

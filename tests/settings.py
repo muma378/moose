@@ -11,6 +11,9 @@ import platform
 IS_WINDOWS = True if platform.system()=="Windows" else False
 IS_POSIX = not IS_WINDOWS
 
+DB_CONN_MAX_TIMES = 3
+DB_CONN_MAX_INTERVAL = 300
+DB_CONN_TIMEOUT = 300
 
 INSTALLED_APPS = []
 
