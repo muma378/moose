@@ -8,7 +8,7 @@ from moose.connection import operations
 from moose.utils.module_loading import import_string
 from moose.core.exceptions import ImproperlyConfigured
 
-from .config import mssql_settings,
+from .config import sql_settings
 from .config import template_table_alias as table_alias
 
 
@@ -17,7 +17,7 @@ class BaseOperationTestCase(unittest.TestCase):
     def setUp(self):
         self.context = {
             "sql_handler": 'moose.connection.mssql.SQLServerHandler',
-            "sql_context": mssql_settings,
+            "sql_context": sql_settings,
         }
 
     @mock.patch("moose.connection.operations.issubclass")
@@ -30,7 +30,7 @@ class BaseOperationTestCase(unittest.TestCase):
         sql_operation = operations.BaseOperation.create_from_context(self.context)
         mock_import.assert_called_with(self.context['sql_handler'])
         mock_issubclass.assert_called_with(MockHandler, sqlhandler.BaseSQLHandler)
-        MockHandler.assert_called_with(mssql_settings)
+        MockHandler.assert_called_with(sql_settings)
         self.assertEqual(sql_operation.handler, None)
 
     @mock.patch("moose.connection.operations.issubclass")
