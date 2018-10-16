@@ -100,8 +100,9 @@ class OutputWrapper(object):
 
     def __init__(self, out, style_func=None, ending='\n'):
         self._out = out
-        self.style_func = None
+        self.style_func = style_func
         self.ending = ending
+        self.style = color_style()
 
     def __getattr__(self, name):
         return getattr(self._out, name)
@@ -115,6 +116,19 @@ class OutputWrapper(object):
             msg += ending
         style_func = style_func or self.style_func
         self._out.write(force_str(style_func(msg)))
+
+    # Shortcuts to print colorized message
+    def SUCCESS(self, msg):
+        self.write(msg, style_func=self.style.SUCCESS)
+
+    def ERROR(self, msg):
+        self.write(msg, style_func=self.style.ERROR)
+
+    def WARNING(self, msg):
+        self.write(msg, style_func=self.style.WARNING)
+
+    def NOTICE(self, msg):
+        self.write(msg, style_func=self.style.NOTICE)
 
 
 class BaseCommand(object):
@@ -296,6 +310,9 @@ class BaseCommand(object):
 
                 style_output = self.style.SUCCESS(output)
                 self.stdout.write(style_output)
+        except ImproperlyConfigured as e:
+            self.stderr.write(repr(e))
+            sys.exit(1)
         finally:
             pass
 

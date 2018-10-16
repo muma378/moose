@@ -868,7 +868,7 @@ if sys.meta_path:
 sys.meta_path.append(_importer)
 
 
-### Additional customizations for Django ###
+### Additional customizations for Moose ###
 
 if PY3:
     memoryview = memoryview

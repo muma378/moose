@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# common.connection.azure -
+from __future__ import unicode_literals
+
 import os
 import sys
 import urllib
@@ -121,7 +122,7 @@ class AzureBlobService(object):
         return blob
 
 
-    def upload(self, container_name, blob_pairs):
+    def upload(self, container_name, blob_pairs, overwrite=False):
         """
         Uploads files to the container on Azure. Note that 'blob_name' uploaded
         will be converted to posix-style names, which means sep for path is
@@ -144,7 +145,7 @@ class AzureBlobService(object):
         for blob_name, filepath in progressbar.progressbar(\
                                     blob_pairs, widgets=self.widgets):
             posix_blob_name = ppath(blob_name)
-            if posix_blob_name not in blobs_in_container:
+            if overwrite or (posix_blob_name not in blobs_in_container):
                 self.create_blob_from_path(
                     container_name, posix_blob_name, filepath)
                 blobs.append(posix_blob_name)

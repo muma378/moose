@@ -6,6 +6,11 @@ from PIL import Image, ImageDraw, ImageFont
 from moose.utils._os import npath
 from .pallet import dip, create_pallet
 
+def get_label_color(label, pallet, default):
+	color = pallet.get(label, default)
+	# reverse the color for opencv, cause the default order is BGR
+	return color[::-1]
+
 
 # point = (x1, y1)
 def draw_points(img_name, dst_name, points, fill=128):
@@ -98,7 +103,7 @@ def draw_polygons(img_name, dst_name, datalist, pallet=None, border=False, grays
 		pts = np.array(points, np.int32)
 		if border:
 			cv2.polylines(canvas, [pts], True, border, 3)
-		cv2.fillPoly(canvas, [pts], (pallet.get(label, default)))
+		cv2.fillPoly(canvas, [pts], (get_label_color(label, pallet, default)))
 
 	cv2.imwrite(npath(dst_name), canvas)
 	return pallet
@@ -142,7 +147,7 @@ def blend(img_name, dst_name, datalist, pallet=None, alpha=0.4, beta=0.6):
 	mask = np.zeros(image.shape, np.uint8)
 	for label, points in datalist:
 		pts = np.array(points, np.int32)
-		cv2.fillPoly(mask, [pts], (pallet.get(label, default)))
+		cv2.fillPoly(mask, [pts], (get_label_color(label, pallet, default)))
 
 	blended = cv2.addWeighted(image, alpha, mask, beta, 0)
 	cv2.imwrite(npath(dst_name), blended)

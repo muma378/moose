@@ -15,6 +15,15 @@ import platform
 IS_WINDOWS = True if platform.system()=="Windows" else False
 IS_POSIX = not IS_WINDOWS
 
+# Shows useful information and changes multithreading to single thread when turns on `DEBUG` mode
+DEBUG = False
+# How to solve conflicts when uploading files to azure, overwrite or ignore(default)?
+OVERWRITE = False
+
+
+DB_CONN_MAX_TIMES = 3
+DB_CONN_MAX_INTERVAL = 300
+DB_CONN_TIMEOUT = 300
 
 INSTALLED_APPS = []
 
@@ -28,6 +37,15 @@ ALL_IMAGE_PATTERN = ('*.jpg', '*.png', '*.jpeg', '*.bmp', '*.gif', '*.tiff')
 
 AUDIO_PATTERN = ('*.wav', '*.mp3')
 
+###########
+# LOGGING #
+###########
+
+# The callable to use to configure logging
+LOGGING_CONFIG = 'logging.config.dictConfig'
+
+# Custom logging configuration.
+LOGGING = {}
 
 ###########
 # CONFIGS #
@@ -48,6 +66,7 @@ CONFIG_DESC_EXPR_SEP = ':'
 CONFIG_DISCOVER_BY_TAG = 't'
 CONFIG_DISCOVER_BY_ATTR = 'a'
 CONFIG_DESC_ATTR_VAL_SEP = '='
+CONFIG_DESC_SECT_OPT_SEP = '.'
 
 
 DEFAULT_TIMEOUT = 60
@@ -88,6 +107,9 @@ DATABASES = {
             'table_person': '[10.0.0.201].CrowdDB.dbo.Person',
             'table_project': '[10.0.0.201].CrowdDB.dbo.Project',
             'table_person_in_project': '[10.0.0.201].CrowdDB.dbo.PersonInProject',
+            'table_person_in_team': '[10.0.0.201].CrowdDB.dbo.PersonInTeam',
+        	'table_team': '[10.0.0.201].CrowdDB.dbo.Team',
+            'table_acquisition': '[10.0.0.201].CrowdDB.dbo.DataAcquisition',
         },
     },
     'mongo': {
@@ -127,6 +149,27 @@ QUERY_CONTEXT = {
     'mongo_context': DATABASES['mongo'],
 }
 
+INSERT_CONTEXT = {
+    'sql_handler': 'moose.connection.database.PrimitiveMssqlHandler',
+    'sql_context': DATABASES['sqlserver'],
+    'mongo_handler': 'moose.connection.database.MongoDBHandler',
+    'mongo_context': DATABASES['mongo'],
+}
+
+# Database cache
+DATACACHE_DIRNAME = '.database'
+DATACACHE_LIFETIME = 1
+
+
+
+##########
+# DRAWER #
+##########
+DRAWER_RADIUS = 3
+DEFAULT_THICKNESS = 3
+DEFAULT_COLOR = (255, 0, 0)
+
+
 # Config for Server Message Block protocol
 SMB = {
     'HOST': '',
@@ -145,15 +188,13 @@ WEB_SETTINGS = {
     "password": "",
 }
 
-BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
-
-
 DOWNLOAD_SETTINGS = {
     "queue_buffer": 2500,
     "queue_timeout": 60,
     "download_timeout": 60,
 }
 
+BROWSER_SIMULATOR = "Firefox"   # Firefox, Chrome, Ie, Opera
 
 # Host for sending email.
 EMAIL_HOST = 'mail.datatang.com'

@@ -78,6 +78,7 @@ PALETTES = {
         'SUCCESS': {},
         'WARNING': {},
         'NOTICE': {},
+        'NORMAL': {},
 
         'SQL_FIELD': {},
         'SQL_COLTYPE': {},

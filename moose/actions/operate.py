@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import os
 
-from moose.process import video
+from moose.toolbox import video
 from moose.shortcuts import ivisit
 from moose.utils._os import makedirs, makeparents
 

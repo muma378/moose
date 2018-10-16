@@ -20,6 +20,10 @@ class DoesNotExist(Exception):
     """File specified does not exist"""
     pass
 
+class ConnectionTimeout(Exception):
+    """Failed to connect to service, waiting for retry"""
+    pass
+
 class SuspiciousOperation(Exception):
     """The user did something suspicious"""
     pass

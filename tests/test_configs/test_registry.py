@@ -10,7 +10,9 @@ from mock import Mock
 from moose.conf import settings
 from moose.apps import AppConfig
 from moose.core.configs.loader import ConfigLoader
-from moose.core.configs.registry import ConfigsRegistry, get_conf_cache, get_conf_dirname
+from moose.core.configs.registry import \
+	ConfigsRegistry, get_conf_cache, get_conf_dirname, \
+	find_matched_conf
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
 
 
@@ -58,6 +60,7 @@ class ConfigsRegistryTestCase(unittest.TestCase):
 		# tests if cache file was updated after creating a new one
 		# clears the memory at first
 		ConfigsRegistry.configs_of_app = {}
+
 		# changes the last modification time for sample2.cfg
 		sample2_conf_path = os.path.join(get_conf_dirname(self.testapp1), 'sample2.cfg')
 		time.sleep(1)
@@ -68,6 +71,11 @@ class ConfigsRegistryTestCase(unittest.TestCase):
 		testapp1_configs_new = ConfigsRegistry.get_or_create(self.testapp1)
 		cache_stat_after = os.stat(config_cache)
 		self.assertNotEqual(cache_stat_before.st_mtime, cache_stat_after.st_mtime, "Configs cache is not synchronized.")
+
+		# call __clear()
+		testapp1_configs._ConfigsRegistry__clear()
+		self.assertEqual(len(ConfigsRegistry.configs_of_app), 0)
+
 
 	def test_synchronize(self):
 		testapp1_configs = ConfigsRegistry.get_or_create(self.testapp1)
@@ -90,6 +98,32 @@ class ConfigsRegistryTestCase(unittest.TestCase):
 
 		sample2_config = testapp1_configs.find_by_attr('upload', 'task_id', 2)
 		self.assertEqual(sample2_config.parse().common['name'], 'sample-test2')
+
+	def test_append(self):
+		# basic function test
+		testapp1_configs = ConfigsRegistry.get_or_create(self.testapp1)
+		new_config_name = 'new.conf'
+		new_config_path = os.path.join(self.testapp1.configs_dirname, new_config_name)
+		if os.path.exists(new_config_path):
+			os.remove(new_config_path)
+		testapp1_configs.append(new_config_name)
+		self.assertTrue(os.path.exists(new_config_path))
+
+	def test_find_matched_conf(self):
+		matched_conf = find_matched_conf(self.testapp1, 'sample1.cfg')
+		self.assertEqual(matched_conf.path, 'tests/sample_data/configs/testapp1/configs/sample1.cfg')
+
+		matched_conf = find_matched_conf(self.testapp1, 'tests/sample_data/configs/testapp1/configs/sample1.cfg')
+		self.assertEqual(matched_conf.path, 'tests/sample_data/configs/testapp1/configs/sample1.cfg')
+
+		matched_conf = find_matched_conf(self.testapp1, 'a:common.name=sample-test1')
+		self.assertEqual(matched_conf.path, 'tests/sample_data/configs/testapp1/configs/sample1.cfg')
+
+		matched_conf = find_matched_conf(self.testapp1, 'a:common.name=sample-test1')
+		self.assertEqual(matched_conf.path, 'tests/sample_data/configs/testapp1/configs/sample1.cfg')
+
+		matched_conf = find_matched_conf(self.testapp1, 'f:unknown')
+		self.assertEqual(matched_conf, None)
 
 if __name__ == "__main__":
     unittest.main()
