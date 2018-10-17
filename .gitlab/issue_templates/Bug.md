@@ -1,36 +1,41 @@
----
-name: Bug report
-about: Create a report to help us improve
+Summary
 
----
-
-**Bug描述**
-关于该Bug的简洁清晰的描述
-
-**如何重现**
-重现该Bug的步骤依次是：
-1. 进入 '...'
-2. 点击 '....'
-3. 滚轮滑到 '....'
-4. 可见错误
-
-**期望行为**
-关于你期望发生的行为的简洁清晰的描述。
-
-**相关日志或截图**
-如果可以的话，最好附上报错信息或截图来帮助阐述你的问题。
+(Summarize the bug encountered concisely)
 
 
-**环境信息:**
- - OS: [e.g. Windows 10]
- - Terminal [e.g. CMD, Pycharm]
- - Version [e.g. Python 2.7]
+Steps to reproduce
 
-**其他信息**
-在这里添加任何其他有助于解决这个问题的信息。
+(How one can reproduce the issue - this is very important)
 
-**可能的原因及解决方案**
-添加你认为的可能的原因，或者是解决这个问题的代码片段。
 
-/label ~Bug
-/cc @manager
+Example Project
+
+(If possible, please create an example project here on GitLab.com that exhibits the problematic behaviour, and link to it here in the bug report)
+
+(If you are using an older version of GitLab, this will also determine whether the bug has been fixed in a more recent version)
+
+
+What is the current bug behavior?
+
+(What actually happens)
+
+
+What is the expected correct behavior?
+
+(What you should see instead)
+
+
+Relevant logs and/or screenshots
+
+(Paste any relevant logs - please use code blocks (```) to format console output,
+logs, and code as it's very hard to read otherwise.)
+
+
+Possible fixes
+
+(If you can, link to the line of code that might be responsible for the problem)
+
+/label ~bug ~reproduced ~needs-investigation
+/cc @project-manager
+/assign @qa-tester
+
