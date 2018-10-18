@@ -49,6 +49,7 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
    topics/process
    topics/settings
    topics/exceptions
+   topics/drawer
 
 :doc:`topics/commands`
     通过Moose的命令行工具来管理你的Moose项目。
@@ -77,6 +78,8 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
 :doc:`topics/exceptions`
     异常抛出说明和推荐使用惯例。
 
+:doc:`topics/drawer`
+    图形绘制相关。
 
 .. _section-extra:
 
