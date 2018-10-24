@@ -12,10 +12,10 @@ mask图进行图像识别方面的训练，换句话说，这要求将标注结�
 然而在实际情况中，同一张图片往往包含多种图形的标注，例如街景标注中，可能既包含车道线（线），人、车（
 多边形）的标注，也需要框出所有的交通灯和交通标志（矩形框）。而且，在绘制的时候，根据标注的实际情况，
 绘制方法可能是轮廓也可能是填充。如何既提供通用快速的绘制接口，又能根据实际情况进行扩展（改变绘制方法
-、颜色、粗细等），就是`toolbox.drawer`的设计目的。
+、颜色、粗细等），就是 ``toolbox.image.drawer`` 的设计目的。
 
-因此，我们将`Shape(图形)`这一对象抽象出来，提供了验证和绘制的接口，并且提供默认的绘制实现，
-调用绘制接口在图上进行绘制则由`Painter(绘制器)`完成。开发人员只需要关注图形的初始化和绘制方法
+因此，我们将 ``Shape(图形)`` 这一对象抽象出来，提供了验证和绘制的接口，并且提供默认的绘制实现，
+调用绘制接口在图上进行绘制则由 ``Painter(绘制器)`` 完成。开发人员只需要关注图形的初始化和绘制方法
 的实现即可。
 
 
@@ -67,7 +67,7 @@ Shapes（图形）
 
         :param tuple point: 坐标点。
 
-        返回bool值，该方法用来判断输入点的类型是否为列表或者元祖，且长度是否为2，若满足则返回``True``，否则为``False``。
+        返回bool值，该方法用来判断输入点的类型是否为列表或者元祖，且长度是否为2，若满足则返回 ``True`` ，否则为 ``False`` 。
 
     .. method:: is_valid_value(point)
 
@@ -75,7 +75,7 @@ Shapes（图形）
 
         :param tuple point: 坐标点。
 
-        返回bool值，该方法用来判断输入点中元素是否是整数(或者为可以转换成整数的字符串)。
+        返回bool值，该方法用来判断输入点中元素是否是整数（或者为可以转换成整数的字符串）。
 
     .. method:: _equal_points(p1, p2)
 
@@ -90,7 +90,7 @@ Shapes（图形）
 
         :param list coordinates: 坐标列表。
 
-        对传入的坐标参数进行校验，默认返回 ``True`` ，子类根据图形实现。
+        对传入的坐标参数进行校验，默认返回 ``True`` ，子类根据具体图形实现自己的校验方式。
 
     .. method:: normalize(coordinates)
 
@@ -109,7 +109,7 @@ Shapes（图形）
         ``@property``
 
         返回该图形的绘制颜色。
-        需要注意的是，因为``OpenCV``中(R, G, B)是反向的，如果 ``self._color`` 是 ``list`` 或者 ``tuple``
+        需要注意的是，因为 ``OpenCV`` 中(R, G, B)是反向的，如果 ``self._color`` 是 ``list`` 或者 ``tuple``
         则对其逆序。
 
     .. method:: draw_on(im)
@@ -290,101 +290,78 @@ Shapes（图形）
 Painter（绘制器）
 =========================
 
+.. class:: GeneralPainter(image_path, pallet=None, autofill=False, use_default=False, persistent=True)
 
+    **GeneralPainter** 提供了整合多个图形，对图像按照多种方式进行绘制的能力。为 ``GeneralPainter``
+    提供图片的完整路径和待绘制的 ``Shapes`` 列表，即可输出效果图（draw），掩模图（masking）
+    和合成图（blend）。对于输出图形的颜色，既可以在实例化 ``Shapes`` 的时候定义，也可以向
+    ``GeneralPainter`` 提供一个pallet（调色板），指定每个label和color的映射关系，来控制
+    图形绘制颜色的选择。
 
-moose.toolbox.GeneralPainter
-=============================
+    :param str image_path: 图片路径，如果不存在会抛出 ``IOError`` 。
+    :param dict pallet: 标签和颜色的映射表，提供了 ``shape`` 的label对应的颜色。
+    :param bool autofill: 当 ``shape`` 的label在 ``pallet`` 中不存在时，是否随机生成
+        一个颜色，如果为 ``False`` 时，会抛出 ``ImproperlyConfigured`` 。
+    :param bool use_default: 为 ``True`` 时，使用 ``shape`` 的color属性的值作为绘制的
+        颜色。
+    :param bool persistent: 当 ``autofill`` 为 ``True`` 时，是否所有图形绘制使用相同的
+        label到color的映射。
 
-.. class:: GeneralPainter(object)
+    .. attribute:: shape_line_cls
 
-    该类根据用户输入的参数不同实现颜色的多样化，如用户提供完整的pallet(托盘)，包含每一个可能的label和color，如果缺失则报错。如果用户没有提供pallet且属性use_default=True，全部统一使用一种颜色
-    来填充。或者用户提供不完整的或没有提供pallet，且属性autofill=True, use_default=False则使用随机颜色来填充，但每个label必须是唯一的。
+        指定实例化图形 **线** 的类，默认为 ``LineString``。
 
-    GeneralPainter是所有Painter的基类，它定义了Painter子类应该包含的属性并且提供了默认实现。
-    这个类用来展示一个图形对象，它定义了`coordinates`坐标, `label`标签,'color'颜色,'thickness'线宽,'filled'填充等属性，；最后，我们通过实现规定的接口，保证不同的数据格式提供了一套统一的接口。
+    .. attribute:: shape_point_cls
 
-    .. attribute:: shape_line_cls = LineString
+        指定实例化图形 **点** 的类，默认为 ``Point``。
 
-        线串类
+    .. attribute:: shape_polygon_cls
 
-    .. attribute:: shape_point_cls = Point
+        指定实例化图形 **多边形** 的类，默认为 ``Polygon``。
 
-        点类
+    .. attribute:: shape_rectangle_cls
 
-    .. attribute:: shape_polygon_cls = Polygon
+        指定实例化图形 **矩形** 的类，默认为 ``Rectangle``。
 
-        多边形类
-
-    .. attribute:: shape_rectangle_cls = Rectangle
-
-        矩形类
-
-    .. attribute:: persistent_pallet  = {}
-
-        持久化托盘
-
-    .. attribute:: image_path
-
-        定义图片标注后存放的路径
-
-    .. attribute:: im
-
-        根据图片地址利用CV2读取的图片对象
-
-    .. attribute:: _autofill
-
-        定义是否自动添加随机颜色
-
-    .. attribute:: _use_default
-
-        用户没有提供pallet，全部统一使用一种颜色来填充；
-
-    .. attribute:: _persistent
-
-        定义托盘是否设置持久化
-
-    .. attribute:: _pallet
-
-        定义如果托盘没有设置持久化等于True，则重置托盘
-
-    .. attribute:: _shapes
-
-        定义图形对象列表
 
     .. method:: get_color(label)
 
-        :param str label: 颜色标签
+        :param str label: 图形标签
 
-        该方法实现通过输入的颜色标签获取颜色，若托盘不存在则自动填充随机颜色
+        返回图形标签对应的颜色，该值受 ``pallet`` ， ``autofill`` ， ``use_default`` 的影响，有以下三种可能：
+
+        1. 当 ``use_default`` 为 ``True`` 的时候，返回 ``None`` ；
+        2. 当 ``use_default`` 为 ``False`` ，``pallet`` 包含该label对应的color，返回该值；
+        3. 当 ``use_default`` 为 ``False`` ，``pallet`` 不包含该label，且 ``autofill`` 为 ``True`` 时，随机返回一种颜色；
 
     .. method:: add_color(label, color)
 
-        :param str label: 颜色标签
+        :param str label: 图形标签
         :param tuple color: 颜色
 
-        该方法实现为托盘添加颜色
+        添加一对标签和颜色的对应关系到 ``pallet`` 中。
 
     .. method:: update_pallet(pallet)
 
-        :param dict pallet: 托盘
+        :param dict pallet: 标签和颜色的映射表
 
-        该方法实现将原有的托盘更新成输入的托盘
+        更新 ``pallet`` 的标签和颜色的映射。
 
     .. method:: add_shape(shape)
 
         :param object shape: 图形对象
 
-        该方法实现向图形列表添加图形对象
+        添加一个待绘制的图形对象。
 
     .. method:: from_shapes(shapes)
 
-        :param generator shapes: 图形对象生成器
+        :param list shapes: 图形对象列表或生成器
 
-        该方法实现在图形对象是生成器的情况下将其添加到图形对象列表中
+        添加多个待绘制的图形对象。
 
     .. method:: clear()
 
-        该方法用来清空图形对象列表
+        清空待绘制的图形对象列表。
 
     .. method:: add_line(p1, p2, label, **options)
 
@@ -393,7 +370,7 @@ moose.toolbox.GeneralPainter
         :param str label: 图形标签
         :param dict options: 参数
 
-        添加线图形对象
+        实例化并添加线图形对象。
 
     .. method:: add_point(p, lable, **options)
 
@@ -401,7 +378,7 @@ moose.toolbox.GeneralPainter
         :param str label: 图形标签
         :param dict options: 参数
 
-        添加点图形对象
+        实例化并添加点图形对象。
 
     .. method:: add_rectangle(p1, p2, label, **options)
 
@@ -410,7 +387,7 @@ moose.toolbox.GeneralPainter
         :param str label: 图形标签
         :param dict options: 参数
 
-        添加矩形图形对象
+        实例化并添加矩形图形对象。
 
     .. method:: add_polygon(pts, label, **options)
 
@@ -418,25 +395,30 @@ moose.toolbox.GeneralPainter
         :param str label: 图形标签
         :param dict options: 参数
 
-        添加多边形图形对象
+        实例化并添加多边形图形对象。
 
     .. method:: render(canvas)
 
-        :param object canvas: 画布即目标图像文件
+        :param object canvas: 待绘制的目标图像文件
 
-        该方法实现将每个图形对象画在画布上，返回该画布
+        绘制图形列表中的图形到canvas上：::
+
+            for shape in self._shapes:
+                shape.set_color(self.get_color(shape._label))
+                shape.draw_on(canvas)
+            return canvas
 
     .. method:: draw(filename)
 
         :param str filename: 图片对象名称
 
-        该方法实现不在原始的对象文件上绘制，而是复制一份原始文件进行绘制，重新生成一个文件名为filename的图像文件
+        将图形列表中的图形绘制到原始图像中。
 
     .. method:: masking(filename)
 
         :param str filename: 图片对象名称
 
-        该方法实现不在原始的对象文件上绘制，通过在一个零形矩阵上进行绘制，生成一个文件名为filename的图像文件
+        将图形列表中的图形绘制到与原始图像等尺寸的所有值为 (0, 0, 0) 的图像上。
 
 
     .. method:: blend(filename, alpha=0.7, gamma=0.0)
@@ -445,4 +427,6 @@ moose.toolbox.GeneralPainter
         :param int alpha: 第一个数组元素的权重值
         :param int gamma: 标量，在按位与计算中将标量加到每个和中，调整整体颜色
 
-        该方法实现原始图片和mask图片的叠加，生成一个文件名为filename的图像文件
+        叠加原始图片和mask图，按照如下公式生成：::
+
+            dst = alpha * src1 + (1 - alpha) * src2 + gamma
