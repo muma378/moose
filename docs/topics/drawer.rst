@@ -37,15 +37,15 @@ Shapes（图形）
     方法提供了默认实现。
 
     :param list coordinates: 表示图形的坐标点的集合。对于不同的图形可能有不同的格式要求，例如对于点，
-        要求``coordinates``的值是包含两个元素的列表``[x, y]``，对于多边形，要求是``[[x1, y1],
-        [x2, y2] ... [xn, yn], [x1, y1]]`` 的格式，等等。对于具体格式的检查在``_is_valid_coordinates``
+        要求 **coordinates** 的值是包含两个元素的列表 ``[x, y]`` ，对于多边形，要求是 ``[[x1, y1],
+        [x2, y2] ... [xn, yn], [x1, y1]]`` 的格式，等等。对于具体格式的检查在 ``_is_valid_coordinates()``
         中有相应的实现。
     :param str label: 该图形对应物体的标签。
     :param tuple color: 该图形被绘制时的颜色，可以是一个整型（灰度图）也可以是包含三个整型的元组（RGB）。
-        默认值是 ``default_color = settings.DEFAULT_COLOR``。
+        默认值是 ``default_color = settings.DEFAULT_COLOR`` 。
     :param boolean filled: 该图形被绘制时是采用内部填充的方式还是绘制轮廓的方式，默认值根据类变量
         ``drawn_filled`` 决定，对于线、点等图形不发挥作用。
-    :param int thickness: 该图形被绘制时的线的粗细，默认值为``default_thickness = settings.DEFAULT_THICKNESS``
+    :param int thickness: 该图形被绘制时的线的粗细，默认值为 ``default_thickness = settings.DEFAULT_THICKNESS``
     :param dict options: 其他的可选项参数。
 
 
