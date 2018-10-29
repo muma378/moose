@@ -1,14 +1,6 @@
 from __future__ import unicode_literals
 
 
-VERSION = (0, 9, 6, 'Beta', 0)
-
-def get_version(version=None):
-    return '0.9.6b'
-
-__version__ = get_version(VERSION)
-
-
 def setup(set_prefix=True):
     """
     Configure the settings (this happens as a side effect of accessing the

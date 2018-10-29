@@ -2,6 +2,7 @@ import io
 import os
 import sys
 from distutils.sysconfig import get_python_lib
+from os.path import dirname, join
 
 from setuptools import find_packages, setup
 
@@ -27,7 +28,8 @@ EXCLUDE_FROM_PACKAGES = ['moose.conf.project_template',
 
 
 # Dynamically calculate the version based on django.VERSION.
-version = __import__('moose').get_version()
+with open(join(dirname(__file__), 'moose/VERSION'), 'rb') as f:
+    version = f.read().decode('ascii').strip()
 
 
 setup(
@@ -46,7 +48,7 @@ setup(
         'moose-admin = moose.core.management:execute_from_command_line',
     ]},
     install_requires=[
-        "Cython ; python_version>'3.2'",
+        "Cython",
         'pymssql>=2.1.3',
         'pymongo>=3.5.1',
         'azure-storage-blob>=1.1.0',
