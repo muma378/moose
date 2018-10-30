@@ -6,6 +6,8 @@ def get_version():
         version = f.read().decode('ascii').strip()
     return version
 
+__version__ = get_version()
+
 def setup(set_prefix=True):
     """
     Configure the settings (this happens as a side effect of accessing the
