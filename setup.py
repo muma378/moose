@@ -28,8 +28,7 @@ EXCLUDE_FROM_PACKAGES = ['moose.conf.project_template',
 
 
 # Dynamically calculate the version based on django.VERSION.
-with open(join(dirname(__file__), 'moose/VERSION'), 'rb') as f:
-    version = f.read().decode('ascii').strip()
+version = __import__('moose').get_version()
 
 
 setup(

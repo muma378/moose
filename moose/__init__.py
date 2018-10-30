@@ -1,5 +1,10 @@
 from __future__ import unicode_literals
+from os.path import join, dirname
 
+def get_version():
+    with open(join(dirname(__file__), 'VERSION'), 'rb') as f:
+        version = f.read().decode('ascii').strip()
+    return version
 
 def setup(set_prefix=True):
     """
