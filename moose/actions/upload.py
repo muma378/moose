@@ -259,7 +259,7 @@ class AverageUpload(SimpleUpload):
         """
         task_ids = self.getseq(env['task_id'])
         nshare=int(env['nshare'])
-        self.assert_equal_size(task_ids, range(env['nshare']))
+        self.assert_equal_size(task_ids, range(nshare))
 
         files = []
         for root in self.get_roots(env):
