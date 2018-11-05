@@ -258,7 +258,7 @@ class AverageUpload(SimpleUpload):
         List files to upload and belonged container.
         """
         task_ids = self.getseq(env['task_id'])
-        nshare=int(env['nshare'])
+        nshare = int(env['nshare'])
         self.assert_equal_size(task_ids, range(nshare))
 
         files = []
