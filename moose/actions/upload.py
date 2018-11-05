@@ -239,7 +239,7 @@ class VideosUpload(SimpleUpload):
         return groups
 
 
-class AverageUpload(BaseUpload):
+class AverageUpload(SimpleUpload):
     """
     Upload multiple tasks in an action.
     """
@@ -258,7 +258,8 @@ class AverageUpload(BaseUpload):
         List files to upload and belonged container.
         """
         task_ids = self.getseq(env['task_id'])
-        self.assert_equal_size(task_ids, range(env['nshare']))
+        nshare = int(env['nshare'])
+        self.assert_equal_size(task_ids, range(nshare))
 
         files = []
         for root in self.get_roots(env):
@@ -272,7 +273,7 @@ class AverageUpload(BaseUpload):
             context['task_id']  = task_id
             # get a slice of files for one time
             start = i * num_per_share
-            end   = min(start+num_per_share, len(blob_pairs))
+            end   = min(start+num_per_share, len(files))
             context['files'] = files[start:end]
             self.set_context(context, i)
             yield context
