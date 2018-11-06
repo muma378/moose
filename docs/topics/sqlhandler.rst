@@ -1,6 +1,6 @@
 .. _topics-models:
 
-=================
+===================
 连接器（Connection）
 =================
 
@@ -22,44 +22,73 @@ moose.connection.BaseSQLHandler
 
 .. class:: moose.connection.sqlhandler.BaseSQLHandler(settings_dict,host,conn)
 
-    BaseSQLHandler是所有关系型数据库操作接口类的基类,它定义了Handler子类应该包含的属性、需要实现的接口并且为通用方法提供了默认实现。
+    BaseSQLHandler为其子类提供一些通用的方法和接口，实现最基础的连接功能，子类根据需求可在其基础上进行扩展。
 
-    :param dict settings_dict: 包含数据配置的字典。
-    :param str host: 要连接的数据库的主机地址
-    :param object conn:  连接对象
+    :param dict settings_dict: 包含数据配置的字典，包含如 ``HOST`` （要连接的数据库的主机地址），``PORT`` （端口），``USER`` （用户名） ， ``PASSWORD`` （用户密码） 以及 ``CHARSET`` （编码方式），如果需要给数据表起别名还可能包括 ``TABLE_ALIAS`` （给数据表起别名）。
 		
     .. method:: __del__()
 		
 		该方法主要是用来断开数据库的连接。
 
-    .. method:: __connect()
+    .. method:: __connect(settings_dict)
 
-        该方法是用来通过调用get_connection函数进行数据的连接操作的，如果连接成功返回连接对象，如果没有连接成功或者连接超过指定的次数则抛出错误。
+        该方法是预留的接口函数，子类必须实现，子类可以根据要连接的数据库类型的不同进行设置并连接，该方法返回数据库连接对象。
 		
-    .. method:: get_connection()
+    .. method:: get_connection(settings_dict)
 
-        该方法是预留的接口函数，子类必须实现，子类可以根据要连接的数据库类型的不同进行设置并连接。
+        该方法用来判断数据库配置信息是否正确及实现限制重试次数和增加重试间隔时间，如果连接成功则调用 ``_connect()`` 方法返回连接对象，否则抛错。
 
     .. method:: close()
 
-        该方法主要是用来断开数据库的连接并重置连接和游标。
+        该方法首先判断数据库是否断开，若断开则重置连接和游标，否则抛错。
+
+    .. method:: _close()
+
+        该方法定义关闭数据库连接。
+
+    .. method:: _get_cursor()
+
+        该方法返回该连接对象的游标。
 	
-    .. method:: connect()
+    .. method:: execute(operation, operator, *args)
 
-        该方法是调用__connect()实现连接功能，并实现对于连接请求的间断化处理，保证返回可靠的连接。
+        :param str operation: sql语句。
+        :param funtion operator: 真正执行sql操作的函数体，该参数根据调用该方法的主体不同而实现不同的功能。
+        :param str args: sql语句参数。
 
-    .. method:: exec_query(sql_query)
+        该方法对sql语句进行判断，若存在，则获取该连接的游 标及sql语句模板并传入的函数体 ``operator`` 返回执行结果。
 
-    	:param str sql_query: sql查询语句。
+    .. method:: exec_query(operation)
 
-        该方法用来根据输入的sql执行查询操作，首先判断执行输入的sql是否合法以及连接是否正常，如果都满足条件则执行该条sql语句。
+    	:param str operation: sql查询语句。
 
-    .. method:: exec_commit(sql_commit)
+        ::
+
+            def _operator(cursor, operation, *args):
+                cursor.execute(operation)
+                result = cursor.fetchall()
+                return result
+
+        该方法用来根据输入的sql语句及内部 ``operator`` 函数作为参数调用excute()方法执行查询操作。
+
+    .. method:: exec_commit(operation)
 		
-		:param str sql_commit: sql增删改语句。
-		
-		该方法用来根据输入的sql执行增删改操作，首先判断执行输入的sql是否合法以及连接是否正常，如果都满足条件则执行该条sql语句。
+		:param str operation: sql增删改语句。
 
-    .. method:: exec_many()	
+        ::
+
+            def _operator(cursor, operation, *args):
+                cursor.execute(operation)
+                self._conn.commit()
+                naffected = cursor.rowcount
+                stdout.info("Operation completed with '{}' rows affected.".format(naffected))
+                return naffected
 		
-		该方法是预留接口函数，用来批量执行增删改sql语句，子类可根据自行实现。
+		该方法用来根据输入的sql语句及内部 ``operator`` 函数作为参数调用excute()方法执行增删改操作。
+
+    .. method:: exec_many(operation, params_seq)
+
+        :param str operation: sql增删改语句。
+        :param str params_seq: 参数列表。	
+		
+        该方法是预留接口函数，用来批量执行增删改sql语句，子类可根据具体需求自行实现。
