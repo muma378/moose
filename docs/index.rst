@@ -1,4 +1,4 @@
-.. _topics-index
+.. _topics-index:
 
 Welcome to Moose's documentation!
 =================================
@@ -45,11 +45,10 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
    topics/models
    topics/order
    topics/app-templates
-   topics/connections
-   topics/process
+   topics/connection
+   topics/toolbox
    topics/settings
    topics/exceptions
-   topics/drawer
 
 :doc:`topics/commands`
     通过Moose的命令行工具来管理你的Moose项目。
@@ -66,10 +65,10 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
 :doc:`topics/app-templates`
     打包app，复用代码结构。
 
-:doc:`topics/connections`
-    连接Azure，Mongo，SQLServer/MySQL以及SMB。
+:doc:`topics/connection`
+    连接Azure，MongoDB，SQLServer/MySQL。
 
-:doc:`topics/process`
+:doc:`topics/toolbox`
     便捷和统一的多媒体处理类和函数。
 
 :doc:`topics/settings`
@@ -78,8 +77,6 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
 :doc:`topics/exceptions`
     异常抛出说明和推荐使用惯例。
 
-:doc:`topics/drawer`
-    图形绘制相关。
 
 .. _section-extra:
 

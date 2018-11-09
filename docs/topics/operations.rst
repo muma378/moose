@@ -1,29 +1,31 @@
-=============================
-moose.connection.operations
-=============================	
+.. _topics-conn-ops:
 
-	用户在操作数据库时需要调用数据库接口类，而要执行某次具体的操作必须要有确定的sql语句及配置信息，Operation类将数据库接口类对象作为其参数，配合sql语句模板进行封装来适配不同的数据操作需求，使得在其上的各种动作（Action）可以使用相同的接口。
+=============================
+SQL操作
+=============================
+
+用户在操作数据库时需要调用数据库接口类，而要执行某次具体的操作必须要有确定的sql语句及配置信息，Operation类将数据库接口类对象作为其参数，配合sql语句模板进行封装来适配不同的数据操作需求，使得在其上的各种动作（Action）可以使用相同的接口。
 
 .. class:: BaseOperation(handler)
 
     该类是所有operation类的基类，定义了类的必要配置而更多的功能则需子类根据需求自行扩展。
 
     :param object handler: 数据库接口类对象
-		
+
     .. attribute:: operation_template = None
-		
+
 		定义查询语句模板默认为None,其子类可根据不同的需求定制sql语句模板
 
     .. attribute:: base_handler_cls = sqlhandler.BaseSQLHandler
-		
-		定义默认数据库操作的接口类为 ``sqlhandler.BaseSQLHandler`` 
-		
+
+		定义默认数据库操作的接口类为 ``sqlhandler.BaseSQLHandler``
+
     .. method:: create_from_context(query_context)
 
 		``@classmethod``
-	
+
 		:param dict query_context: 数据库查询配置信息，包括数据库配置信息和数据库接口类
-		
+
 		该方法根据输入的数据库配置信息首先判断是否合法，返回接口类对象
 
 
@@ -32,9 +34,9 @@ moose.connection.operations
 	该类是 ``BaseOperation`` 的子类，在继承基类的同时增加了调用数据库接口类执行查询操作。
 
 	.. method:: query(**context)
-		
-		:param dict context: 查询语句模板的参数 
-		
+
+		:param dict context: 查询语句模板的参数
+
 		该方法根据输入的查询语句参数生成完整的sql语句并调用数据库接口类方法执行查询操作。
 
 .. class:: BaseGuidQuery(BaseQuery)
@@ -42,17 +44,17 @@ moose.connection.operations
 	该类是``BaseQuery``的子类，返回根据给定参数查询 ``SourceGuid`` 和 ``ResultGuid`` 字段的值。
 
     :param object handler: 数据库接口类对象
- 
+
 	.. attribute::  operation_template = ("select dr.SourceGuid, dr.DataGuid from $tables where $conditions ")
-	
-		定义查询语句的模板，这里定义了查询语句结果需要返回的字段为 ``SourceGuid`` 和 ``ResultGuid`` 
-	
+
+		定义查询语句的模板，这里定义了查询语句结果需要返回的字段为 ``SourceGuid`` 和 ``ResultGuid``
+
     .. attribute:: tables = None
-	
+
 		定义查询语句的数据表
 
     .. attribute:: conditions = None
-	
+
 		定义查询语句的条件
 
 .. class:: AllGuidQuery(BaseGuidQuery)
@@ -60,11 +62,11 @@ moose.connection.operations
 	该类是 ``BaseGuidQuery`` 的子类，指定了查询语句的数据表 ``$table_result dr`` 和查询条件字段 ``dr.ProjectId = {project_id}``
 
 	.. attribute:: tables = "$table_result dr"
-	
-		定义查询语句的数据表为 ``table_result`` 并将该表重命名为 ``dr`` 
+
+		定义查询语句的数据表为 ``table_result`` 并将该表重命名为 ``dr``
 
 	.. attribute:: conditions ="dr.ProjectId = {project_id}"
-	
+
 		定义查询语句的条件数据表中的ProjectId与输入的值进行匹配。
 
 .. class:: StatusGuidQuery(AllGuidQuery)
@@ -72,7 +74,7 @@ moose.connection.operations
 	该类是 ``AllGuidQuery`` 的子类，它在基类条件的基础上新增了数据表的状态作为条件字段，使查询更精细化。
 
 	.. attribute:: conditions = "dr.ProjectId = {project_id} and dr.status = {status}"
-	
+
 		定义查询语句模板的条件字段
 
 	.. attribute:: STATUS = {
@@ -81,7 +83,7 @@ moose.connection.operations
 				        'refuse': 2,
 				        'revised': 3,
 				    }
-	
+
 		定义查询语句的条件数据表中的数据表状态
 
 
@@ -90,7 +92,7 @@ moose.connection.operations
 	该类是 ``AllGuidQuery`` 的子类，它在基类条件的基础上新增了数据表中的数据创建时间字段作为条件字段，用来获取在给定日期时间之前或之后创建的记录。
 
 	.. attribute::   conditions = ("dr.ProjectId = {project_id} and dr.Date {less_or_more} '{datetime}'")
-	
+
 		定义查询语句模板的条件字段为项目ID和数据表中的数据创建时间
 
 .. class:: AccessedTimeGuidQuery(AllGuidQuery)
@@ -98,7 +100,7 @@ moose.connection.operations
 	该类是 ``AllGuidQuery`` 的子类，它在基类条件的基础上新增了数据表中的最后访问时间作为条件字段，用来获取在给定日期时间之前或之后访问的记录。
 
 	.. attribute:: conditions = ("dr.ProjectId = {project_id} and dr.LastEditTime {less_or_more} '{datetime}'")
-	
+
 		定义查询语句模板的条件字段为项目ID和数据表中的数据最后访问时间
 
 .. class:: AccountGuidQuery(BaseGuidQuery)
@@ -108,9 +110,9 @@ moose.connection.operations
 
 	.. attribute::  tables = "$table_result dr, $table_person ps"
 
-		定义查询语句中数据表为 ``table_result`` 及 ``table_person`` 并将它们重命名为 ``dr`` 和 ``ps`` 
+		定义查询语句中数据表为 ``table_result`` 及 ``table_person`` 并将它们重命名为 ``dr`` 和 ``ps``
 
-	.. attribute:: conditions = ("dr.ProjectId = {project_id} and dr.UserGuid = ps.ProviderUserKey 
+	.. attribute:: conditions = ("dr.ProjectId = {project_id} and dr.UserGuid = ps.ProviderUserKey
 					and ""ps.Account in {accounts}")
 
 		定义了查询语句模板的条件字段为``ps.Account`` 、 ``dr.ProjectId`` 、 ``ps.Account`` 以及 ``dr.UserGuid = ps.ProviderUserKey``
@@ -121,13 +123,13 @@ moose.connection.operations
 	该类是 ``BaseGuidQuery`` 的子类，它将基类的单表查询通过 ``ds.DataGuid = dr.SourceGuid`` 连接变成多表联合查询且查询条件字段为 ``ds.Title`` 、 ``ds.DataGuid = dr.SourceGuid`` 及ProjectId字段等，获取指定标题的记录。
 
 	.. attribute::   tables = "$table_source ds, $table_result dr"
-	
-		定义查询语句中数据表为 ``table_source`` 及 ``table_result`` 并将它们重命名为 ``ds`` 和 ``dr`` 
+
+		定义查询语句中数据表为 ``table_source`` 及 ``table_result`` 并将它们重命名为 ``ds`` 和 ``dr``
 
 	.. attribute::       conditions = ("ds.DataGuid = dr.SourceGuid and ds.ProjectId = {project_id} and "
                          dr.ProjectId = {project_id} and ds.Title in {titles}")
 
-        定义了查询语句模板的条件字段为 ``ds.Title`` 、 ``ds.DataGuid = dr.SourceGuid`` 和 ``ds.ProjectId = {project_id}`` 以及 ``dr.ProjectId = {project_id}`` 
+        定义了查询语句模板的条件字段为 ``ds.Title`` 、 ``ds.DataGuid = dr.SourceGuid`` 和 ``ds.ProjectId = {project_id}`` 以及 ``dr.ProjectId = {project_id}``
 
 
 .. class:: BaseUsersQuery(BaseQuery)
@@ -144,7 +146,7 @@ moose.connection.operations
 		定义查询语句中预留的查询字段，默认为空
 
 	.. attribute::   tables = ""
-	
+
 		定义查询语句中预留的数据表，默认为空
 
 	.. attribute::   conditions = ""
@@ -158,7 +160,7 @@ moose.connection.operations
 
 	.. attribute::   fields = ", ps.Account"
 
-		该属性定义了向模板中添加了查询字段 ``ps.Account``	
+		该属性定义了向模板中添加了查询字段 ``ps.Account``
 
 
 .. class:: UserGuidInProjectQuery(BaseQuery)
@@ -264,12 +266,12 @@ moose.connection.operations
 	该类继承了 ``BaseOperation`` ，定义了单条数据插入的方法，其子类可通过修改sql语句模板进行不同的操作。
 
 	.. method:: execute(**context)
-		
-		:param dict context: 查询语句模板的参数 
-		
+
+		:param dict context: 查询语句模板的参数
+
 		该方法根据输入的模板参数按照指定的sql语句执行插入数据操作，返回插入后的结果。
-			
-	
+
+
 .. class:: AcqToMarkByUser(BaseInsert)
 
 	该类定义了一个根据条件字段为 ``ProjectId`` 、 ``UserGuid`` 且 ``isValid = 1`` 查询得到数据然后插入指定数据表 ``table_source`` 的模板
@@ -298,9 +300,9 @@ moose.connection.operations
 	该类继承了 ``BaseOperation`` ，定义了 ``批量`` 插入数据的方法，其子类可通过修改sql语句模板进行不同的操作。
 
 	.. method:: execute(**context)
-		
-		:param dict context: 查询语句模板的参数 
-		
+
+		:param dict context: 查询语句模板的参数
+
 		该方法根据输入的模板参数按照指定的sql语句执行插入数据操作，返回插入后的结果。
 
 .. class:: BulkAcqToMarkByDataguid(BulkInsert)
@@ -308,10 +310,3 @@ moose.connection.operations
 
 	.. attribute:: operation_template = ("insert into $table_source ({project_id},%s,%s,%s,%s,%f,%s,
 											{create_time}) ")
-
-
-
-
-
-
-
