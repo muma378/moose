@@ -43,19 +43,23 @@ class DownloadWorker(_threading.Thread):
         while True:
             try:
                 data_model = self.queue.get(timeout=self.timeout)
-                data = self.fetch(data_model.filelink, data_model.retry)
-
-                if data != None:
-                    self.write(data, data_model.dest_filepath)
-                    self.callback(data_model)
-                    self.stats.inc_value("download/ok")
+                if not self.overwrite and \
+                    os.path.exists(data_model.dest_filepath):
+                    self.stats.inc_value("download/conflict")
                 else:
-                    if data_model.retry > 0:
-                        data_model.retry -= 1
-                        self.queue.put(data_model)
-                        self.stats.inc_value("download/retry")
+                    data = self.fetch(data_model.filelink, data_model.retry)
+
+                    if data != None:
+                        self.write(data, data_model.dest_filepath)
+                        self.callback(data_model)
+                        self.stats.inc_value("download/ok")
                     else:
-                        self.stats.inc_value("download/failed")
+                        if data_model.retry > 0:
+                            data_model.retry -= 1
+                            self.queue.put(data_model)
+                            self.stats.inc_value("download/retry")
+                        else:
+                            self.stats.inc_value("download/failed")
 
                 self.queue.task_done()
 
@@ -84,11 +88,6 @@ class DownloadWorker(_threading.Thread):
         return data
 
     def write(self, data, filepath):
-        if os.path.exists(filepath):
-            self.stats.inc_value("download/conflict")
-            if not self.overwrite:
-                return
-
         lock.acquire()
         makeparents(filepath)
         lock.release()
