@@ -258,6 +258,33 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
         logger.info("Commitment executed successfully.")
         return
 
+    def exec_many(self, sql_commit, rows):
+        import _mssql
+        if not sql_commit:
+            logger.error("Invalid SQL statement for no content, aborted.")
+            return False
+
+        if not self.conn:
+            self.conn = self.connect()
+
+        try:
+            logger.info("Executing the statement:\n\t'%s' with %d rows." % (sql_commit, len(rows)))
+            insert_op, _, value_op = sql_commit.rpartition('values')
+            insert_op += 'values'
+            for row in rows:
+                insert_op += value_op % row + ','
+            insert_op = insert_op[:-1]
+            self.conn.execute_non_query(insert_op)
+        except _mssql.MssqlDatabaseException as e:
+            if e.number == 2714 and e.severity == 16:
+                # table already existed, so quieten the error
+                pass
+            else:
+                raise # re-raise real error
+
+        logger.info("Commitment executed successfully.")
+        return
+
 
 class MongoDBHandler(object):
     """
