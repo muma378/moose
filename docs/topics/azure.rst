@@ -39,7 +39,7 @@ moose.connection.cloud.AzureBlobService
 		:param str blob_name: blob名称
 		:param str filepath: 要上传文件的路径
 	
-		该方法根据参数 ``filepath``上传文件到容器中，生成带有属性和元数据的 ``Blob`` 实例
+		该方法根据参数 ``filepath`` 上传文件到容器中，生成带有属性和元数据的 ``Blob`` 实例
 	
     .. method:: upload(container_name, blob_pairs, overwrite=False)
 
