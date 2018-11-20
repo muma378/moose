@@ -192,5 +192,4 @@ class AzureBlobServiceTest(unittest.TestCase):
             self.azure_handler.copy_blobs(None, 'test', None)
 
     def tearDown(self):
-        
         self.mock_azure = self.azure_patcher.stop()
