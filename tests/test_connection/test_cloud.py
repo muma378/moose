@@ -1,10 +1,5 @@
 # -*- coding:utf-8 -*-
 
-
-import sys  # 要重新载入sys。因为 Python 初始化后会删除 sys.setdefaultencoding 这个方 法
-
-reload(sys)
-sys.setdefaultencoding('utf-8')
 import unittest
 import mock
 from azure.storage.blob import BlockBlobService, PublicAccess
