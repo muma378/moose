@@ -153,8 +153,7 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.mock_azure.reset_mock()
         blobs_in_container = self.azure_handler.list_blobs('test')
 
-
-        #没写完
+        # 没写完
 
     #     self.azure_handler.download('test', 'dest', blob_names=None)
     #     self.mock_blob_service.download.assert_called_with(blob_names=None)  # 是不是通过某个参数调用的
@@ -175,12 +174,10 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.azure_handler.delete_blobs('test', [])
         # self.mock_blob_service.delete_blob.assert_called_with('test', '')     #循环情况   ？？？？、
 
-
         self.mock_azure.reset_mock()  # 重置mock对象
         self.mock_blob_service.delete_blob = mock.Mock(side_effect=AzureMissingResourceHttpError('A', 'B'))  # 判断抛错
         self.mock_blob_service.delete_blob.assert_not_called()
-        self.assertEqual(self.azure_handler.delete_blobs('test', []), [])   #抛错，没有向列表添加
-
+        self.assertEqual(self.azure_handler.delete_blobs('test', []), [])  # 抛错，没有向列表添加
 
     def test_copy_blobs(self):
         blob_names = None
@@ -189,12 +186,10 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.azure_handler.copy_blobs(blob_names, container_name, src_container=src_container)
         self.mock_blob_service.list_blobs.assert_called_with(src_container, prefix=None, timeout=300)
 
-
         self.mock_azure.reset_mock()
 
-        with self.assertRaises(ImproperlyConfigured):   #blob_names, src_container都是None 应该抛错
-            self.azure_handler.copy_blobs(None,'test',None)
-
+        with self.assertRaises(ImproperlyConfigured):  # blob_names, src_container都是None 应该抛错
+            self.azure_handler.copy_blobs(None, 'test', None)
 
     def tearDown(self):
         self.mock_azure = self.azure_patcher.stop()
