@@ -319,7 +319,7 @@ class MongoDBHandler(object):
             raise ConnectionTimeout
         except errors.AutoReconnect as e:
             count = 1
-            logger.warn("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, counter))
+            logger.warn("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, count))
             while count <= RETRY_TIME:
                 try:
                     time.sleep(5)
