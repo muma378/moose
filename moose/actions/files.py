@@ -31,9 +31,10 @@ class FileObject(object):
     """
     LABEL_CHOICES = []
 
-    def __init__(self, filepath, actor):
+    def __init__(self, filepath):
+        if not os.path.exists(filepath):
+            raise IllegalFileObject("File '{}' not found".format(filepath))
         self.filepath = filepath
-        self.actor    = actor
         dirname, self.filename = os.path.split(filepath)
 
         self._get_meta()
