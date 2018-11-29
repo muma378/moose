@@ -7,7 +7,9 @@ import urllib
 from azure.storage.blob import BlockBlobService, PublicAccess
 from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError
 
+from moose.core.exceptions import ImproperlyConfigured
 from moose.utils import progressbar
+from moose.utils.encoding import escape_uri_path
 from moose.utils._os import npath, ppath, safe_join
 from moose.conf import settings
 from moose.shortcuts import get_matchfn
@@ -133,7 +135,6 @@ class AzureBlobService(object):
             filesystem.
         """
 
-
         if not self.block_blob_service.exists(container_name):
             logger.info(
                 "Container [%s] which upload to doesn't exist, "
@@ -164,6 +165,7 @@ class AzureBlobService(object):
             logger.debug("Directory '%s' does not exist, creating now..." % dirpath)
             os.makedirs(dirpath)
 
+        # TODO: changes filepath to local-filesystem
         logger.debug("Gets blob '{}' from [{}]".format(blob_name, container_name))
         blob = self.block_blob_service.get_blob_to_path(
             container_name, blob_name, filepath)
@@ -195,6 +197,8 @@ class AzureBlobService(object):
                 self.get_blob_to_path(container_name, ppath(blob_name), dest_filepath)
                 logger.debug("Got blob '{}' to '{}'.".format(blob_name, dest_filepath))
                 blobs.append(blob_name)
+            else:
+                logger.warn("Blob name '{}' specified does not exist.".format(blob_name))
 
         return blobs
 
@@ -241,7 +245,7 @@ class AzureBlobService(object):
 
     def copy_blobs(self, blob_names, container_name, src_container=None, pattern=None):
         """
-        Copy blobs listed in blob_names to the dest container.
+        Copy blobs listed in `blob_names` to the dest container.
 
         `src_container`
             if src_container was given, blob_names are OK to be relative path
@@ -272,17 +276,17 @@ class AzureBlobService(object):
                 if not blob_name.startswith('http'):
                     # extends with the account and container
                     blob_name = "http://{}/{}/{}".format(self.host, src_container, blob_name)
-                urls.append(urllib.quote(blob_name))
+                urls.append(escape_uri_path(blob_name))
             blob_names = urls
 
         blobs = []
-        logger.info("Will copy {} blobs to [{}].".format(len(urls), container_name))
-        for copy_source in progressbar.progressbar(urls, widgets=self.widgets):
+        logger.info("Will copy {} blobs to [{}].".format(len(blob_names), container_name))
+        for copy_source in progressbar.progressbar(blob_names, widgets=self.widgets):
             r = re.match(self.blob_pattern, copy_source)
             if r:
                 blob_name = r.group(3)
             else:
-                logger.error("Unable to match blob pattern: '{}'".format(copy_source))
+                logger.error("Blob name specified must be a url: '{}'.".format(copy_source))
                 continue
 
             self.block_blob_service.copy_blob(container_name, \
@@ -299,6 +303,3 @@ class AzureBlobService(object):
         self.create_container(dst_container, set_public=True)
         logger.info("Copy blobs from [{}] to [{}]".format(src_container, dst_container))
         self.copy_blobs(None, dst_container, pattern)
-
-
-azure = AzureBlobService(settings.AZURE)
