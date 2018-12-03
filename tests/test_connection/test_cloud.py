@@ -13,10 +13,11 @@ from .config import azure_settings
 
 
 class AzureBlobServiceTest(unittest.TestCase):
+    # path = 'D:\\daily\\Moose'
 
     def setUp(self):
         self.azure_patcher = mock.patch("moose.connection.cloud.BlockBlobService")
-        self.mock_azure    = self.azure_patcher.start()
+        self.mock_azure = self.azure_patcher.start()
         self.mock_blob_service = mock.MagicMock(spec=BlockBlobService)
         self.mock_azure.return_value = self.mock_blob_service
         # creates a mock instance of `AzureBlobService`
@@ -29,11 +30,11 @@ class AzureBlobServiceTest(unittest.TestCase):
         azure_handler = AzureBlobService(azure_settings)
         # tests if it was initialized with params in `config`
         self.mock_azure.assert_called_with(
-            account_name='<test>',
+            account_name='test',
             account_key='<password>',
-            endpoint_suffix='<endpoint>'
-            )
-        self.assertEqual(azure_handler.host, '<test>.blob.<endpoint>')
+            endpoint_suffix='endpoint'
+        )
+        self.assertEqual(azure_handler.host, 'test.blob.endpoint')
         self.assertEqual(azure_handler.block_blob_service, self.mock_blob_service)
 
     def test_create_container(self):
@@ -41,13 +42,13 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.azure_handler.create_container('test')
         self.mock_blob_service.create_container.assert_called_with(
             'test', fail_on_exist=True, timeout=300, public_access=None
-            )
+        )
 
         self.azure_handler.create_container('test', set_public=True)
         self.mock_blob_service.create_container.assert_called_with(
             'test', fail_on_exist=True, timeout=300,
             public_access=PublicAccess.Container
-            )
+        )
 
         self.mock_azure.reset_mock()
         # tests if it was muted when an error occured at creating containers
@@ -62,14 +63,13 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.azure_handler.list_containers()
         self.mock_blob_service.list_containers.assert_called_with(
             prefix=None, timeout=300
-            )
+        )
 
         self.azure_handler.list_containers(prefix="test-")
         self.mock_blob_service.list_containers.assert_called_with(
             prefix="test-", timeout=300
-            )
+        )
         self.assertTrue(isinstance(self.azure_handler.list_containers(), list))
-
 
     def test_list_blobs(self):
         # Since “name” is an argument to the Mock constructor,
@@ -108,14 +108,13 @@ class AzureBlobServiceTest(unittest.TestCase):
             self.azure_handler.list_blobs('test', suffix=(".wav", ".txt")),
             [])
 
-
     @mock.patch('moose.connection.cloud.os')
     def test_create_blob_from_path(self, mock_os):
         mock_os.path.exists.return_value = False
         self.assertEqual(
             self.azure_handler.create_blob_from_path("test", 'blobname', 'filepath'),
             None
-            )
+        )
 
         mock_os.path.exists.return_value = True
         self.azure_handler.create_blob_from_path("test", 'blobname', 'filepath')
@@ -130,7 +129,7 @@ class AzureBlobServiceTest(unittest.TestCase):
             ('to/blob1.txt', '/path/to/file1.txt'),
             ('to\\blob2.txt', '\\path\\to\\file2.txt'),
             ('to\\blob3.txt', '/path/to/file3.txt'),
-            ]
+        ]
 
         # container and some blobs were created before,
         # and upload with overwritting
@@ -139,17 +138,16 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.assertItemsEqual(
             self.azure_handler.upload('test', blob_pairs, overwrite=False),
             ['to/blob3.txt', ]
-            )
+        )
         mock_create_container.assert_not_called()
         mock_create_blob.assert_called_with('test', 'to/blob3.txt', '/path/to/file3.txt')
-
 
         # upload with `overwrite` set to True
         mock_create_blob.reset_mock()
         self.assertItemsEqual(
             self.azure_handler.upload('test', blob_pairs, overwrite=True),
             ['to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt']
-            )
+        )
         self.azure_handler.upload('test', blob_pairs, overwrite=True)
         mock_create_container.assert_not_called()
         mock_create_blob.assert_has_calls(
@@ -166,7 +164,6 @@ class AzureBlobServiceTest(unittest.TestCase):
         mock_create_container.assert_called_with(
             'test', set_public=True)
 
-
     @mock.patch('moose.connection.cloud.os')
     def test_get_blob_to_path(self, mock_os):
         mock_os.path.dirname = os.path.dirname
@@ -182,49 +179,49 @@ class AzureBlobServiceTest(unittest.TestCase):
         # case 1. the container does not exist
         self.mock_blob_service.exists = mock.Mock(return_value=False)
         self.assertEqual(
-            self.azure_handler.download('test', '/dest'),
+            self.azure_handler.download('test', 'dest'),
             [])
         self.assertEqual(
-            self.azure_handler.download('test', '/dest', blob_names=["blob1.txt"]),
+            self.azure_handler.download('test', 'dest', blob_names=["blob1.txt"]),
             [])
 
         # case 2. the container exists and `blob_names` was not specified
         self.mock_blob_service.exists = mock.Mock(return_value=True)
         mock_list_blobs.return_value = [
             'to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt'
-            ]
+        ]
         self.assertItemsEqual(
-            self.azure_handler.download('test', '/dest'),
+            self.azure_handler.download('test', 'dest'),
             ['to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt'])
         mock_get_blob.assert_has_calls(
             [
-                mock.call("test", "to/blob1.txt", "/dest/to/blob1.txt"),
-                mock.call("test", "to/blob2.txt", "/dest/to/blob2.txt"),
-                mock.call("test", "to/blob3.txt", "/dest/to/blob3.txt"),
-            ])
+                mock.call("test", "to/blob1.txt", os.path.join(os.getcwd(), "dest\\to\\blob1.txt")),
+                mock.call("test", "to/blob2.txt", os.path.join(os.getcwd(), "dest\\to\\blob2.txt")),
+                mock.call("test", "to/blob3.txt", os.path.join(os.getcwd(), "dest\\to\\blob3.txt"))
+            ]
+        )
 
         # case 3. the container exists and `blob_names` was specified
-        blob_names = ['to/blob1.txt', 'to\\blob2.txt',]
+        blob_names = ['to/blob1.txt', 'to\\blob2.txt', ]
         mock_get_blob.reset_mock()
         self.assertItemsEqual(
-            self.azure_handler.download('test', '/dest', blob_names=blob_names),
+            self.azure_handler.download('test', 'dest', blob_names=blob_names),
             ['to/blob1.txt', 'to\\blob2.txt'])
         mock_get_blob.assert_has_calls(
             [
-                mock.call("test", "to/blob1.txt", "/dest/to/blob1.txt"),
-                mock.call("test", "to/blob2.txt", "/dest/to\\blob2.txt"),
+                mock.call("test", "to/blob1.txt", os.path.join(os.getcwd(), "dest\\to\\blob1.txt")),
+                mock.call("test", "to/blob2.txt", os.path.join(os.getcwd(), "dest\\to\\blob2.txt")),
             ])
 
-        missing_blob_names = ['to/blob1.txt', 'to/blob4.txt',]
+        missing_blob_names = ['to/blob1.txt', 'to/blob4.txt', ]
         mock_get_blob.reset_mock()
         self.assertItemsEqual(
-            self.azure_handler.download('test', '/dest', blob_names=missing_blob_names),
+            self.azure_handler.download('test', 'dest', blob_names=missing_blob_names),
             ['to/blob1.txt'])
         mock_get_blob.assert_has_calls(
             [
-                mock.call("test", "to/blob1.txt", "/dest/to/blob1.txt"),
+                mock.call("test", "to/blob1.txt", os.path.join(os.getcwd(), "dest\\to\\blob1.txt")),
             ])
-
 
     def test_set_container_acl(self):
         self.azure_handler.set_container_acl('test', set_public=True)
@@ -239,7 +236,7 @@ class AzureBlobServiceTest(unittest.TestCase):
     def test_delete_blobs(self):
         blob_names = [
             'to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt'
-            ]
+        ]
         self.azure_handler.delete_blobs('test', blob_names)
         self.mock_blob_service.delete_blob.assert_has_calls(
             [
@@ -256,14 +253,52 @@ class AzureBlobServiceTest(unittest.TestCase):
 
     @mock.patch.object(AzureBlobService, 'list_blobs')
     def test_copy_blobs(self, mock_list_blobs):
+        # azure_handler = AzureBlobService(azure_settings)
         # case 1. `blob_names` was set to None but src_container was given
         mock_list_blobs.return_value = [
             'to/blob1.txt', 'to/blob1.wav', 'to/blob2.txt'
-            ]
+        ]
         self.assertItemsEqual(
-            self.azure_handler.copy_blobs(None, 'test', src_container='source'),
+            self.azure_handler.copy_blobs(None, 'test', src_container='source'),  # 可以匹配所有的
             ['to/blob1.txt', 'to/blob1.wav', 'to/blob2.txt'])
 
+        self.mock_blob_service.copy_blob.assert_has_calls(
+            [
+                mock.call('test', 'to/blob1.txt', 'http://{}/source/to/blob1.txt'.format(self.azure_handler.host)),
+                mock.call('test', 'to/blob1.wav', 'http://{}/source/to/blob1.wav'.format(self.azure_handler.host)),
+                mock.call('test', 'to/blob2.txt', 'http://{}/source/to/blob2.txt'.format(self.azure_handler.host)),
+            ])
+
+        self.assertItemsEqual(
+            self.azure_handler.copy_blobs(None, 'test', src_container='source', pattern='*.wav'),
+            ['to/blob1.wav'])
+        self.assertItemsEqual(
+            self.azure_handler.copy_blobs(None, 'test', src_container='source', pattern='*.txt'),
+            ['to/blob1.txt', 'to/blob2.txt'])
+
+        self.assertTrue(isinstance(self.azure_handler.copy_blobs(None, 'test', src_container='source'), list))
+
+        self.mock_blob_service.reset_mock()
+
+        # if src_container is None
         self.mock_azure.reset_mock()
-        with self.assertRaises(ImproperlyConfigured):  # blob_names, src_container都是None 应该抛错
+        with self.assertRaises(ImproperlyConfigured):
             self.azure_handler.copy_blobs(None, 'test', None)
+
+    @mock.patch.object(AzureBlobService, 'list_blobs')
+    def test_copy_container(self, mock_list_blobs):
+        mock_list_blobs.return_value = [
+            'to/blob1.txt', 'to/blob1.wav', 'to/blob2.txt'
+        ]
+
+        self.azure_handler.copy_container('source', 'test', pattern=None)
+        self.mock_blob_service.create_container.assert_called_with(
+            'test', fail_on_exist=True, timeout=300,
+            public_access=PublicAccess.Container
+        )
+
+        self.mock_blob_service.copy_blob.assert_has_calls([
+            mock.call('test', 'to/blob1.txt', 'http://{}/source/to/blob1.txt'.format(self.azure_handler.host)),
+            mock.call('test', 'to/blob1.wav', 'http://{}/source/to/blob1.wav'.format(self.azure_handler.host)),
+            mock.call('test', 'to/blob2.txt', 'http://{}/source/to/blob2.txt'.format(self.azure_handler.host))
+        ])

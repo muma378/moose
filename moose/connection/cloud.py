@@ -13,7 +13,7 @@ from moose.utils.encoding import escape_uri_path
 from moose.utils._os import npath, ppath, safe_join
 from moose.conf import settings
 from moose.shortcuts import get_matchfn
-
+import re
 import logging
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,8 @@ class AzureBlobService(object):
     the module 'BlockBlobService' from azure SDK for python.
     """
 
-    blob_pattern = 'http://([\w\.]+)/(\w+)/(.*)'
+    # blob_pattern = 'http://(\w+)/(\w+)/(.*)'
+    blob_pattern='http://([\w\.]+)/(\w+)/(.*)'
 
 
     def __init__(self, settings_dict):
@@ -257,12 +258,14 @@ class AzureBlobService(object):
             dest container.
 
         """
+        # import pdb;pdb.set_trace()
         if blob_names == None:
             if src_container:
                 blobs_in_container = self.list_blobs(src_container)
                 matchfn = get_matchfn(pattern, True)
                 # gets blobs from the src_container which matches the pattern(with ignorecase)
-                blob_names = filter(lambda x: matchfn(pattern, x), blobs_in_container)
+                # import pdb;pdb.set_trace()
+                blob_names = filter(lambda x: matchfn(x), blobs_in_container)
             else:
                 raise ImproperlyConfigured(
                     "Method `copy_blobs` is ought to be called with "
@@ -278,7 +281,7 @@ class AzureBlobService(object):
                     blob_name = "http://{}/{}/{}".format(self.host, src_container, blob_name)
                 urls.append(escape_uri_path(blob_name))
             blob_names = urls
-
+        # import pdb;pdb.set_trace()
         blobs = []
         logger.info("Will copy {} blobs to [{}].".format(len(blob_names), container_name))
         for copy_source in progressbar.progressbar(blob_names, widgets=self.widgets):
@@ -293,6 +296,7 @@ class AzureBlobService(object):
                                             blob_name, copy_source)
             logger.debug("Copied '{}' to '{}'.".format(copy_source, blob_name))
             blobs.append(blob_name)
+
         return blobs
 
     def copy_container(self, src_container, dst_container, pattern=None):
@@ -302,4 +306,4 @@ class AzureBlobService(object):
         # creates container if not exists
         self.create_container(dst_container, set_public=True)
         logger.info("Copy blobs from [{}] to [{}]".format(src_container, dst_container))
-        self.copy_blobs(None, dst_container, pattern)
+        self.copy_blobs(None, dst_container,src_container=src_container,pattern=pattern)
