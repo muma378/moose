@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 azure_settings = {
-    'ACCOUNT': '<test>',
+    'ACCOUNT': 'test',
     'KEY': '<password>',
-    'ENDPOINT': '<endpoint>',
+    'ENDPOINT': 'endpoint',
     "TIMEOUT": 300,
 }
