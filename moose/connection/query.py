@@ -312,7 +312,9 @@ class AcqToMarkByDataguid(BaseInsert):
         "WHERE DataGuid = '{data_guid}' and isValid = 1"
     )
 
-# class AcqToMarkByDataguid(BulkInsert):
-#     statement_template = (
-#         "insert into {table_source} ({project_id},%s,%s,%s,%s,%f,%s,{create_time}) "
-#     )
+class AcqsToMarkByDataguids(BulkInsert):
+    statement_template = (
+        "insert into {table_source} (ProjectID,Title,DataGuid,"
+        "DataVersion,UserGuid,Duration,FileName,CreateTime) values "
+        "({project_id},'%s','%s',%d,'%s',%s,'%s','{create_time}')"
+    )
