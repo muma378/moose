@@ -10,7 +10,7 @@ from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError
 from moose.core.exceptions import ImproperlyConfigured
 from moose.utils import progressbar
 from moose.utils.encoding import escape_uri_path
-from moose.utils._os import npath, ppath, safe_join
+from moose.utils._os import npath, ppath, safe_join, normpath
 from moose.conf import settings
 from moose.shortcuts import get_matchfn
 import re
@@ -23,8 +23,7 @@ class AzureBlobService(object):
     the module 'BlockBlobService' from azure SDK for python.
     """
 
-    # blob_pattern = 'http://(\w+)/(\w+)/(.*)'
-    blob_pattern='http://([\w\.]+)/(\w+)/(.*)'
+    blob_pattern = 'http://([\w\.]+)/(\w+)/(.*)'
 
 
     def __init__(self, settings_dict):
@@ -192,7 +191,7 @@ class AzureBlobService(object):
         for blob_name in progressbar.progressbar(\
                             blob_names, widgets=self.widgets):
             if ppath(blob_name) in blobs_in_container:
-                dest_filepath = safe_join(dest, blob_name)
+                dest_filepath = normpath(safe_join(dest, blob_name))
                 # TODO: not sure posix-style path works for files on container
                 # are windows-style
                 self.get_blob_to_path(container_name, ppath(blob_name), dest_filepath)
@@ -258,13 +257,11 @@ class AzureBlobService(object):
             dest container.
 
         """
-        # import pdb;pdb.set_trace()
         if blob_names == None:
             if src_container:
                 blobs_in_container = self.list_blobs(src_container)
                 matchfn = get_matchfn(pattern, True)
                 # gets blobs from the src_container which matches the pattern(with ignorecase)
-                # import pdb;pdb.set_trace()
                 blob_names = filter(lambda x: matchfn(x), blobs_in_container)
             else:
                 raise ImproperlyConfigured(
@@ -281,7 +278,7 @@ class AzureBlobService(object):
                     blob_name = "http://{}/{}/{}".format(self.host, src_container, blob_name)
                 urls.append(escape_uri_path(blob_name))
             blob_names = urls
-        # import pdb;pdb.set_trace()
+
         blobs = []
         logger.info("Will copy {} blobs to [{}].".format(len(blob_names), container_name))
         for copy_source in progressbar.progressbar(blob_names, widgets=self.widgets):
