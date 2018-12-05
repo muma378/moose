@@ -8,6 +8,7 @@ import httplib
 
 from moose.utils._os import makedirs, makeparents, safe_join
 from moose.utils.encoding import force_bytes
+from moose.utils.module_loading import import_string
 from moose.conf import settings
 
 """
@@ -98,21 +99,27 @@ class DownloadWorker(_threading.Thread):
 
 
 class ModelDownloader(object):
-    def __init__(self, callback, stats, timeout=None, overwrite=False, nworkers=10):
+
+    DEFAULT_WORKER_CLASS = "DownloadWorker"
+
+    def __init__(self, callback, stats, worker_cls=None, timeout=None, overwrite=False, nworkers=10):
         self.queue     = Queue.Queue()
         self.callback  = callback
         self.stats     = stats
         self.timeout   = timeout or settings.DEFAULT_TIMEOUT
         self.overwrite = overwrite
         # Run in one loop if setting DEBUG mode
-        self.nworkers  = nworkers if not settings.DEBUG else 1
+        self.nworkers  = nworkers
+        worker_cls_str = worker_cls if worker_cls else self.DEFAULT_WORKER_CLASS
+        self.worker_cls = import_string(worker_cls_str)
 
     def start(self):
-        for i in range(self.nworkers):
-            worker = DownloadWorker(self.queue, self.callback, self.stats, \
-                        self.timeout, self.overwrite)
-            worker.setDaemon(True)
-            worker.start()
+        if not settings.DEBUG:
+            for i in range(self.nworkers):
+                worker = self.worker_cls(self.queue, self.callback, self.stats, \
+                            self.timeout, self.overwrite)
+                worker.setDaemon(True)
+                worker.start()
 
     def add_task(self, data_model):
         try:
@@ -123,4 +130,10 @@ class ModelDownloader(object):
             raise e
 
     def join(self):
-        self.queue.join()
+        if settings.DEBUG:
+            # waitting for data to be handled one by one
+            _worker = self.worker_cls(
+                self.queue, self.callback, self.stats, self.timeout, self.overwrite)
+            _worker.start()
+        else:
+            self.queue.join()

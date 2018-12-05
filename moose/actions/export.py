@@ -171,12 +171,12 @@ class SimpleExport(BaseExport):
 
     def handle_model_by_callback(self, queryset, callback, context):
         downloader = ModelDownloader(callback, self.stats)
+        downloader.start()
 
         for data_model in self.enumerate_model(queryset, context):
             data_model.set_up()
             downloader.add_task(data_model)
 
-        downloader.start()
         downloader.join()
 
     def execute(self, context):
