@@ -63,7 +63,7 @@ moose.connection.sqlhander
 
     .. method:: exec_commit(operation)
 
-		:param str operation: sql增删改语句。
+        :param str operation: sql增删改语句。
 
         ::
 
@@ -74,7 +74,9 @@ moose.connection.sqlhander
                 stdout.info("Operation completed with '{}' rows affected.".format(naffected))
                 return naffected
 
-		该方法用来根据输入的sql语句及内部 ``operator`` 函数作为参数调用excute()方法执行增删改操作。
+
+        该方法用来根据输入的sql语句及内部 ``operator`` 函数作为参数调用excute()方法执行增删改操作。
+
 
     .. method:: exec_many(operation, params_seq)
 
@@ -123,6 +125,7 @@ moose.connection.mssql
 				naffected = cursor.rowcount
 				stdout.info("Operation completed with '{}' rows affected.".format(naffected))
 				return naffected
+
 
 		该方法根据输入的模板、参数及内部函数 ``_operator`` 作为参数调用 ``excute()方法`` 批量操作数据库的操作，返回执行结果
 

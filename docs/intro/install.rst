@@ -51,7 +51,7 @@ Moose完全由Python编写并且依赖于以下几个关键的Python包（Packag
 .. _virtualenvwrapper: https://virtualenvwrapper.readthedocs.io/en/latest/install.html
 .. _user guide: https://virtualenv.pypa.io/en/stable/userguide/
 .. _pip: https://pip.pypa.io/en/latest/installing/
-.. _azure: http://azure-sdk-for-python.readthedocs.io/en/v2.0.0rc6/
+.. _azure: https://azure-storage.readthedocs.io/
 .. _pymongo: https://dfproj.readthedocs.io/en/latest/
 .. _pymssql: http://pymssql.org/en/stable/
 .. _MySQLdb: https://mysqlclient.readthedocs.io/
