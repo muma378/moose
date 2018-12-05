@@ -45,7 +45,7 @@ SQL操作
 
     :param object handler: 数据库接口类对象
 
-	.. attribute::  operation_template = ("select dr.SourceGuid, dr.DataGuid from $tables where $conditions ")
+	.. attribute::  operation_template
 
 		定义查询语句的模板，这里定义了查询语句结果需要返回的字段为 ``SourceGuid`` 和 ``ResultGuid``
 
@@ -57,6 +57,12 @@ SQL操作
 
 		定义查询语句的条件
 
+
+    `operation_template` 为： ::
+
+        "select dr.SourceGuid, dr.DataGuid from $tables where $conditions "
+
+
 .. class:: AllGuidQuery(BaseGuidQuery)
 
 	该类是 ``BaseGuidQuery`` 的子类，指定了查询语句的数据表 ``$table_result dr`` 和查询条件字段 ``dr.ProjectId = {project_id}``
@@ -65,7 +71,7 @@ SQL操作
 
 		定义查询语句的数据表为 ``table_result`` 并将该表重命名为 ``dr``
 
-	.. attribute:: conditions ="dr.ProjectId = {project_id}"
+	.. attribute:: conditions = "dr.ProjectId = {project_id}"
 
 		定义查询语句的条件数据表中的ProjectId与输入的值进行匹配。
 
@@ -77,31 +83,44 @@ SQL操作
 
 		定义查询语句模板的条件字段
 
-	.. attribute:: STATUS = {
-				        'default': 0,
-				        'pass': 1,
-				        'refuse': 2,
-				        'revised': 3,
-				    }
+	.. attribute:: STATUS
 
-		定义查询语句的条件数据表中的数据表状态
+        定义查询语句的条件数据表中的数据表状态
+
+    `STATUS` 定义如下： ::
+
+        STATUS = {
+            'default': 0,
+            'pass': 1,
+            'refuse': 2,
+            'revised': 3,
+            }
 
 
 .. class:: CreatedTimeGuidQuery(AllGuidQuery)
 
 	该类是 ``AllGuidQuery`` 的子类，它在基类条件的基础上新增了数据表中的数据创建时间字段作为条件字段，用来获取在给定日期时间之前或之后创建的记录。
 
-	.. attribute::   conditions = ("dr.ProjectId = {project_id} and dr.Date {less_or_more} '{datetime}'")
+	.. attribute::   conditions
 
 		定义查询语句模板的条件字段为项目ID和数据表中的数据创建时间
+
+    `conditions` 定义如下：::
+
+        "dr.ProjectId = {project_id} and dr.Date {less_or_more} '{datetime}'"
+
 
 .. class:: AccessedTimeGuidQuery(AllGuidQuery)
 
 	该类是 ``AllGuidQuery`` 的子类，它在基类条件的基础上新增了数据表中的最后访问时间作为条件字段，用来获取在给定日期时间之前或之后访问的记录。
 
-	.. attribute:: conditions = ("dr.ProjectId = {project_id} and dr.LastEditTime {less_or_more} '{datetime}'")
+	.. attribute:: conditions
 
 		定义查询语句模板的条件字段为项目ID和数据表中的数据最后访问时间
+
+    `conditions` 定义如下：::
+
+        "dr.ProjectId = {project_id} and dr.LastEditTime {less_or_more} '{datetime}'"
 
 .. class:: AccountGuidQuery(BaseGuidQuery)
 
