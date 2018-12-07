@@ -45,7 +45,7 @@ def ivisit(src, dst=None, pattern=None, ignorecase=True):
             filepath = os.path.join(dirpath, filename)
             if anymatch(filepath):
                 # if `dst` was set, returns a pair
-                if dst:
+                if dst != None:
                     relpath = os.path.relpath(filepath, src)
                     yield (filepath, os.path.join(dst, relpath))
                 else:
