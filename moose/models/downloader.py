@@ -69,6 +69,7 @@ class DownloadWorker(_threading.Thread):
 
     def fetch(self, url, retry):
         data = None
+        # Logs error only if it was the last time to try
         warn = logger.error if retry == 0 else logger.info
 
         try:
@@ -123,6 +124,9 @@ class ModelDownloader(object):
 
     def add_task(self, data_model):
         try:
+            # For every models, we would like to try to fetch
+            # data from urls the model provides for 3 times,
+            # and give up if it never succeed.
             data_model.retry = 3
             self.queue.put(data_model)
         except Queue.Full as e:
