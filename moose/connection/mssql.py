@@ -58,6 +58,7 @@ class SQLServerHandler(BaseSQLHandler):
 
 
 class PrimitiveMssqlHandler(BaseSQLHandler):
+
     """
     Uses the primitive mssql instead of `SQLServerHandler` when doing
     INSERT, UPDATE or DELETE operation.

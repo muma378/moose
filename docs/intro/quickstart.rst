@@ -230,10 +230,10 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
         def run(self, **kwargs):
             config = kwargs['config']
             task_id = config.upload['task_id']
-            ···
+            # ···
 
             images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
-            ···
+            # ···
 
 完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trial.cfg* 完成与上一节相同的功能： ::
 
