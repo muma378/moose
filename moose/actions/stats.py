@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+# `stats` 模块提供了一个便捷的途径对不同的对象或状态进行计数
+# 当Action在初始化的时候自动创建一个stats对象，当需要对某种
+# 对象的个数进行统计时，只需要在action内部调用
+# `self.stats.inc_value(target_name)` 即可。
+#
+# 对于target_name，我们建议使用“/”作为域分隔符，比如对于下载
+# 结果的统计，我们可以用"download/ok"，"download/http_error"，
+# "download/url_error"，"download/unknown" 来表示同一动作
+# 下不同结果的个数，在查看日志时可读性也要更好。
+
 import pprint
 import logging
 
