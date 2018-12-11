@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from os.path import join, dirname
 
 def get_version():
