@@ -12,6 +12,7 @@ SQL操作
 
     :param object handler: 数据库接口类对象
 
+
     .. attribute:: operation_template = None
 
 		定义查询语句模板默认为None,其子类可根据不同的需求定制sql语句模板
@@ -45,7 +46,8 @@ SQL操作
 
     :param object handler: 数据库接口类对象
 
-	.. attribute::  operation_template
+
+    .. attribute::  operation_template
 
 		定义查询语句的模板，这里定义了查询语句结果需要返回的字段为 ``SourceGuid`` 和 ``ResultGuid``
 
@@ -60,7 +62,7 @@ SQL操作
 
     `operation_template` 为： ::
 
-        "select dr.SourceGuid, dr.DataGuid from $tables where $conditions "
+        "SELECT dr.SourceGuid, dr.DataGuid FROM $tables WHERE $conditions "
 
 
 .. class:: AllGuidQuery(BaseGuidQuery)
@@ -79,7 +81,7 @@ SQL操作
 
 	该类是 ``AllGuidQuery`` 的子类，它在基类条件的基础上新增了数据表的状态作为条件字段，使查询更精细化。
 
-	.. attribute:: conditions = "dr.ProjectId = {project_id} and dr.status = {status}"
+	.. attribute:: conditions = "dr.ProjectId = {project_id} AND dr.status = {status}"
 
 		定义查询语句模板的条件字段
 
@@ -107,7 +109,7 @@ SQL操作
 
     `conditions` 定义如下：::
 
-        "dr.ProjectId = {project_id} and dr.Date {less_or_more} '{datetime}'"
+        "dr.ProjectId = {project_id} AND dr.Date {less_or_more} '{datetime}'"
 
 
 .. class:: AccessedTimeGuidQuery(AllGuidQuery)
@@ -120,7 +122,7 @@ SQL操作
 
     `conditions` 定义如下：::
 
-        "dr.ProjectId = {project_id} and dr.LastEditTime {less_or_more} '{datetime}'"
+        "dr.ProjectId = {project_id} AND dr.LastEditTime {less_or_more} '{datetime}'"
 
 .. class:: AccountGuidQuery(BaseGuidQuery)
 
@@ -137,7 +139,7 @@ SQL操作
 
     ::
 
-	"dr.ProjectId = {project_id} and dr.UserGuid = ps.ProviderUserKey and ""ps.Account in {accounts}"
+	"dr.ProjectId = {project_id} AND dr.UserGuid = ps.ProviderUserKey AND ps.Account in {accounts}"
 
 
 .. class:: TitlesGuidQuery(BaseGuidQuery)
@@ -150,12 +152,12 @@ SQL操作
 
 
     该方法定义了查询语句模板的条件字段为 ``ds.Title`` 、 ``ds.DataGuid = dr.SourceGuid`` 和 ``ds.ProjectId = {project_id}`` 以及 ``dr.ProjectId = {project_id}``
-    
+
     `conditions` 定义如下：
 
     ::
 
-    "ds.DataGuid = dr.SourceGuid and ds.ProjectId = {project_id} and  dr.ProjectId = {project_id} and ds.Title in {titles}"
+    "ds.DataGuid = dr.SourceGuid AND ds.ProjectId = {project_id} AND  dr.ProjectId = {project_id} AND ds.Title in {titles}"
 
 .. class:: BaseUsersQuery(BaseQuery)
 
@@ -178,7 +180,7 @@ SQL操作
 
     ::
 
-	"select DISTINCT pip.id, pip.PersonName $fields from $table_person_in_project pip, $table_person ps $tables where pip.ProjectId = {project_id} and pip.PersonId=ps.id $conditions"
+	"SELECT DISTINCT pip.id, pip.PersonName $fields FROM $table_person_in_project pip, $table_person ps $tables WHERE pip.ProjectId = {project_id} AND pip.PersonId=ps.id $conditions"
 
 .. class:: UsersInProjectQuery(BaseUsersQuery)
 
@@ -197,13 +199,13 @@ SQL操作
 
     ::
 
-	"select ProviderUserGuid from $table_person_in_project where PersonName = '{user_name}' and ProjectId = {project_id}"
+	"SELECT ProviderUserGuid FROM $table_person_in_project WHERE PersonName = '{user_name}' AND ProjectId = {project_id}"
 
 
 .. class:: TeamUsersInProjectQuery(BaseQuery)
 
 	该类定义模板用来获取指定用户参与项目的信息
-	
+
     `operation_template` 定义如下：
 
     ::
@@ -238,7 +240,7 @@ SQL操作
 
     ::
 
-	"select * from $table_source ds where ds.ProjectId={project_id}"
+	"SELECT * FROM $table_source ds WHERE ds.ProjectId={project_id}"
 
 
 .. class:: DataResultQuery(BaseQuery)
@@ -249,7 +251,7 @@ SQL操作
 
     ::
 
-	"select * from $table_result ds where ds.ProjectId={project_id}"
+	"SELECT * FROM $table_result ds WHERE ds.ProjectId={project_id}"
 
 
 .. class:: DataInfoQuery(BaseQuery)
@@ -260,9 +262,9 @@ SQL操作
 
     ::
 
-    "select ds.Title, ds.FileName, dr.Status, dr.IsValid, dr.UserGuid, dr.SourceGuid, dr.DataGuid"
-    "from $table_source ds, $table_result dr where ds.DataGuid=dr.SourceGuid and"
-    "dr.ProjectId={project_id} and ds.ProjectId={project_id}"
+    "SELECT ds.Title, ds.FileName, dr.Status, dr.IsValid, dr.UserGuid, dr.SourceGuid, dr.DataGuid "
+    "FROM $table_source ds, $table_result dr WHERE ds.DataGuid=dr.SourceGuid AND "
+    "dr.ProjectId={project_id} AND ds.ProjectId={project_id}"
 
 
 .. class:: ProjectInfoQuery(BaseQuery)
@@ -273,7 +275,7 @@ SQL操作
 
     ::
 
-	"select * from $table_project where id={project_id}"
+	"SELECT * FROM $table_project WHERE id={project_id}"
 
 
 .. class:: ProjectInfoByBatchQuery(BaseQuery)
@@ -284,7 +286,7 @@ SQL操作
 
     ::
 
-	"select * from $table_project where batch='{batch_name}'"
+	"SELECT * FROM $table_project WHERE batch='{batch_name}'"
 
 
 .. class:: AcqInfoByGuidQuery(BaseQuery)
@@ -295,7 +297,7 @@ SQL操作
 
     ::
 
-	"select * from $table_acquisition where DataGuid= '{data_guid}'"
+	"SELECT * FROM $table_acquisition WHERE DataGuid= '{data_guid}'"
 
 .. class:: AcqInfoByUserQuery(BaseQuery)
 
@@ -305,7 +307,7 @@ SQL操作
 
     ::
 
-	"select * from $table_acquisition WHERE ProjectId = {project_id} and UserGuid = '{user_guid}' and isValid = 1"
+	"SELECT * FROM $table_acquisition WHERE ProjectId = {project_id} AND UserGuid = '{user_guid}' AND isValid = 1"
 
 .. class:: AcqToMarkByUserQuery(BaseQuery)
 
@@ -315,9 +317,9 @@ SQL操作
 
     ::
 
-	"select {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,'{create_time}'"
-	"from $table_acquisition WHERE ProjectId = {acquisition_id} and UserGuid = '{user_guid}'" 
-	"and isValid = 1"
+	"SELECT {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,'{create_time}' "
+	"FROM $table_acquisition WHERE ProjectId = {acquisition_id} AND UserGuid = '{user_guid}' "
+	"AND isValid = 1"
 
 .. class:: BaseInsert(BaseOperation)
 
@@ -338,10 +340,10 @@ SQL操作
 
     ::
 
-	"insert into $table_source (ProjectID,Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
-	"CreateTime) select {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
-	"'{create_time}' from $table_acquisition WHERE ProjectId = {acquisition_id} and UserGuid = "
-	"'{user_guid}' and isValid = 1"
+	"INSERT INTO $table_source (ProjectID,Title,DataGuid,DataVersion,UserGuid,Duration,FileName, "
+	"CreateTime) SELECT {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName, "
+	"'{create_time}' FROM $table_acquisition WHERE ProjectId = {acquisition_id} AND UserGuid = "
+	"'{user_guid}' AND isValid = 1"
 
 .. class:: AcqToMarkByDataguid(BaseInsert)
 
@@ -351,9 +353,9 @@ SQL操作
 
     ::
 
-    "insert into $table_source (ProjectID,Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
-    "CreateTime) select {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
-    "'{create_time}'from $table_acquisition WHERE DataGuid = '{data_guid}' and isValid = 1"
+    "INSERT INTO $table_source (ProjectID,Title,DataGuid,DataVersion,UserGuid,Duration,FileName, "
+    "CreateTime) SELECT {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName, "
+    "'{create_time}' FROM $table_acquisition WHERE DataGuid = '{data_guid}' AND isValid = 1"
 
 .. class:: BulkInsert(BaseOperation)
 
@@ -371,4 +373,4 @@ SQL操作
 
     ::
 
-	"insert into $table_source ({project_id},%s,%s,%s,%s,%f,%s,{create_time}) "
+	"INSERT INTO $table_source ({project_id},%s,%s,%s,%s,%f,%s,{create_time})"
