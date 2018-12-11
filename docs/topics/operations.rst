@@ -131,10 +131,13 @@ SQL操作
 
 		定义查询语句中数据表为 ``table_result`` 及 ``table_person`` 并将它们重命名为 ``dr`` 和 ``ps``
 
-	.. attribute:: conditions = ("dr.ProjectId = {project_id} and dr.UserGuid = ps.ProviderUserKey
-					and ""ps.Account in {accounts}")
+    该方法定义了查询语句模板的条件字段为 ``ps.Account`` 、 ``dr.ProjectId`` 、 ``ps.Account`` 以及 ``dr.UserGuid = ps.ProviderUserKey``
 
-		定义了查询语句模板的条件字段为``ps.Account`` 、 ``dr.ProjectId`` 、 ``ps.Account`` 以及 ``dr.UserGuid = ps.ProviderUserKey``
+    `conditions` 定义如下：
+
+    ::
+
+	"dr.ProjectId = {project_id} and dr.UserGuid = ps.ProviderUserKey and ""ps.Account in {accounts}"
 
 
 .. class:: TitlesGuidQuery(BaseGuidQuery)
@@ -145,20 +148,19 @@ SQL操作
 
 		定义查询语句中数据表为 ``table_source`` 及 ``table_result`` 并将它们重命名为 ``ds`` 和 ``dr``
 
-	.. attribute::       conditions = ("ds.DataGuid = dr.SourceGuid and ds.ProjectId = {project_id} and "
-                         dr.ProjectId = {project_id} and ds.Title in {titles}")
 
-        定义了查询语句模板的条件字段为 ``ds.Title`` 、 ``ds.DataGuid = dr.SourceGuid`` 和 ``ds.ProjectId = {project_id}`` 以及 ``dr.ProjectId = {project_id}``
+    该方法定义了查询语句模板的条件字段为 ``ds.Title`` 、 ``ds.DataGuid = dr.SourceGuid`` 和 ``ds.ProjectId = {project_id}`` 以及 ``dr.ProjectId = {project_id}``
+    
+    `conditions` 定义如下：
 
+    ::
+
+    "ds.DataGuid = dr.SourceGuid and ds.ProjectId = {project_id} and  dr.ProjectId = {project_id} and ds.Title in {titles}"
 
 .. class:: BaseUsersQuery(BaseQuery)
 
 	该类是 ``BaseQuery`` 的子类，定义了查询模板的条件为表 ``table_person_in_project`` 中的字段 ``ProjectId`` 等于表 ``table_person`` 中的字段 ``id`` 及查询字段并预留了扩展字段供子类使用。
 
-	.. attribute::   operation_template = (
-				        "select DISTINCT pip.id, pip.PersonName $fields from "
-				        "$table_person_in_project pip, $table_person ps $tables where "
-				        "pip.ProjectId = {project_id} and pip.PersonId=ps.id $conditions")
 
 	.. attribute::   fields = ""
 
@@ -172,6 +174,11 @@ SQL操作
 
 		定义查询语句中预留的条件，默认为空
 
+    `operation_template` 定义如下：
+
+    ::
+
+	"select DISTINCT pip.id, pip.PersonName $fields from $table_person_in_project pip, $table_person ps $tables where pip.ProjectId = {project_id} and pip.PersonId=ps.id $conditions"
 
 .. class:: UsersInProjectQuery(BaseUsersQuery)
 
@@ -186,99 +193,131 @@ SQL操作
 
 	该类定义模板实现根据提供的 ``PersonName`` 和 ``project_id`` 中获取用户guid( ``ProviderUserGuid``)
 
-	.. attribute::   operation_template = (
-				        "select ProviderUserGuid from $table_person_in_project "
-				        "where PersonName = '{user_name}' and ProjectId = {project_id}")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select ProviderUserGuid from $table_person_in_project where PersonName = '{user_name}' and ProjectId = {project_id}"
 
 
 .. class:: TeamUsersInProjectQuery(BaseQuery)
 
 	该类定义模板用来获取指定用户参与项目的信息
+	
+    `operation_template` 定义如下：
 
-	.. attribute::   operation_template = """
-				SELECT
-				    pat.id, pat.PersonName, pat.Account, t.Name
-				FROM
-				    (
-				        SELECT
-				            person.*, pit.TeamId
-				        FROM
-				            (
-				                SELECT DISTINCT
-				                    pip.id, pip.PersonName, pip.ProviderUserGuid, ps.Account
-				                FROM
-				                    $table_person_in_project pip, $table_person ps
-				                WHERE
-				                    pip.ProjectId = {project_id}
-				                AND pip.PersonId = ps.id
-				            ) AS person
-				        LEFT JOIN $table_person_in_team pit ON pit.ProviderUserKey = Person.ProviderUserGuid
-				    ) AS pat
-				LEFT JOIN $table_team AS t ON pat.TeamId = t.Id
-				"""
+    ::
+
+	'''
+	SELECT pat.id, pat.PersonName, pat.Account, t.Name
+		FROM
+		    (
+		        SELECT
+		            person.*, pit.TeamId
+		        FROM
+		            (
+		                SELECT DISTINCT
+		                    pip.id, pip.PersonName, pip.ProviderUserGuid, ps.Account
+		                FROM
+		                    $table_person_in_project pip, $table_person ps
+		                WHERE
+		                    pip.ProjectId = {project_id}
+		                AND pip.PersonId = ps.id
+		            ) AS person
+		        LEFT JOIN $table_person_in_team pit ON pit.ProviderUserKey = Person.ProviderUserGuid
+		    ) AS pat
+		LEFT JOIN $table_team AS t ON pat.TeamId = t.Id
+	'''
 
 
 .. class:: DataSourceQuery(BaseQuery)
 
 	该类继承了基类 ``BaseQuery`` ,定义了根据表 ``table_source`` 中匹配字段 ``ProjectId`` 进行查询的模板。
 
-	.. attribute::   operation_template = ("select * from $table_source ds where ds.ProjectId={project_id}")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select * from $table_source ds where ds.ProjectId={project_id}"
 
 
 .. class:: DataResultQuery(BaseQuery)
 
 	该类继承了基类 ``BaseQuery`` ,定义了根据表 ``table_result`` 中匹配字段 ``ProjectId`` 进行查询的模板。
 
-	.. attribute::   operation_template = ("select * from $table_result ds where ds.ProjectId={project_id}")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select * from $table_result ds where ds.ProjectId={project_id}"
 
 
 .. class:: DataInfoQuery(BaseQuery)
 
 	该类继承了基类 ``BaseQuery`` ,定义了根据 ``table_source.DataGuid=table_result.SourceGuid``查询指定项目信息的模板。
 
-	.. attribute::   operation_template = (
-				        "select ds.Title, ds.FileName, dr.Status, dr.IsValid, dr.UserGuid, "
-				        "dr.SourceGuid, dr.DataGuid from $table_source ds, $table_result "
-				        "dr where ds.DataGuid=dr.SourceGuid and dr.ProjectId={project_id} "
-				        "and ds.ProjectId={project_id}")
+    `operation_template` 定义如下：
+
+    ::
+
+    "select ds.Title, ds.FileName, dr.Status, dr.IsValid, dr.UserGuid, dr.SourceGuid, dr.DataGuid"
+    "from $table_source ds, $table_result dr where ds.DataGuid=dr.SourceGuid and"
+    "dr.ProjectId={project_id} and ds.ProjectId={project_id}"
 
 
 .. class:: ProjectInfoQuery(BaseQuery)
 
 	该类定义了根据输入指定项目ID返回该项目所有信息的模板
 
-	.. attribute::   operation_template = ("select * from $table_project where id={project_id}")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select * from $table_project where id={project_id}"
 
 
 .. class:: ProjectInfoByBatchQuery(BaseQuery)
 
 	该类定义了根据输入的 ``batch`` 字段返回该项目所有信息的模板
 
-	.. attribute::   operation_template = ("select * from $table_project where batch='{batch_name}'")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select * from $table_project where batch='{batch_name}'"
 
 
 .. class:: AcqInfoByGuidQuery(BaseQuery)
 
 	该类定义了根据输入的 ``DataGuid`` 字段返回该项目所有信息的模板
 
-	.. attribute::    operation_template = ("select * from $table_acquisition where DataGuid= '{data_guid}'")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select * from $table_acquisition where DataGuid= '{data_guid}'"
 
 .. class:: AcqInfoByUserQuery(BaseQuery)
 
 	该类定义了根据输入的 ``ProjectId`` 、 ``UserGuid`` 字段且 ``isValid = 1`` 返回该项目所有信息的模板
 
-	.. attribute::  operation_template = ("select * from $table_acquisition WHERE ProjectId = {project_id} "
-        			   "and UserGuid = '{user_guid}' and isValid = 1")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select * from $table_acquisition WHERE ProjectId = {project_id} and UserGuid = '{user_guid}' and isValid = 1"
 
 .. class:: AcqToMarkByUserQuery(BaseQuery)
 
 	该类定义了根据输入的 ``ProjectId`` 、 ``UserGuid`` 字段且 ``isValid = 1`` 返回该项目指定输出字段的模板
 
-	.. attribute::     operation_template = (
-					        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
-					        "Duration,FileName,'{create_time}' from $table_acquisition "
-					        "WHERE ProjectId = {acquisition_id} and UserGuid = '{user_guid}' "
-					        "and isValid = 1")
+    `operation_template` 定义如下：
+
+    ::
+
+	"select {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,'{create_time}'"
+	"from $table_acquisition WHERE ProjectId = {acquisition_id} and UserGuid = '{user_guid}'" 
+	"and isValid = 1"
 
 .. class:: BaseInsert(BaseOperation)
 
@@ -295,24 +334,26 @@ SQL操作
 
 	该类定义了一个根据条件字段为 ``ProjectId`` 、 ``UserGuid`` 且 ``isValid = 1`` 查询得到数据然后插入指定数据表 ``table_source`` 的模板
 
-	.. attribute:: operation_template = (
-				        "insert into $table_source (ProjectID,Title,DataGuid,"
-					        "DataVersion,UserGuid,Duration,FileName,CreateTime) "
-					        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
-					        "Duration,FileName,'{create_time}' from $table_acquisition "
-					        "WHERE ProjectId = {acquisition_id} and UserGuid = '{user_guid}' "
-					        "and isValid = 1")
+    `operation_template` 定义如下：
+
+    ::
+
+	"insert into $table_source (ProjectID,Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
+	"CreateTime) select {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
+	"'{create_time}' from $table_acquisition WHERE ProjectId = {acquisition_id} and UserGuid = "
+	"'{user_guid}' and isValid = 1"
 
 .. class:: AcqToMarkByDataguid(BaseInsert)
 
 	该类定义了一个根据条件字段为 ``DataGuid`` 且 ``isValid = 1`` 查询得到数据然后插入指定数据表 ``table_source`` 的模板
 
-	.. attribute:: operation_template = (
-					        "insert into $table_source (ProjectID,Title,DataGuid,"
-					        "DataVersion,UserGuid,Duration,FileName,CreateTime) "
-					        "select {project_id},Title,DataGuid,DataVersion,UserGuid,"
-					        "Duration,FileName,'{create_time}' from $table_acquisition "
-					        "WHERE DataGuid = '{data_guid}' and isValid = 1")
+    `operation_template` 定义如下：
+
+    ::
+
+    "insert into $table_source (ProjectID,Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
+    "CreateTime) select {project_id},Title,DataGuid,DataVersion,UserGuid,Duration,FileName,"
+    "'{create_time}'from $table_acquisition WHERE DataGuid = '{data_guid}' and isValid = 1"
 
 .. class:: BulkInsert(BaseOperation)
 
@@ -326,6 +367,8 @@ SQL操作
 
 .. class:: BulkAcqToMarkByDataguid(BulkInsert)
 
+    `operation_template` 定义如下：
 
-	.. attribute:: operation_template = ("insert into $table_source ({project_id},%s,%s,%s,%s,%f,%s,
-											{create_time}) ")
+    ::
+
+	"insert into $table_source ({project_id},%s,%s,%s,%s,%f,%s,{create_time}) "
