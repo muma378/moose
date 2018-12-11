@@ -18,4 +18,4 @@
 
 /label ~Proposal
 
-/cc @manager
+/cc @dataproc
