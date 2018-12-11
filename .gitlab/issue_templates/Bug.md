@@ -38,4 +38,4 @@
 
 /label ~Bug
 
-/cc @manager
+/cc @dataproc
