@@ -18,6 +18,7 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
    intro/install
    intro/quickstart
    intro/examples
+   intro/cookbook
 
 :doc:`intro/overview`
     了解Moose是什么以及它用于解决什么问题。
@@ -30,6 +31,9 @@ Moose是一个数据处理的自动化框架，旨在提供一套快速、灵活
 
 :doc:`intro/examples`
     通过Moose示例了解更多。
+
+:doc:`intro/cookbook`
+    Moose Project编写规范和建议
 
 .. _section-basics:
 
