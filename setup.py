@@ -55,7 +55,7 @@ setup(
         'pytz>=2017.2',
         'python-utils>=2.3.0',
         'opencv-python>=3.3.0.10',
-        'openpyxl>=2.5.0'
+        'openpyxl==2.5.3'
         'Pillow>=3.4.1',
     ],
     zip_safe=False,
