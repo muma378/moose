@@ -1,7 +1,7 @@
 .. _intro-cookbook:
 
 ===================
-Project Cookbook
+Moose Cookbook
 ===================
 
 
@@ -67,7 +67,7 @@ App实战
 
 **上传**
 
-- 我们为上传提供了 ``SimpleUpload``，继承后指定要上传的文件的名称的模式即可，例如：::
+- 我们为上传提供了 ``SimpleUpload``，继承后指定要上传的文件的名称的模式即可，例如： ::
 
     default_pattern = "*.jpg"
 
