@@ -101,7 +101,7 @@ class DownloadWorker(_threading.Thread):
 
 class ModelDownloader(object):
 
-    DEFAULT_WORKER_CLASS = "DownloadWorker"
+    DEFAULT_WORKER_CLASS = "moose.models.downloader.DownloadWorker"
 
     def __init__(self, callback, stats, worker_cls=None, timeout=None, overwrite=False, nworkers=10):
         self.queue     = Queue.Queue()
