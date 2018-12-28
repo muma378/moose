@@ -10,4 +10,4 @@ test py27:
     - /^issue-.*$/
     - web
   script:
-    - tox -e new
+    - tox
