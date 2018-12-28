@@ -9,7 +9,7 @@ test:2.7:
       - /^issue-.*$/
       - web
   script:
-    - tox
+    - tox -e py27
 
 test:3.6:
   image: python:3.6
@@ -18,4 +18,4 @@ test:3.6:
       - /^issue-.*$/
       - web
   script:
-    - tox
+    - tox -e py36
