@@ -56,7 +56,7 @@ class BaseQuery(BaseOperation):
         try:
             operation = self.operation_template.format(**context)
         except KeyError as e:
-            raise ImproperlyConfigured("Key missing: %s" % e.message)
+            raise ImproperlyConfigured("Key missing: {}".format(str(e)))
         # execute the query with context provided
         return self.handler.exec_query(operation)
 
@@ -263,7 +263,7 @@ class BaseInsert(BaseOperation):
         try:
             operation = self.operation_template.format(**context)
         except KeyError as e:
-            raise ImproperlyConfigured("Key missing: %s" % e.message)
+            raise ImproperlyConfigured("Key missing: {}".format(str(e)))
         # execute the query with context provided
         naffected = self.handler.exec_commit(operation)
         return naffected
@@ -307,7 +307,7 @@ class BulkInsert(BaseOperation):
         try:
             operation = self.operation_template.format(**context)
         except KeyError as e:
-            raise ImproperlyConfigured("Key missing: %s" % e.message)
+            raise ImproperlyConfigured("Key missing: {}".format(str(e)))
         # execute the query with context provided
         return self.handler.exec_many(operation, params_seq)
 

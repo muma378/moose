@@ -36,7 +36,7 @@ class SQLServerHandler(BaseSQLHandler):
         # More details on error of python database api, see ref:
         # https://www.python.org/dev/peps/pep-0249/
         except (pymssql.InternalError, pymssql.OperationalError) as e:
-            stdout.warn(e.message)
+            stdout.warn(str(e))
             raise ConnectionTimeout
         return conn
 

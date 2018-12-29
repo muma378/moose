@@ -158,7 +158,7 @@ class StreamWrapper(object):
             except (io.UnsupportedOperation,
                     AttributeError):  # pragma: no cover
                 self.wrapped_stdout = False
-                logger.warn('Disabling stdout redirection, %r is not seekable',
+                logger.warning('Disabling stdout redirection, %r is not seekable',
                             sys.stdout)
 
         if self.wrapped_stderr:  # pragma: no branch
@@ -167,7 +167,7 @@ class StreamWrapper(object):
             except (io.UnsupportedOperation,
                     AttributeError):  # pragma: no cover
                 self.wrapped_stderr = False
-                logger.warn('Disabling stderr redirection, %r is not seekable',
+                logger.warning('Disabling stderr redirection, %r is not seekable',
                             sys.stderr)
 
     def excepthook(self, exc_type, exc_value, exc_traceback):

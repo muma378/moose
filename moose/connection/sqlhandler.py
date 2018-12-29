@@ -72,8 +72,8 @@ class BaseSQLHandler(object):
             except KeyError as e:
                 # May raise when resolving the settings dict
                 stdout.error(
-                    "Fields missing, check '{}' was set.".format(e.message))
-                raise ImproperlyConfigured("Fields missing: {}".format(e.message))
+                    "Fields missing, check '{}' was set.".format(str(e)))
+                raise ImproperlyConfigured("Fields missing: {}".format(str(e)))
 
         stdout.error("Unable to establish connection to '{}'".format(self.db_name))
         raise ImproperlyConfigured()
@@ -89,7 +89,7 @@ class BaseSQLHandler(object):
         stdout.debug("Closing connection to {}.".format(self.db_name))
         try:
             self._close()
-        except AttributeError, e:
+        except AttributeError as e:
             stdout.debug("Connection was closed already.")
         else:
             self._conn = None

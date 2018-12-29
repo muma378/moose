@@ -31,6 +31,6 @@ class MySQLHandler(BaseSQLHandler):
                 connect_timeout=settings.DB_CONN_TIMEOUT
                 )
         except (mysqldb.InternalError, mysqldb.OperationalError) as e:
-            stdout.warn(e.message)
+            stdout.warn(str(e))
             raise ConnectionTimeout
         return conn

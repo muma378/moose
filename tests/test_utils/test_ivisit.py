@@ -1,5 +1,5 @@
 import unittest
-
+from moose.utils import six
 from moose.shortcuts import ivisit
 
 class IvisitTestCase(unittest.TestCase):
@@ -43,5 +43,11 @@ class IvisitTestCase(unittest.TestCase):
         ) # a.txt, B.txt, b/b.yaml
 
     def test_visit_dst(self):
-        self.assertItemsEqual([p[1] for p in self.visit(dst='test')], ['test/a.txt', 'test/B.txt', 'test/b/b.yaml'])
-        self.assertItemsEqual([p[1] for p in self.visit(dst='')], ['a.txt', 'B.txt', 'b/b.yaml'])
+        six.assertCountEqual(
+            self,
+            [p[1] for p in self.visit(dst='test')],
+            ['test/a.txt', 'test/B.txt', 'test/b/b.yaml'])
+        six.assertCountEqual(
+            self,
+            [p[1] for p in self.visit(dst='')],
+            ['a.txt', 'B.txt', 'b/b.yaml'])
