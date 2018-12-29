@@ -295,7 +295,8 @@ class GeneralPainter(object):
 
 		if self._pallet.get(label) == None:
 			if self._autofill:
-				color = colors.choice(exclude=self._pallet.values())
+				# dict.values() returns a iterator, uses list() to force convert
+				color = colors.choice(exclude=list(self._pallet.values()))
 				self.add_color(label, color)
 			else:
 				raise ImproperlyConfigured("Color for lable '{}' was not set.".format(label))
