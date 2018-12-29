@@ -7,6 +7,7 @@ import mock
 import platform
 from azure.storage.blob import BlockBlobService, PublicAccess
 from azure.common import AzureConflictHttpError, AzureMissingResourceHttpError
+from moose.utils import six
 from moose.connection.cloud import AzureBlobService
 from moose.core.exceptions import \
     ConnectionTimeout, SuspiciousOperation, ImproperlyConfigured
@@ -89,19 +90,22 @@ class AzureBlobServiceTest(unittest.TestCase):
         mock_obj3.name = "a.metadata"
 
         self.mock_blob_service.list_blobs.return_value = [mock_obj1, mock_obj2, mock_obj3]
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.list_blobs('test'),
             ["a.txt", "a.wav", "a.metadata"])
         self.mock_blob_service.list_blobs.assert_called_with(
             'test', prefix=None, timeout=300)
 
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.list_blobs('test', prefix="test-", suffix=".wav"),
             ["a.wav"])
         self.mock_blob_service.list_blobs.assert_called_with(
             'test', prefix="test-", timeout=300)
 
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.list_blobs('test', suffix=(".wav", ".txt")),
             ["a.wav", "a.txt"])
         self.mock_blob_service.list_blobs.assert_called_with(
@@ -110,7 +114,8 @@ class AzureBlobServiceTest(unittest.TestCase):
         self.mock_azure.reset_mock()
         self.mock_blob_service.list_blobs = mock.Mock(
             side_effect=AzureMissingResourceHttpError('a', 'b'))
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.list_blobs('test', suffix=(".wav", ".txt")),
             [])
 
@@ -141,7 +146,8 @@ class AzureBlobServiceTest(unittest.TestCase):
         # and upload with overwritting
         self.mock_blob_service.exists = mock.Mock(return_value=True)
         mock_list_blobs.return_value = ['to/blob1.txt', 'to/blob2.txt']
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.upload('test', blob_pairs, overwrite=False),
             ['to/blob3.txt', ]
         )
@@ -150,7 +156,8 @@ class AzureBlobServiceTest(unittest.TestCase):
 
         # upload with `overwrite` set to True
         mock_create_blob.reset_mock()
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.upload('test', blob_pairs, overwrite=True),
             ['to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt']
         )
@@ -197,7 +204,8 @@ class AzureBlobServiceTest(unittest.TestCase):
         mock_list_blobs.return_value = [
             'to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt'
         ]
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.download('test', 'dest'),
             ['to/blob1.txt', 'to/blob2.txt', 'to/blob3.txt'])
 
@@ -211,7 +219,8 @@ class AzureBlobServiceTest(unittest.TestCase):
         # case 3. the container exists and `blob_names` was specified
         blob_names = ['to/blob1.txt', 'to\\blob2.txt', ]
         mock_get_blob.reset_mock()
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.download('test', 'dest', blob_names=blob_names),
             ['to/blob1.txt', 'to\\blob2.txt'])
 
@@ -224,7 +233,8 @@ class AzureBlobServiceTest(unittest.TestCase):
 
         missing_blob_names = ['to/blob1.txt', 'to/blob4.txt', ]
         mock_get_blob.reset_mock()
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.download('test', 'dest', blob_names=missing_blob_names),
             ['to/blob1.txt'])
 
@@ -256,7 +266,8 @@ class AzureBlobServiceTest(unittest.TestCase):
 
         self.mock_azure.reset_mock()
         self.mock_blob_service.delete_blob = mock.Mock(side_effect=AzureMissingResourceHttpError('A', 'B'))  # 判断抛错
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.delete_blobs('test', blob_names),
             [])
 
@@ -267,7 +278,8 @@ class AzureBlobServiceTest(unittest.TestCase):
             'to/blob1.txt', 'to/blob1.wav', 'to/blob2.txt'
         ]
         azure_host = "test.blob.endpoint"
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.copy_blobs(None, 'test', src_container='source'),  # 可以匹配所有的
             ['to/blob1.txt', 'to/blob1.wav', 'to/blob2.txt'])
 
@@ -278,10 +290,12 @@ class AzureBlobServiceTest(unittest.TestCase):
                 mock.call('test', 'to/blob2.txt', 'http://{}/source/to/blob2.txt'.format(azure_host)),
             ])
 
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.copy_blobs(None, 'test', src_container='source', pattern='*.wav'),
             ['to/blob1.wav'])
-        self.assertItemsEqual(
+        six.assertCountEqual(
+            self,
             self.azure_handler.copy_blobs(None, 'test', src_container='source', pattern='*.txt'),
             ['to/blob1.txt', 'to/blob2.txt'])
 
