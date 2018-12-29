@@ -198,7 +198,7 @@ class AzureBlobService(object):
                 logger.debug("Got blob '{}' to '{}'.".format(blob_name, dest_filepath))
                 blobs.append(blob_name)
             else:
-                logger.warn("Blob name '{}' specified does not exist.".format(blob_name))
+                logger.warning("Blob name '{}' specified does not exist.".format(blob_name))
 
         return blobs
 
@@ -237,7 +237,7 @@ class AzureBlobService(object):
                     "Delete the blob '%s' from container [%s]." % (blob_name, container_name))
                 blobs.append(blob)
             except AzureMissingResourceHttpError as e:
-                logger.warn(
+                logger.warning(
                     "The sepcified blob '%s' on [%s] does not exist." % (blob_name, container_name))
 
         return blobs
