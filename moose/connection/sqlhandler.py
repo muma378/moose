@@ -89,7 +89,7 @@ class BaseSQLHandler(object):
         stdout.debug("Closing connection to {}.".format(self.db_name))
         try:
             self._close()
-        except AttributeError, e:
+        except AttributeError as e:
             stdout.debug("Connection was closed already.")
         else:
             self._conn = None

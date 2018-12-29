@@ -106,7 +106,7 @@ class Apps(object):
 				try:
 					app_config.import_actions()
 				except ImportError as e:
-					raise ImproperlyConfigured(e.message)
+					raise ImproperlyConfigured(str(e))
 
 			# self.actions_ready = True
 

@@ -62,7 +62,7 @@ class MongoDBHandler(object):
                     "auto-connect will be made ..."
                     )
                 stdout.warn(msg)
-                logger.warn(msg)
+                logger.warning(msg)
 
         logger.error("Unable to establish the connection to MongoDB.")
         raise ImproperlyConfigured("Unable to establish the connection to MongoDB.")
@@ -98,7 +98,7 @@ class MongoDBHandler(object):
             self._db = self._client[db_name]
             self._db_name = db_name
         except errors.InvalidName as e:
-            logger.warn("Unknown database specified: '{}'".format(db_name))
+            logger.warning("Unknown database specified: '{}'".format(db_name))
             raise ImproperlyConfigured("Unknown database specified: '{}'".format(db_name))
 
     @property
@@ -116,7 +116,7 @@ class MongoDBHandler(object):
                 self._coll = self.db[coll_name]
                 self._coll_name = coll_name
             except errors.InvalidName as e:
-                logger.warn("Unknown collection specified: '{}'".format(coll_name))
+                logger.warning("Unknown collection specified: '{}'".format(coll_name))
                 raise ImproperlyConfigured("Unknown collection specified: '{}'".format(coll_name))
 
     def execute(self, coll_name, operator):
@@ -128,7 +128,7 @@ class MongoDBHandler(object):
                 return result
             except (errors.AutoReconnect, errors.ExecutionTimeout):
                 conn_cnt += 1
-                logger.warn(
+                logger.warning(
                     "Failed to execute the operation, an attempt to "
                     "re-connect will be made."
                     )
@@ -157,7 +157,7 @@ class MongoDBHandler(object):
         if isinstance(documents, dict):
             documents = [documents]
 
-        logger.warn(
+        logger.warning(
             "Insert {} documents to the collection '{}'".format(len(documents), coll_name))
         def _operator():
             return self.coll.insert_many(documents, **kwargs)
@@ -165,7 +165,7 @@ class MongoDBHandler(object):
         return self.execute(coll_name, _operator)
 
     def update(self, coll_name, filter, document, **kwargs):
-        logger.warn("Update collection '{}' matching the filter: '{}'".format(coll_name, filter))
+        logger.warning("Update collection '{}' matching the filter: '{}'".format(coll_name, filter))
         def _operator():
             return self.coll.update_many(
                 filter,
@@ -178,7 +178,7 @@ class MongoDBHandler(object):
     def close(self):
         try:
             self._client.close()
-        except AttributeError,e:
-            logger.warn("No connections found.")
+        except AttributeError as e:
+            logger.warning("No connections found.")
         else:
             logger.debug("Connection to '{}' closed.".format(self.displayed_mongo_url))

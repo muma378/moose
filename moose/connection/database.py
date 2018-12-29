@@ -30,7 +30,7 @@ class BaseSQLHandler(object):
     def __del__(self):
         try:
             self.conn.close()
-        except AttributeError,e:
+        except AttributeError as e:
             logger.debug("No connections established.")
         else:
             logger.debug("Connection to %s closed." % self.database_name)
@@ -45,7 +45,7 @@ class BaseSQLHandler(object):
                 return conn
             except ConnectionTimeout as e:    # TODO:add a specified exception
                 conn_cnt += 1
-                logger.warn(
+                logger.warning(
                     "Connection failed for '%s',\n times to reconnect: %d." %\
                     (str(e), conn_cnt))
 
@@ -61,8 +61,8 @@ class BaseSQLHandler(object):
             self.conn.close()
             self.conn = None
             self.cursor = None
-        except AttributeError, e:
-            logger.warn("Connection closed already.")
+        except AttributeError as e:
+            logger.warning("Connection closed already.")
 
     # guarantee to return a reliable connection
     def connect(self):
@@ -70,7 +70,7 @@ class BaseSQLHandler(object):
             self.conn = self.__connect()
             if not self.conn:
                 interval = random.randint(0, MAX_INTERVAL)
-                logger.warn("Will try to connect the database in next %ss." % interval)
+                logger.warning("Will try to connect the database in next %ss." % interval)
                 time.sleep(interval)
             return self.conn
 
@@ -342,11 +342,11 @@ class MongoDBHandler(object):
             for item in self.db[coll].find(cond):
                 yield item
         except errors.ServerSelectionTimeoutError as e:
-            logger.warn("Timeout to fetch data from [%s]." % coll)
+            logger.warning("Timeout to fetch data from [%s]." % coll)
             raise ConnectionTimeout
         except errors.AutoReconnect as e:
             count = 1
-            logger.warn("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, count))
+            logger.warning("Failed, retry to connect to '%s' for %d time(s)." % (self.db_name, count))
             while count <= RETRY_TIME:
                 try:
                     time.sleep(5)
@@ -355,7 +355,7 @@ class MongoDBHandler(object):
                     break
                 except errors.AutoReconnect as e:
                     count += 1
-                    logger.warn("Retry to fetch data from '%s' for %d time(s)." % (self.db_name, count))
+                    logger.warning("Retry to fetch data from '%s' for %d time(s)." % (self.db_name, count))
 
     def fetch_source(self, cond={}):
         for item in self.fetch(self.coll_source, cond):
@@ -384,7 +384,7 @@ class MongoDBHandler(object):
     def close(self):
         try:
             self.client.close()
-        except AttributeError,e:
-            logger.warn("No connections found.")
+        except AttributeError as e:
+            logger.warning("No connections found.")
         else:
             logger.debug("Connection to %s closed." % self.host)
