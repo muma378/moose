@@ -144,12 +144,12 @@ class SQLServerHandler(BaseSQLHandler):
                 charset=settings_dict['CHARSET']
             )
         except (pymssql.InterfaceError, pymssql.OperationalError) as e:
-            logger.error(e.message)
+            logger.error(str(e))
             raise ImproperlyConfigured("Failed to connect to SQL database '%s'." % settings_dict['HOST'])
         except KeyError as e:
             logger.error(
-                "Fields missing, please check %s was in settings." % e.message)
-            raise ImproperlyConfigured("Fields missing: %s" % e.message)
+                "Fields missing, please check {} was in settings.".format(str(e)))
+            raise ImproperlyConfigured("Fields missing: {}".format(str(e)))
         return conn
 
     def exec_many(self, sql_commit, rows):
@@ -196,12 +196,12 @@ class MySQLHandler(BaseSQLHandler):
                 charset=settings_dict['CHARSET']
                 )
         except mysqldb.Error as e:
-            logger.error(e.message)
+            logger.error(str(e))
             raise ImproperlyConfigured
         except KeyError as e:
             logger.error(
-                "Fields missing, please check %s was in settings." % e.message)
-            raise ImproperlyConfigured("Fields missing: %s" % e.message)
+                "Fields missing, please check {} was in settings.".format(str(e)))
+            raise ImproperlyConfigured("Fields missing: {}".format(str(e)))
         return conn
 
 class PrimitiveMssqlHandler(BaseSQLHandler):
@@ -227,12 +227,12 @@ class PrimitiveMssqlHandler(BaseSQLHandler):
                 charset=settings_dict['CHARSET']
             )
         except _mssql.MssqlDatabaseException as e:
-            logger.error(e.message)
+            logger.error(str(e))
             raise ImproperlyConfigured("Failed to connect to SQL database '%s'." % settings_dict['HOST'])
         except KeyError as e:
             logger.error(
-                "Fields missing, please check %s was in settings." % e.message)
-            raise ImproperlyConfigured("Fields missing: %s" % e.message)
+                "Fields missing, please check {} was in settings.".format(str(e)))
+            raise ImproperlyConfigured("Fields missing: {}".format(str(e)))
         return conn
 
 

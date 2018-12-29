@@ -72,8 +72,8 @@ class MongoDBHandler(object):
         try:
             return "mongodb://{USER}:{PASSWORD}@{HOST}:{PORT}".format(**settings_dict)
         except KeyError as e:
-            logger.error("Key missing, check '{}' was set.".format(e.message))
-            raise ImproperlyConfigured("Key missing, check '{}' was set.".format(e.message))
+            logger.error("Key missing, check '{}' was set.".format(str(e)))
+            raise ImproperlyConfigured("Key missing, check '{}' was set.".format(str(e)))
 
     def __get_displayed_url(self, settings_dict):
         if settings_dict.get('PASSWORD'):

@@ -53,7 +53,7 @@ class BaseQuery(SQLOperation):
             context.update(self.table_alias)
             sql_statement = self.statement_template.format(**context)
         except KeyError as e:
-            raise ImproperlyConfigured("Keys missing: %s" % e.message)
+            raise ImproperlyConfigured("Keys missing: {}".format(str(e)))
         # execute the query with context provided
         return self.handler.exec_query(sql_statement)
 
@@ -264,7 +264,7 @@ class BaseInsert(SQLOperation):
             context.update(self.table_alias)
             sql_statement = self.statement_template.format(**context)
         except KeyError as e:
-            raise ImproperlyConfigured("Keys missing: %s" % e.message)
+            raise ImproperlyConfigured("Keys missing: {}".format(str(e)))
         # execute the query with context provided
         naffected = self.handler.exec_commit(sql_statement)
         return naffected
@@ -276,7 +276,7 @@ class BulkInsert(SQLOperation):
             context.update(self.table_alias)
             sql_statement = self.statement_template.format(**context)
         except KeyError as e:
-            raise ImproperlyConfigured("Keys missing: %s" % e.message)
+            raise ImproperlyConfigured("Keys missing: {}".format(str(e)))
         # execute the query with context provided
         return self.handler.exec_many(sql_statement, rows)
 
