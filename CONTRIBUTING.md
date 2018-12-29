@@ -1,6 +1,5 @@
 # CONTRIBUTING
-#moose/doc
-- - - -
+
 ## GitLab Workfow
 我们遵循基于GitLab的工作流，所以在参与到Moose的开发之前，最好先了解下[GitLab Workflow: An Overview](https://about.gitlab.com/2016/10/25/gitlab-workflow-an-overview/)以尽快熟悉基本流程。简而言之，GitLab Workflow将软件开发分解成10个步骤，我们在此之上略有调整以适合Moose的开发工作模式，分别是：
 1. IDEA。
