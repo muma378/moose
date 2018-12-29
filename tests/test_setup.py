@@ -2,6 +2,7 @@
 import mock
 import unittest
 import moose
+from moose.utils import six
 
 import platform
 if platform.system()=="Windows":
@@ -14,9 +15,10 @@ class SetupTestCase(unittest.TestCase):
     def test_get_version(self):
         self.assertRegexpMatches(moose.__version__, '[\d\.ab]+')
 
-        # if moose was installed under a path with chinese characters
-        moose.__file__ = npath(u"tests/sample_data/setup/版本/__init__.py")
-        self.assertRegexpMatches(moose.get_version(), '[\d\.ab]+')
+        if six.PY2:
+            # if moose was installed under a path with chinese characters
+            moose.__file__ = npath(u"tests/sample_data/setup/版本/__init__.py")
+            self.assertRegexpMatches(moose.get_version(), '[\d\.ab]+')
 
     def test_setup(self):
         moose.setup()
