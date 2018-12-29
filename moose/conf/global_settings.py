@@ -66,6 +66,8 @@ DATABASE_ROUTERS = []
 # CONFIGS #
 ###########
 
+CONF_CHARDET_CONFIDENCE = 0.8
+
 CONF_TEMPLATE_NAME = 'template.cfg'
 CONF_IN_USING_NAME = 'config.cfg'
 

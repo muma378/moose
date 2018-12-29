@@ -5,12 +5,15 @@ import codecs
 import chardet
 
 from moose.utils import six
+from moose.utils import encoding
 from moose.utils._os import npath
 from moose.utils.datautils import stripl
 from moose.utils.six.moves import configparser
 from moose.core.exceptions import DoesNotExist, ImproperlyConfigured
 from moose.conf import settings
 
+import logging
+logger = logging.getLogger(__name__)
 
 class Config(object):
 	"""
@@ -64,38 +67,58 @@ class ConfigLoader(object):
 		# create a new ArgvConfig instance
 		return cls(conf_path), is_newly_created
 
+
+	def __update_with_locales(self, content):
+		unsigned_content = encoding.remove_bom(content)
+		try:
+			# Try to decode with the default encoding firstly
+			# if no error was throwed, the encoding was correct
+			unsigned_content.decode(settings.FILE_CHARSET)
+			return unsigned_content
+		except UnicodeDecodeError as e:
+			# Try to decode with the locale encoding then (if they were different)
+			if settings.FILE_CHARSET != encoding.DEFAULT_LOCALE_ENCODING:
+				try:
+					content = unsigned_content.decode(encoding.DEFAULT_LOCALE_ENCODING)
+					# The locale encoding is correct, but we need to encode it with another one
+					return content.encode(settings.FILE_CHARSET)
+				except UnicodeDecodeError as e:
+					raise e
+			else:
+				raise e
+
+
 	def __update_codec(self):
 		# character encoding detect
 		with open(self.path, 'rb+') as f:
-			overwrite = False
-			content = f.read()
+			raw_content = f.read()
 
-			# coding with utf-N-BOM, removes the BOM signs '\xff\xfe' or '\xfe\xff'
-			if content.startswith(codecs.BOM_LE) or content.startswith(codecs.BOM_BE):
-				content = content[2:]
-				overwrite = True	# flag to rewrite the config file
-			else:
-				result = chardet.detect(content)
-				if not result or result['confidence'] < 0.9:
+			if raw_content.strip() == "":
+				# do nothing if it was empty
+				return
+
+			try:
+				content = self.__update_with_locales(raw_content)
+			except UnicodeError as e:
+				result = chardet.detect(raw_content)
+				if not result or result['encoding'] in ['ascii', settings.FILE_CHARSET, encoding.DEFAULT_LOCALE_ENCODING]:
+					# Tried, but failed
 					raise ImproperlyConfigured(
-						"Unknown encoding for '%s', please use codecs "
-						"'UTF-8' to encode the file." % self.path)
+						"Unknown encoding for '%s'." % self.path)
+
+				if result['confidence'] < settings.CONF_CHARDET_CONFIDENCE:
+					logger.warning(
+						"Confidence for file encoding is too low: '%s'" % self.path)
 
 				file_encoding = result['encoding']
+				try:
+					content = raw_content.decode(file_encoding).encode(settings.FILE_CHARSET)
+				except UnicodeError as e:
+					raise ImproperlyConfigured(
+						"Unknown encoding for '%s'." % self.path)
 
-				# coding with other codecs except for ascii or utf-8
-				if file_encoding!='ascii' and file_encoding!=settings.FILE_CHARSET:
-					try:
-						content = content.decode(file_encoding).encode(settings.FILE_CHARSET)
-						overwrite = True
-					except UnicodeDecodeError as e:
-						raise ImproperlyConfigured(
-							"Unknown encoding for '%s'." % self.path)
-					except UnicodeEncodeError as e:
-						raise ImproperlyConfigured(
-							"Unrecognized symbols in '%s'." % self.path)
 			# erases the content and rewrites with 'utf-8' encoding
-			if overwrite:
+			if content != raw_content:
 				f.truncate(0)	# truncate the config size to 0
 				f.seek(0)	# rewind
 				f.write(content)
