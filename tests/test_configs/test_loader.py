@@ -3,8 +3,10 @@ import unittest
 import io
 import os
 import codecs
+import mock
 
 from moose.conf import settings
+from moose.utils import encoding
 from moose.utils.six.moves import configparser
 from moose.core.configs.loader import \
 	Config, ConfigLoader, OptionParser, SectionParser
@@ -38,6 +40,8 @@ class ConfigLoaderTestCase(unittest.TestCase):
 
 	def setUp(self):
 		self.test_config_path = "tests/sample_data/configs/sample.conf"
+		with open("tests/test_configs/data/sample.conf", "rb") as f:
+			self.test_content = f.read()
 
 	def test_create(self):
 		# The first time to meet the config
@@ -56,6 +60,53 @@ class ConfigLoaderTestCase(unittest.TestCase):
 		# Passed a not existed file
 		with self.assertRaises(DoesNotExist) as context:
 			ConfigLoader.create('does/not/existed/path.conf', configs)
+
+	def test_codecs(self):
+		config_content = self.test_content.decode('utf-8')
+		loader = ConfigLoader(self.test_config_path)
+		mock_module = "moose.core.configs.loader.open"
+
+		def test_data_untouched(read_data):
+			with mock.patch(mock_module, mock.mock_open(read_data=read_data)) as mock_open:
+				loader._update_codec("")
+				mock_fd = mock_open()
+				# not rewrite if encoded with UTF-8
+				mock_fd.write.assert_not_called()
+
+		test_data_untouched("")
+		test_data_untouched(config_content.encode('utf-8'))
+
+		def test_data_rewritten(read_data, write_data):
+			with mock.patch(mock_module, mock.mock_open(read_data=read_data)) as mock_open:
+				loader._update_codec("")
+				mock_fd = mock_open()
+				# rewrite for encoded with UTF-8-SIG
+				mock_fd.write.assert_called_with(write_data)
+
+		test_data_rewritten(config_content.encode('utf-8-sig'), self.test_content)
+		test_data_rewritten(config_content.encode('utf-16'), self.test_content)
+		test_data_rewritten(config_content.encode('utf-32'), self.test_content)
+		test_data_rewritten(config_content.encode('gbk'), self.test_content)
+
+		short_data = u"短testcase"
+		test_data_untouched(short_data.encode('utf-8'))
+		with self.assertRaises(ImproperlyConfigured):
+			# with confidence too low
+			test_data_rewritten(short_data.encode('gbk'), short_data.encode('utf-8'))
+
+		encoding.DEFAULT_LOCALE_ENCODING = "gbk"
+		japanese_data = u"通常、関数やメソッドが単体テストの単位（ユニット）となります。 プログラムが全体として正しく動作しているかを検証する結合テストは、開発の比較的後の段階でQAチームなどによって行なわれることが多いのとは対照的に、単体テストは、コード作成時などの早い段階で開発者によって実施されることが多いのが特徴です"
+		test_data_rewritten(japanese_data.encode('shift_jis'), japanese_data.encode('utf-8'))
+		with mock.patch("moose.core.configs.loader.chardet") as mock_chardet:
+			mock_chardet.returned_value = {"encoding": "UTF-8", "confidence": 1}
+			with self.assertRaises(ImproperlyConfigured):
+				# with same encoding as FILE_CHARSET
+				test_data_rewritten(short_data.encode('gbk'), short_data.encode('utf-8'))
+
+			mock_chardet.returned_value = {"encoding": "latin_1", "confidence": 1}
+			with self.assertRaises(ImproperlyConfigured):
+				# with incorrect encoding reported
+				test_data_rewritten(short_data.encode('gbk'), short_data.encode('utf-8'))
 
 
 	def test_utf8_codec(self):

@@ -38,7 +38,7 @@ class ConfigLoader(object):
 		self.path = conf_path
 		# checks and updates the codecs of config file if necessary
 		# which must be done before setting attribute mtime.
-		self.__update_codec()
+		self._update_codec(self.path)
 
 		# Reference to the Argvs registry that holds this ArgvConfig.
 		self._config = self._parse()
@@ -76,21 +76,21 @@ class ConfigLoader(object):
 			unsigned_content.decode(settings.FILE_CHARSET)
 			return unsigned_content
 		except UnicodeDecodeError as e:
+			# TOO DANGEROUS: data may be overwritten with incorrect encoding
 			# Try to decode with the locale encoding then (if they were different)
-			if settings.FILE_CHARSET != encoding.DEFAULT_LOCALE_ENCODING:
-				try:
-					content = unsigned_content.decode(encoding.DEFAULT_LOCALE_ENCODING)
-					# The locale encoding is correct, but we need to encode it with another one
-					return content.encode(settings.FILE_CHARSET)
-				except UnicodeDecodeError as e:
-					raise e
-			else:
-				raise e
+			# if settings.FILE_CHARSET != encoding.DEFAULT_LOCALE_ENCODING:
+			# 	try:
+			# 		content = unsigned_content.decode(encoding.DEFAULT_LOCALE_ENCODING)
+			# 		# The locale encoding is correct, but we need to encode it with another one
+			# 		return content.encode(settings.FILE_CHARSET)
+			# 	except UnicodeDecodeError as e:
+			# 		raise e
+			raise e
 
 
-	def __update_codec(self):
+	def _update_codec(self, conf_path):
 		# character encoding detect
-		with open(self.path, 'rb+') as f:
+		with open(conf_path, 'rb+') as f:
 			raw_content = f.read()
 
 			if raw_content.strip() == "":
@@ -101,7 +101,7 @@ class ConfigLoader(object):
 				content = self.__update_with_locales(raw_content)
 			except UnicodeError as e:
 				result = chardet.detect(raw_content)
-				if not result or result['encoding'] in ['ascii', settings.FILE_CHARSET, encoding.DEFAULT_LOCALE_ENCODING]:
+				if not result and result['encoding'] in ['ascii', settings.FILE_CHARSET]:
 					# Tried, but failed
 					raise ImproperlyConfigured(
 						"Unknown encoding for '%s'." % self.path)
@@ -109,6 +109,9 @@ class ConfigLoader(object):
 				if result['confidence'] < settings.CONF_CHARDET_CONFIDENCE:
 					logger.warning(
 						"Confidence for file encoding is too low: '%s'" % self.path)
+					raise ImproperlyConfigured(
+							"Ambigious encoding for '%s', make sure it was "
+							"encoded with 'UTF-8'." % self.path)
 
 				file_encoding = result['encoding']
 				try:
@@ -144,10 +147,8 @@ class ConfigLoader(object):
 
 		return config
 
-
 	def parse(self):
 		return self._config
-
 
 
 class SectionParser(object):
