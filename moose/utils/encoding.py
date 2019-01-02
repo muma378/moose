@@ -28,6 +28,21 @@ class MooseUnicodeDecodeError(UnicodeDecodeError):
 # For backwards compatibility. (originally in Django, then added to six 1.9)
 python_2_unicode_compatible = six.python_2_unicode_compatible
 
+def remove_bom(s):
+    # Passing unicode to the function makes no sense
+    if isinstance(s, six.text_type):
+        return s
+    # starts with '\xff\xfe\x00\x00' or '\x00\x00\xfe\xff'
+    if s.startswith(codecs.BOM_UTF32_LE) or s.startswith(codecs.BOM_UTF32_BE):
+        s = s[4:]
+    # encoded with BOM started: '\xef\xbb\xbf'
+    elif s.startswith(codecs.BOM_UTF8):
+        s = s[3:]
+    # starts with '\xff\xfe' or '\xfe\xff'
+    elif s.startswith(codecs.BOM_LE) or s.startswith(codecs.BOM_BE):
+        s = s[2:]
+    return s
+
 
 def smart_text(s, encoding='utf-8', strings_only=False, errors='strict'):
     """
