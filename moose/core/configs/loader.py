@@ -101,7 +101,7 @@ class ConfigLoader(object):
 				content = self.__update_with_locales(raw_content)
 			except UnicodeError as e:
 				result = chardet.detect(raw_content)
-				if not result and result['encoding'] in ['ascii', settings.FILE_CHARSET]:
+				if not result or result['encoding'] in ['ascii', settings.FILE_CHARSET]:
 					# Tried, but failed
 					raise ImproperlyConfigured(
 						"Unknown encoding for '%s'." % self.path)
