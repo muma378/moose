@@ -39,8 +39,8 @@ class ConfigLoaderTestCase(unittest.TestCase):
 	"""
 
 	def setUp(self):
-		self.test_config_path = "tests/sample_data/configs/sample.conf"
-		with open("tests/test_configs/data/sample.conf", "rb") as f:
+		self.test_config_path = "tests/test_configs/data/sample.conf"
+		with open(self.test_config_path, "rb") as f:
 			self.test_content = f.read()
 
 	def test_create(self):
@@ -56,6 +56,13 @@ class ConfigLoaderTestCase(unittest.TestCase):
 			ConfigLoader.create(self.test_config_path, configs)
 		self.assertFalse(newly_created)
 		self.assertEqual(new_config, loaded_config)
+
+		with mock.patch("moose.core.configs.loader.os") as mock_os:
+			mock_os.stat.return_value = mock.MagicMock(mtime=1546416606)
+			loaded_config, newly_created = \
+				ConfigLoader.create(self.test_config_path, configs)
+			self.assertTrue(newly_created)
+			self.assertNotEqual(new_config, loaded_config)
 
 		# Passed a not existed file
 		with self.assertRaises(DoesNotExist) as context:
@@ -112,8 +119,8 @@ class ConfigLoaderTestCase(unittest.TestCase):
 				test_data_rewritten(japanese_data.encode('gbk'), japanese_data.encode('utf-8'))
 
 
-	def __test_parse(self, test_config_path):
-		loader = ConfigLoader(test_config_path)
+	def test_parse(self):
+		loader = ConfigLoader(self.test_config_path)
 		test_config = loader.parse()
 
 		self.assertTrue(isinstance(test_config, Config))
