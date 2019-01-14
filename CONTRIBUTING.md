@@ -44,22 +44,22 @@ Moose所有的讨论都在 *[Issue Tracker](http://git.datatang.com/xiaoyang/Moo
 * 注意在提交MR之前，除了功能代码外，也需提供相应的单元测试证明代码work，并确保所有的单元测试能跑通；
 
 ### Coding style
-	* 除非特殊声明的情况，Moose的编码风格遵照 [PEP 8](https://www.python.org/dev/peps/pep-0008/)；
-	* Moose Cookbook提供了一些Moose使用上的建议和惯例说明，除了用户，开发者也应该了解它，确保你的想法（反映在风格上）和设计者是一致的；
+* 除非特殊声明的情况，Moose的编码风格遵照 [PEP 8](https://www.python.org/dev/peps/pep-0008/)；
+* Moose Cookbook提供了一些Moose使用上的建议和惯例说明，除了用户，开发者也应该了解它，确保你的想法（反映在风格上）和设计者是一致的；
 
 ### 分支命名风格
-	* 分支创建分为功能增加和bug修改两种，两者都基于master分支创建；
-	* 分支名应该足够简短且具有代表性，包含1~4个单词，使用中横线分割，表示本次修改主要做什么（可以省略动词）。例如：empty-nil-blank、rm-default-type-submit、rebuild-model-properties；
-	* 如果该分支的创建是为了增加新功能，加上 feature/* 前缀； 
-	* 如果该分支的创建是为了修复临时的紧急的bug，加上hotfix/*前缀，并将修改结果应用到上个patch中（通过[cherry-pick](https://backlog.com/git-tutorial/cn/stepup/stepup7_4.html)）；
+* 分支创建分为功能增加和bug修改两种，两者都基于master分支创建；
+* 分支名应该足够简短且具有代表性，包含1~4个单词，使用中横线分割，表示本次修改主要做什么（可以省略动词）。例如：empty-nil-blank、rm-default-type-submit、rebuild-model-properties；
+* 如果该分支的创建是为了增加新功能，加上 feature/* 前缀； 
+* 如果该分支的创建是为了修复临时的紧急的bug，加上hotfix/*前缀，并将修改结果应用到上个patch中（通过[cherry-pick](https://backlog.com/git-tutorial/cn/stepup/stepup7_4.html)）；
 
 ### 提交操作
 详细流程操作如下：
-	1. 更新你本地的代码(git pull);
-	2. 创建你的 feature或bugfix 分支 (git checkout -b feature/my-new-feature)；
-	3. 提交修改 (git commit -am 'Add some feature; fixed \#23’)；
-	4. 推送到你的远端分支上 (git push origin feature/my-new-feature)
-	5. 创建 **Merge Request**，并指定Assignee为Maintainer；
+1. 更新你本地的代码(git pull);
+2. 创建你的 feature或bugfix 分支 (git checkout -b feature/my-new-feature)；
+3. 提交修改 (git commit -am 'Add some feature; fixed \#23’)；
+4. 推送到你的远端分支上 (git push origin feature/my-new-feature)
+5. 创建 **Merge Request**，并指定Assignee为Maintainer；
 
 ## 测试
 运行单元测试，linux 和 macOS下：
