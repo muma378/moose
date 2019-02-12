@@ -176,7 +176,6 @@ DRAWER_RADIUS = 3
 DEFAULT_THICKNESS = 3
 DEFAULT_COLOR = (255, 0, 0)
 
-
 # Config for Server Message Block protocol
 SMB = {
     'HOST': '',
@@ -220,7 +219,7 @@ EDITOR = "vim" if IS_POSIX else "notepad"
 DATALINK_TEMPLATE = 'http://bz.datatang.com/datalink?data={data_guid}&taskId={task_id}'
 AZURE_FILELINK = 'http://crowdfile.blob.core.chinacloudapi.cn/{task_id}/{file_path}'
 
-PREFERRED_PROJECT_NAME = u"%d第%d期图片标注任务"
+PREFERRED_PROJECT_NAME = u"%d第%d期图片任务"
 
 TIME_ZONE = 'Asia/Shanghai'
 

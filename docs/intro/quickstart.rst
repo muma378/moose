@@ -102,11 +102,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     # -*- coding: utf-8 -*-
     import os
     import json
-    from moose import actions
+    from moose.actions import base
     from moose.connection.cloud import AzureBlobService
     from tutorial import settings
 
-    class Upload(actions.base.BaseAction):
+    class Upload(base.BaseAction):
 
         def run(self, **kwargs):
             """
@@ -118,8 +118,8 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
             # Phase 1. establishes the connection to azure and do uploading files
             azure = AzureBlobService(settings.AZURE)
             # Assume there was only one file in '/data/cityscape/vol1'.
-            images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
-            blobs = azure.upload(task_id, images)
+            images = [('vol1/a.jpg', '/data/cityscape/vol1/a.jpg'), ]
+            blobs = azure.upload(task_id, images, overwrite=True)
 
             # Phase 2. creates the index file to declare the relationships
             # between files uploaded and names to display
@@ -133,6 +133,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
                     f.write(json.dumps(item))
             return '{} files uploaded.' % len(blobs)
 
+此外，你还需要在 *tutorial/settings.py* 的 **AZURE** 字段中填入对应的账号密码以及端点（ENDPOINT）的值才能运行，如果你不知道填什么内容，请咨询IT相关信息。
 
 为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.base.BaseAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
 
@@ -225,14 +226,14 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: order-actions-py-1
 
-    class Upload(actions.base.BaseAction):
+    class Upload(base.BaseAction):
 
         def run(self, **kwargs):
             config = kwargs['config']
             task_id = config.upload['task_id']
             # ···
 
-            images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
+            images = [('vol1/a.jpg', '/data/cityscape/vol1/a.jpg'), ]
             # ···
 
 完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trial.cfg* 完成与上一节相同的功能： ::
@@ -245,7 +246,9 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: order-actions-py-2
 
-    class Upload(actions.upload.SimpleUpload):
+   from moose.actions import upload
+
+    class Upload(upload.SimpleUpload):
         default_pattern = "*.jpg"
 
 
