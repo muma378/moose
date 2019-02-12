@@ -194,7 +194,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     title = 2017第?期图片标注任务
 
 
-需要注意的是，订单模板的格式不是强制性的——只要能定义你的借口，你可以组织成任意格式！我们推荐使用如上的格式是希望即使在不同的app中也能复用同一个action（或者尽量少地去修改它），并且这种格式比较好地概括了我们日常工作中一个订单会用到的属性。
+需要注意的是，订单模板的格式不是强制性的——只要能定义你的接口，你可以组织成任意格式！我们推荐使用如上的格式是希望即使在不同的app中也能复用同一个action（或者尽量少地去修改它），并且这种格式比较好地概括了我们日常工作中一个订单会用到的属性。
 
 我们将上面的模板复制到 *cityscape/template.cfg* 文件中，然后在命令行中运行： ::
 
@@ -246,7 +246,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: order-actions-py-2
 
-   from moose.actions import upload
+    from moose.actions import upload
 
     class Upload(upload.SimpleUpload):
         default_pattern = "*.jpg"
@@ -267,7 +267,9 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: model-actions-py
 
-    class Export(actions.export.SimpleExport):
+    from moose.actions import export
+
+    class Export(export.SimpleExport):
         data_model = 'cityscape.models.CityscapeModel'
 
 .. code-block:: python
