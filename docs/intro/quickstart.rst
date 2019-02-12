@@ -5,7 +5,7 @@
 =====================
 在这篇教程中，我们假设你已经安装好了Moose并且了解一个数据标注项目的基本流程，如果还没有的话请参考 **安装指南** 和 **标注任务创建指南**。
 
-我们将以一个名为 **cityscape** 的图片标注项目开始(得益于各大厂商在自动驾驶研发上的投入，对街景图像的采集与标注的需求也变得旺盛)，该项目需要在 `标注平台 <http://bz.datatang.com/Admin/task/markList>`_ 上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
+我们将以一个名为 **cityscape** 的图片标注项目开始，该项目需要在 `标注平台 <http://bz.datatang.com/Admin/task/markList>`_ 上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
 
 这篇教程将会着重讲述Moose相关的操作，包含以下要点：
 
@@ -28,11 +28,11 @@
 这将会在当前文件夹中创建以下内容： ::
 
 
-   tutorial/   # project's python module
-       __init__.py     # an empty file tells Python that this directory should be considered as a package
-       settings.py     # settings/configuration for this Moose project
-       template.cfg    # global tasks' config template
-       manage.py   # a command-line utility that let you interact with Moose in various ways
+   tutorial/   # 项目的Python模块
+       __init__.py     # 一个空文件，用来告诉Python解释器把该文件夹看做包（Package）
+       settings.py     # 该Moose项目的配置信息
+       template.cfg    # 整个项目的订单文件模板
+       manage.py   # 一个用来和Moose进行交互的命令行小工具
 
 
 创建一个新的application
@@ -46,13 +46,13 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 这将会为你创建一个叫 **cityscape** 的文件夹，内部结构如下： ::
 
     cityscape/
-        configs/    # directory to put tasks' config files
-        data/       # directory for input/output data
+        configs/    # 用来存放订单文件，我们会在下一节解释什么是订单
+        data/       # 用来存放输入输出数据
         __init__.py
-        actions.py      # actions defined that application runs with
-        apps.py         # control center to glue all components
-        models.py       # object representation for data queried from the backend
-        template.cfg    # local tasks' config template
+        actions.py      # 在这个文件中，我们定义所有可被执行的动作（Action）
+        apps.py         # 将actions.py中的Action类和命令行中的参数绑定
+        models.py       # 从后端获取的结果的对象表示
+        template.cfg    # 该application的订单文件的模板
         tests.py
 
 
@@ -324,7 +324,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
         def ready(self):
             self.register('Upload', 'upload')
-            self.register('Export', 'export')   # Same as upload, now we can type `-a export`
+            self.register('Export', 'export')   # 和上面的upload一样，现在我们可以通过键入 `-a export` 来调用Export了
 
 
 此时，我们在命令行中输入： ::
