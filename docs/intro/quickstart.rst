@@ -5,7 +5,7 @@
 =====================
 在这篇教程中，我们假设你已经安装好了Moose并且了解一个数据标注项目的基本流程，如果还没有的话请参考 **安装指南** 和 **标注任务创建指南**。
 
-我们将以一个名为 **cityscape** 的图片标注项目开始(得益于各大厂商在自动驾驶研发上的投入，对街景图像的采集与标注的需求也变得旺盛)，该项目需要在 `标注平台 <http://bz.datatang.com/Admin/task/markList>`_ 上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
+我们将以一个名为 **cityscape** 的图片标注项目开始，该项目需要在 `标注平台 <http://bz.datatang.com/Admin/task/markList>`_ 上创建任务，上传图片数据并建立索引关系，待标注人员完成后，再将结果从后端提取出来，整理成相应格式并等待交付客户。
 
 这篇教程将会着重讲述Moose相关的操作，包含以下要点：
 
@@ -28,11 +28,11 @@
 这将会在当前文件夹中创建以下内容： ::
 
 
-   tutorial/   # project's python module
-       __init__.py     # an empty file tells Python that this directory should be considered as a package
-       settings.py     # settings/configuration for this Moose project
-       template.cfg    # global tasks' config template
-       manage.py   # a command-line utility that let you interact with Moose in various ways
+   tutorial/   # 项目的Python模块
+       __init__.py     # 一个空文件，用来告诉Python解释器把该文件夹看做包（Package）
+       settings.py     # 该Moose项目的配置信息
+       template.cfg    # 整个项目的订单文件模板
+       manage.py   # 一个用来和Moose进行交互的命令行小工具
 
 
 创建一个新的application
@@ -46,13 +46,13 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 这将会为你创建一个叫 **cityscape** 的文件夹，内部结构如下： ::
 
     cityscape/
-        configs/    # directory to put tasks' config files
-        data/       # directory for input/output data
+        configs/    # 用来存放订单文件，我们会在下一节解释什么是订单
+        data/       # 用来存放输入输出数据
         __init__.py
-        actions.py      # actions defined that application runs with
-        apps.py         # control center to glue all components
-        models.py       # object representation for data queried from the backend
-        template.cfg    # local tasks' config template
+        actions.py      # 在这个文件中，我们定义所有可被执行的动作（Action）
+        apps.py         # 将actions.py中的Action类和命令行中的参数绑定
+        models.py       # 从后端获取的结果的对象表示
+        template.cfg    # 该application的订单文件的模板
         tests.py
 
 
@@ -102,11 +102,11 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     # -*- coding: utf-8 -*-
     import os
     import json
-    from moose import actions
+    from moose.actions import base
     from moose.connection.cloud import AzureBlobService
     from tutorial import settings
 
-    class Upload(actions.base.BaseAction):
+    class Upload(base.BaseAction):
 
         def run(self, **kwargs):
             """
@@ -118,8 +118,8 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
             # Phase 1. establishes the connection to azure and do uploading files
             azure = AzureBlobService(settings.AZURE)
             # Assume there was only one file in '/data/cityscape/vol1'.
-            images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
-            blobs = azure.upload(task_id, images)
+            images = [('vol1/a.jpg', '/data/cityscape/vol1/a.jpg'), ]
+            blobs = azure.upload(task_id, images, overwrite=True)
 
             # Phase 2. creates the index file to declare the relationships
             # between files uploaded and names to display
@@ -133,6 +133,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
                     f.write(json.dumps(item))
             return '{} files uploaded.' % len(blobs)
 
+此外，你还需要在 *tutorial/settings.py* 的 **AZURE** 字段中填入对应的账号密码以及端点（ENDPOINT）的值才能运行，如果你不知道填什么内容，请咨询IT相关信息。
 
 为了避免我们的教程陷入过多细节的讨论，我们跳过了部分具体实现，例如 *AzureBlobService* 类。目前你只需要了解：通过继承 **actions.base.BaseAction** 并对接口 **run** 添加实现，我们完成了原始文件的上传和索引文件的生成这两个功能。
 
@@ -193,7 +194,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
     title = 2017第?期图片标注任务
 
 
-需要注意的是，订单模板的格式不是强制性的——只要能定义你的借口，你可以组织成任意格式！我们推荐使用如上的格式是希望即使在不同的app中也能复用同一个action（或者尽量少地去修改它），并且这种格式比较好地概括了我们日常工作中一个订单会用到的属性。
+需要注意的是，订单模板的格式不是强制性的——只要能定义你的接口，你可以组织成任意格式！我们推荐使用如上的格式是希望即使在不同的app中也能复用同一个action（或者尽量少地去修改它），并且这种格式比较好地概括了我们日常工作中一个订单会用到的属性。
 
 我们将上面的模板复制到 *cityscape/template.cfg* 文件中，然后在命令行中运行： ::
 
@@ -225,14 +226,14 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: order-actions-py-1
 
-    class Upload(actions.base.BaseAction):
+    class Upload(base.BaseAction):
 
         def run(self, **kwargs):
             config = kwargs['config']
             task_id = config.upload['task_id']
             # ···
 
-            images = [('/data/cityscape/vol1/a.jpg', 'vol1/a.jpg'), ]
+            images = [('vol1/a.jpg', '/data/cityscape/vol1/a.jpg'), ]
             # ···
 
 完成以上修改后，在命令行里运行（run）时通过指定订单文件名就可以按照该订单的配置来执行——我们通过指定使用 *trial.cfg* 完成与上一节相同的功能： ::
@@ -245,7 +246,9 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: order-actions-py-2
 
-    class Upload(actions.upload.SimpleUpload):
+    from moose.actions import upload
+
+    class Upload(upload.SimpleUpload):
         default_pattern = "*.jpg"
 
 
@@ -264,7 +267,9 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
    :caption: cityscape/actions.py
    :name: model-actions-py
 
-    class Export(actions.export.SimpleExport):
+    from moose.actions import export
+
+    class Export(export.SimpleExport):
         data_model = 'cityscape.models.CityscapeModel'
 
 .. code-block:: python
@@ -319,7 +324,7 @@ Moose提供了一系列的工具来自动创建相应的文件和文件夹，使
 
         def ready(self):
             self.register('Upload', 'upload')
-            self.register('Export', 'export')   # Same as upload, now we can type `-a export`
+            self.register('Export', 'export')   # 和上面的upload一样，现在我们可以通过键入 `-a export` 来调用Export了
 
 
 此时，我们在命令行中输入： ::
