@@ -47,6 +47,7 @@ class DownloadWorker(_threading.Thread):
                 if not self.overwrite and \
                     os.path.exists(data_model.dest_filepath):
                     self.stats.inc_value("download/conflict")
+                    self.callback(data_model)
                 else:
                     data = self.fetch(data_model.filelink, data_model.retry)
 
